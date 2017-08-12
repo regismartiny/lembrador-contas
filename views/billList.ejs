@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head></head>
+<body>
+ <h1 class="text-center title-1">Lista de Contas</h1>
+ <ul>
+ <% billList.forEach(function(bill){ %>
+ <li>Empresa: <%= bill.company %>, FonteValor: <%= bill.valueSource %></li>
+ <%})%>
+ </ul>
+</body>
+</html>
