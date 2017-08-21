@@ -1,0 +1,106 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="text-center title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <form action="/bills/update" method="post">
+                        <input type="hidden" name="id" value="<%= bill._id %>">
+                        <div class="form-group">
+                            <label for="company">Empresa</label>
+                            <input type="text" class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="company" name="company" placeholder="Empresa"
+                                aria-describedby="basic-addon1" value="<%= bill.company %>">
+                        </div>
+                        <br>
+                        <div class="form-group">
+                            <label for="valueSourceType">Tipo FonteValor</label>
+                            <select name='valueSourceType' class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="valueSourceType">
+                                <% var keys = Object.keys(valueSourceType); keys.forEach(function(vst){ %>
+                                    <option <% if (vst == bill.valueSourceType) {%>selected="selected"<% } %> value="<%= vst %>"><%= valueSourceType[vst] %></option>
+                                <%})%>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="form-group" id="emailGroup" style="display:none">
+                            <label for="email">Email</label>
+                            <select name='email' class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="emailOptions">
+                            </select>
+                        </div>
+                        <br>
+                        <div class="form-group" id="tableGroup" style="display:none">
+                            <label for="table">Tabela</label>
+                            <select name='table' class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="tableOptions">
+                                </select>
+                        </div>
+                        <br>
+                        <br>
+                        <div class="form-group-btn">
+                            <input type="submit" class="btn btn-primary center-block" value="Salvar" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <%- template.scripts %>
+                <script>
+                    const EMAIL_REST = '/emails/listJSON';
+                    const TABLE_REST = '/tables/listJSON';
+                    const VALUE_SOURCE_TYPE = '<%= bill.valueSourceType %>';
+                    const DATA_ID = '<%= bill.valueSourceId %>';
+
+                    if (VALUE_SOURCE_TYPE === 'EMAIL') {
+                        getList(EMAIL_REST, loadEmailList);
+                    } else {
+                        getList(TABLE_REST, loadTableList);
+                    }
+
+                    $('#valueSourceType').change(function (value) {
+                        if (value.target.value === 'EMAIL') {
+                            $('#tableGroup').hide();
+                            getList(EMAIL_REST, loadEmailList);
+                        } else {
+                            $('#emailGroup').hide();
+                            getList(TABLE_REST, loadTableList);
+                        }
+                    });
+
+                    function getList(rest, callback) {
+                        $.getJSON(rest, function (result, status) {
+                            callback(result);
+                        });
+                    }
+
+                    function loadEmailList(list) {
+                        var optionsAsString = createSelectOptions(list);
+                        
+                        $('#emailOptions').html(optionsAsString);
+
+                        $('#emailOptions').val(DATA_ID);
+
+                        $('#emailGroup').show();
+                    }
+
+                    function loadTableList(list) {
+                        var optionsAsString = createSelectOptions(list);
+                        
+                        $('#tableOptions').html(optionsAsString);
+
+                        $('#tableOptions').val(DATA_ID);
+
+                        $('#tableGroup').show();
+                    }
+
+                    function createSelectOptions(list) {
+                        var optionsAsString = "";
+                        for (var i = 0; i < list.length; i++) {
+                            optionsAsString += "<option value='" + list[i]._id + "'>" + list[i].address + "</option>";
+                        }
+                        return optionsAsString;
+                    }
+                </script>
+    </body>
+
+    </html>

@@ -1,0 +1,41 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="text-center title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <div class="justify-content-center">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% userList.forEach(function(user){ %>
+                                    <tr>
+                                        <td>
+                                            <%= user.username %>
+                                        </td>
+                                        <td style="word-break: break-word;">
+                                            <%= user.email %>
+                                        </td>
+                                        <td><a href='/users/edit/<%= user._id %>'>Editar</a>
+                                            <a href='/users/remove/<%= user._id %>'>Excluir</a></td>
+                                    </tr>
+                                    <%})%>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <%- template.scripts %>
+    </body>
+
+    </html>

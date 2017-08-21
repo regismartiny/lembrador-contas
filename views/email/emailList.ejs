@@ -1,0 +1,37 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="text-center title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <div class="justify-content-center">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% emailList.forEach(function(email){ %>
+                                    <tr>
+                                        <td>
+                                            <%= email.address %>
+                                        </td>
+                                        <td><a href='/emails/edit/<%= email._id %>'>Editar</a>
+                                            <a href='/emails/remove/<%= email._id %>'>Excluir</a></td>
+                                    </tr>
+                                    <%})%>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <%- template.scripts %>
+    </body>
+
+    </html>

@@ -7,6 +7,8 @@ var bodyParser = require('body-parser');
 
 var index = require('./routes/index');
 var users = require('./routes/users');
+var bills = require('./routes/bills');
+var emails = require('./routes/emails');
 
 var app = express();
 
@@ -21,9 +23,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
+app.use('/tether', express.static(__dirname + '/node_modules/tether/dist/'));
+app.use('/bootstrap', express.static(__dirname + '/node_modules/bootstrap/dist/'));
 
 app.use('/', index);
 app.use('/users', users);
+app.use('/bills', bills);
+app.use('/emails', emails);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

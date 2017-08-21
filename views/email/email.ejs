@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1 class="text-center title-1">Email</h1>
+    <ul>
+        <% message.payload.headers.forEach(function(header){ %>
+        <li>
+            <%= header.name %>:
+            <%= header.value %>
+         </li>
+        <% }) %>
+        <li>Anexo: <a href='data:application/pdf;base64,<%- attachment.attachment.data %>' title='Download pdf document'><%= attachment.filename %></a></li>
+        <li>Valor: <%= valor %></li>
+    </ul>
+    <script>
+        //var txt = '<%- JSON.stringify(message) %>';
+        //var msg = JSON.parse(txt);
+        //console.log(msg);
+        //var data = '<%- attachment.attachment.data %>';
+        //window.open("data:application/pdf;base64," + data);
+    </script>
+</body>
+</html>

@@ -1,24 +1,17 @@
-<!DOCTYPE html>
-<html>
+<%- template.head %>
 
-<head>
-  <title>
-    <%= title %>
-  </title>
-  <link rel='stylesheet' href='/stylesheets/style.css' />
-</head>
+  <body>
+    <%- template.navbar %>
 
-<body>
-  <h1>
-    <%= title %>
-  </h1>
-  <p>Bem vindo ao Lembrador de Contas</p>
-  <ul>
-    <li><a href="/userList">Listar Usuários</a></li>
-    <li><a href="/billList">Listar Contas</a></li>
-    <li><a href="/newUser">Cadastrar Usuários</a></li>
-    <li><a href="/newBill">Cadastrar Contas</a></li>
-  </ul>
-</body>
+      <div class="container">
+        <div class="starter-template">
+          <h1 class="text-center title-1">
+            Bem vindo ao Lembrador de Contas
+          </h1>
+        </div>
+      </div>
 
-</html>
+      <%- template.scripts %>
+  </body>
+
+  </html>
