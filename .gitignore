@@ -1,3 +1,9 @@
+# Secret files
+client_secret.json
+
+# Data files
+data
+
 # Logs
 logs
 *.log
