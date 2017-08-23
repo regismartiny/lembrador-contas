@@ -15,8 +15,14 @@ var billSchema = new mongoose.Schema({
 );
 
 var emailSchema = new mongoose.Schema({
-    address:{ type: String, unique: true }
+    address: { type: String, unique: true }
 }, { collection: 'emailcollection' }
+);
+
+var tableSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    data: [ { period: { month: Number, year: Number }, value: Number } ]
+}, { collection: 'tablecollection' }
 );
 
 const ValueSourceType = {
@@ -24,4 +30,4 @@ const ValueSourceType = {
     EMAIL : 'Email',
 }
 
-module.exports = { Mongoose: mongoose, UserSchema: userSchema, BillSchema: billSchema, EmailSchema: emailSchema, ValueSourceType: ValueSourceType }
+module.exports = { Mongoose: mongoose, UserSchema: userSchema, BillSchema: billSchema, EmailSchema: emailSchema, TableSchema: tableSchema, ValueSourceType: ValueSourceType }

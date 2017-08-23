@@ -1,0 +1,61 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="text-center title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <form action="/tables/update" method="post">
+                        <input type="hidden" name="id" value="<%= table._id %>">
+                        <div class="form-group">
+                            <label for="company">Nome</label>
+                            <input type="text" class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="name" name="name" placeholder="Nome" aria-describedby="basic-addon1"
+                                value="<%= table.name %>">
+                        </div>
+                        <br>
+                        <div class="justify-content-center">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2">Período</th>
+                                        <th rowspan="2">Valor</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Mês</th>
+                                        <th>Ano</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% table.data.forEach(function(line){ %>
+                                        <tr>
+                                            <td>
+                                                <%= line.period.month %>
+                                            </td>
+                                            <td>
+                                                <%= line.period.year %>
+                                            </td>
+                                            <td>
+                                                <%= line.value %>
+                                            </td>
+                                        </tr>
+                                    <%})%>
+                                </tbody>
+                            </table>
+                        </div>
+                        <br>
+                        <div class="form-group-btn">
+                            <input type="submit" class="btn btn-primary center-block" value="Salvar" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <%- template.scripts %>
+                <script>
+
+                </script>
+    </body>
+
+    </html>
