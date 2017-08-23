@@ -194,7 +194,7 @@ function getValorFromPDF(pdfData) {
 }
 
 function handleError(error) {
-    console.log("Error! " + err.message);
+    console.log("Error! " + error.message);
 }
 
 module.exports = router;
