@@ -8,42 +8,27 @@
                         <%= title %>
                     </h1>
                     <br>
-                    <form action="/tables/update" method="post">
+                    <form action="/tables/update" method="post" class="justify-content-center">
                         <input type="hidden" name="id" value="<%= table._id %>">
                         <div class="form-group">
                             <label for="company">Nome</label>
-                            <input type="text" class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="name" name="name" placeholder="Nome" aria-describedby="basic-addon1"
+                            <input type="text" class="form-control text-center" id="name" name="name" placeholder="Nome" aria-describedby="basic-addon1"
                                 value="<%= table.name %>">
                         </div>
                         <br>
-                        <div class="justify-content-center">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th colspan="2">Período</th>
-                                        <th rowspan="2">Valor</th>
-                                    </tr>
-                                    <tr>
-                                        <th>Mês</th>
-                                        <th>Ano</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% table.data.forEach(function(line){ %>
-                                        <tr>
-                                            <td>
-                                                <%= line.period.month %>
-                                            </td>
-                                            <td>
-                                                <%= line.period.year %>
-                                            </td>
-                                            <td>
-                                                <%= line.value %>
-                                            </td>
-                                        </tr>
-                                    <%})%>
-                                </tbody>
-                            </table>
+                        <table id="table" class="table">
+                            <thead>
+                                <tr>
+                                    <th>Período</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <div>
+                            <a href="javascript:addRow()">Adicionar linha</a>
                         </div>
                         <br>
                         <div class="form-group-btn">
@@ -54,7 +39,46 @@
             </div>
             <%- template.scripts %>
                 <script>
+                    var rowCount = 0;
 
+                    var dataJSON = '<%- JSON.stringify(table.data) %>';
+                    var data = JSON.parse(dataJSON);
+
+                    createRows();
+
+                    function createRows() {
+                        for (line of data) {
+                            let period =  line.period.year + '-' + n(line.period.month);
+                            let value = line.value;
+                            addRow(period, value);
+                        }
+                    }
+
+                    function addRow(periodValue, valueValue) {
+                        var table = $('#table tr:last').after('<tr id="row-' + rowCount + '">' + genPeriodCol(periodValue) + genValueCol(valueValue) + genRemoveAction() + '</tr>');
+                        rowCount++;
+                    }
+
+                    function removeRow(rowNumber) {
+                        $('#row-' + rowNumber).remove();
+                        rowCount--;
+                    }
+
+                    function genPeriodCol(value) {
+                        return '<td><input type="month" class="form-control text-center" id="period" value="' + (value || '') + '" name="period" aria-describedby="basic-addon1"></td>';
+                    }
+
+                    function genValueCol(value) {
+                        return '<td><input type="number" class="form-control text-center" id="value" value="' + (value || '') + '" name="value" placeholder="Valor" aria-describedby="basic-addon1"></td>';
+                    }
+
+                    function genRemoveAction() {
+                        return '<td><a href="javascript:removeRow(' + rowCount + ')">Remover</a></td>';
+                    }
+
+                    function n(n) {
+                        return n > 9 ? "" + n : "0" + n;
+                    }
                 </script>
     </body>
 
