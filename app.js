@@ -25,6 +25,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
+app.use('/jquery-mask', express.static(__dirname + '/node_modules/jquery-mask-plugin/dist/'));
 //app.use('/tether', express.static(__dirname + '/node_modules/tether/dist/'));
 app.use('/popperjs', express.static(__dirname + '/node_modules/popper.js/dist/umd/'));
 app.use('/bootstrap', express.static(__dirname + '/node_modules/bootstrap/dist/'));

@@ -16,15 +16,15 @@ router.get('/list', function (req, res) {
 
 /* GET New Table page. */
 router.get('/new', function (req, res) {
-    res.render('table/newTable', { template, title: 'Cadastro de Tabela' });
+    res.render('table/editTable', { template, title: 'Cadastro de Tabela' });
 });
 
 /* POST to Add Table */
 router.post('/add', function (req, res) {
-    let tableName = req.body.name;
-    let tableData = [ { period: { month: req.body.month, year: req.body.year }, value: req.body.value }];
+    let name = req.body.name;
+    let data = parseData(req.body);
 
-    let table = new Tables({ name: tableName, data: tableData });
+    let table = new Tables({ name, data });
     table.save(function (err) {
         if (err) {
             handleError(err);
@@ -55,7 +55,8 @@ router.get('/edit/:id', function (req, res) {
 router.post('/update', function (req, res) {
 
     let tableId = req.body.id;
-    let data = req.body.data;
+    let name = req.body.name;
+    let data = parseData(req.body);
 
     Tables.findOneAndUpdate({ _id: tableId }, { $set: { data, name }}, { new: true }, function (err, table) {
         if (err) {
@@ -85,6 +86,20 @@ router.get('/remove/:id', function (req, res) {
 
 function handleError(error) {
     console.log("Error! " + error.message);
+}
+
+function parseData(body) {
+    let data = body;
+    let newData = [];
+    let length = (typeof body.period === 'Array') ? body.period.length : 1;
+    for(let i=0; i < data.length; i++) {
+        let line = length > 1 ? data[i].period : data.period;
+        console.log('line:', line);
+        let period = { month:  Number(line.substr(5,7)), year: Number(line.substr(0,4)) };
+        let value = length > 1 ? data[i].value : data.value;
+        newData.push({period, value});
+    }
+    return newData;
 }
 
 

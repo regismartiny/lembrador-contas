@@ -9,3 +9,13 @@ body {
 th, td {
   text-align: center;
 }
+
+input {
+  text-align: center;
+}
+
+select{
+  text-align-last:center;
+  /*padding-right: 29px;
+  direction: rtl;*/
+}
