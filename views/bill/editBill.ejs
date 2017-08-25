@@ -27,13 +27,12 @@
                         <br>
                         <div class="form-group" id="emailGroup" style="display:none">
                             <label for="email">Email</label>
-                            <select name='email' class="form-control text-center" id="emailOptions">
+                            <select name='email' class="form-control" id="emailOptions">
                             </select>
                         </div>
-                        <br>
                         <div class="form-group" id="tableGroup" style="display:none">
                             <label for="table">Tabela</label>
-                            <select name='table' class="form-control col-10 offset-1 col-sm-8 offset-sm-2" id="tableOptions">
+                            <select name='table' class="form-control" id="tableOptions">
                                 </select>
                         </div>
                         <br>
@@ -96,7 +95,7 @@
                     function createSelectOptions(list) {
                         var optionsAsString = "";
                         for (var i = 0; i < list.length; i++) {
-                            optionsAsString += "<option value='" + list[i]._id + "'>" + list[i].address + "</option>";
+                            optionsAsString += "<option value='" + list[i]._id + "'>" + (list[i].address || list[i].name) + "</option>";
                         }
                         return optionsAsString;
                     }

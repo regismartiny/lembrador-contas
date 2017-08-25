@@ -15,9 +15,7 @@
                                 <div class="form-group">
                                     <label for="company">Nome</label>
                                     <input type="text" class="form-control" id="name" name="name" placeholder="Nome" aria-describedby="basic-addon1" required <% if (locals.table)
-                                        { %>value="
-                                    <%= table.name %>"
-                                        <% } %>>
+                                        { %>value="<%= table.name %>"<% } %>>
                                 </div>
                                 <br>
                                 <table id="table" class="table">
@@ -57,10 +55,10 @@
                         createRow({ month: 1, year: new Date().getFullYear() }, 0);
                     <% } %>
 
-                        function createRow(period, value) {
-                            period = period.year + '-' + n(period.month);
-                            addRow(period, value);
-                        }
+                    function createRow(period, value) {
+                        period = period.year + '-' + n(period.month);
+                        addRow(period, value);
+                    }
 
                     function n(n) {
                         return n > 9 ? "" + n : "0" + n;
@@ -69,6 +67,7 @@
                     function addRow(periodValue, valueValue) {
                         var table = $('#table tr:last').after('<tr id="row-' + rowCount + '">' + genPeriodCol(periodValue) + genValueCol(valueValue) + genRemoveAction() + '</tr>');
                         rowCount++;
+                        applyMask();
                     }
 
                     function removeRow(rowNumber) {
@@ -88,11 +87,17 @@
                         return '<td><a href="javascript:removeRow(' + rowCount + ')">Remover</a></td>';
                     }
 
-                    $("input[name='value'").mask("R$ ###,00");
+                    $( document ).ready(function() {
+                        applyMask();
+                    });
+
+                    function applyMask() {
+                        $("input[name='value'").mask("R$ ###,00");
+                    }
 
                     function doSubmit() {
                         $("input[name='value'").unmask();
-                        setTimeout(()=> {$('#form').submit()}, 100);
+                        $('#form').submit()
                     }
                 </script>
     </body>

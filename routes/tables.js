@@ -14,6 +14,15 @@ router.get('/list', function (req, res) {
         });
 });
 
+/* GET tables JSON */
+router.get('/listJSON', function (req, res) {
+    Tables.find({}).lean().exec(
+        function (e, tables) {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(tables));
+        });
+});
+
 /* GET New Table page. */
 router.get('/new', function (req, res) {
     res.render('table/editTable', { template, title: 'Cadastro de Tabela' });
@@ -89,14 +98,12 @@ function handleError(error) {
 }
 
 function parseData(body) {
-    let data = body;
     let newData = [];
-    let length = (typeof body.period === 'Array') ? body.period.length : 1;
-    for(let i=0; i < data.length; i++) {
-        let line = length > 1 ? data[i].period : data.period;
-        console.log('line:', line);
+    let length = (typeof body.period === 'object') ? body.period.length : 1;
+    for(let i=0; i < length; i++) {
+        let line = length > 1 ? body.period[i] : body.period;
         let period = { month:  Number(line.substr(5,7)), year: Number(line.substr(0,4)) };
-        let value = length > 1 ? data[i].value : data.value;
+        let value = length > 1 ? body.value[i] : body.value;
         newData.push({period, value});
     }
     return newData;

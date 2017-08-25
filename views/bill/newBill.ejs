@@ -91,7 +91,7 @@
                     function createSelectOptions(list) {
                         var optionsAsString = "";
                         for (var i = 0; i < list.length; i++) {
-                            optionsAsString += "<option value='" + list[i]._id + "'>" + list[i].address + "</option>";
+                            optionsAsString += "<option value='" + list[i]._id + "'>" + (list[i].address || list[i].name) + "</option>";
                         }
                         return optionsAsString;
                     }

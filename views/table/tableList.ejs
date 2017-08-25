@@ -4,31 +4,32 @@
         <%- template.navbar %>
             <div class="container">
                 <div class="starter-template">
-                    <h1 class="text-center title-1">
+                    <h1 class="title-1">
                         <%= title %>
                     </h1>
                     <br>
-                    <div class="justify-content-center">
-                        <table class="table">
-                            <thead>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% tableList.forEach(function(table){ %>
                                 <tr>
-                                    <th>Nome</th>
-                                    <th>Ações</th>
+                                    <td>
+                                        <%= table.name %>
+                                    </td>
+                                    <td>
+                                        <a href='/tables/edit/<%= table._id %>'>Editar</a>
+                                        <a href='/tables/remove/<%= table._id %>'>Excluir</a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <% tableList.forEach(function(table){ %>
-                                    <tr>
-                                        <td>
-                                            <%= table.name %>
-                                        </td>
-                                        <td><a href='/tables/edit/<%= table._id %>'>Editar</a>
-                                            <a href='/tables/remove/<%= table._id %>'>Excluir</a></td>
-                                    </tr>
-                                    <%})%>
-                            </tbody>
-                        </table>
-                    </div>
+                                <%})%>
+                        </tbody>
+                    </table>
+
                 </div>
             </div>
             <%- template.scripts %>
