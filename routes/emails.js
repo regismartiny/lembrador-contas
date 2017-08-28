@@ -7,22 +7,20 @@ var fs = require('fs');
 var template = require('./template');
 var db = require("../db");
 
-var Emails = db.Mongoose.model('emailcollection', db.EmailSchema, 'emailcollection');
-
-/* GET emails page. */
+/* GET db.Email page. */
 router.get('/list', function (req, res) {
-    Emails.find({}).lean().exec(
-        function (e, emails) {
-            res.render('email/emailList', { template, title: 'Emails', emailList: emails });
+    db.Email.find({}).lean().exec(
+        function (e, email) {
+            res.render('email/emailList', { template, title: 'Lista de Emails', emailList: email });
         });
 });
 
-/* GET emails JSON */
+/* GET db.Email JSON */
 router.get('/listJSON', function (req, res) {
-    Emails.find({}).lean().exec(
-        function (e, emails) {
+    db.Email.find({}).lean().exec(
+        function (e, email) {
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(emails));
+            res.send(JSON.stringify(email));
         });
 });
 
@@ -37,7 +35,7 @@ router.post('/add', function (req, res) {
 
     console.log(req.body);
 
-    let email = new Emails({ address: emailAddress });
+    let email = new db.Email({ address: emailAddress });
     email.save(function (err) {
         if (err) {
             handleError(err);
@@ -54,7 +52,7 @@ router.post('/add', function (req, res) {
 router.get('/edit/:id', function (req, res) {
     let emailId = req.params.id;
 
-    Emails.findById(emailId, function (err, email) {
+    db.Email.findById(emailId, function (err, email) {
         if (err) {
             handleError(err);
             return err;
@@ -70,7 +68,7 @@ router.post('/update', function (req, res) {
     let emailId = req.body.id;
     let emailAddress = req.body.address;
 
-    Emails.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress } }, { new: true }, function (err, email) {
+    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress } }, { new: true }, function (err, email) {
         if (err) {
             handleError(err);
             return err;
@@ -86,7 +84,7 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
     let emailId = req.params.id;
 
-    Emails.findOneAndRemove({ _id: emailId }, function (err, email) {
+    db.Email.findOneAndRemove({ _id: emailId }, function (err, email) {
         if (err) {
             handleError(err);
             return err;
@@ -98,12 +96,12 @@ router.get('/remove/:id', function (req, res) {
 
 
 
-/* GET unread emails page. */
+/* GET unread db.Email page. */
 router.get('/unread', function (req, res) {
 
     gmail.listUnreadMessages(function (messages) {
         console.log('MENSAGENS BUSCADAS');
-        res.render('email/unreadEmails', { title: 'Emails', messageList: messages });
+        res.render('email/unreadEmails', { title: 'Emails não lidos', messageList: messages });
     });
 
 });

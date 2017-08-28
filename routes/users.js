@@ -3,11 +3,10 @@ var router = express.Router();
 var template = require('./template');
 var db = require("../db");
 
-var Users = db.Mongoose.model('usercollection', db.UserSchema, 'usercollection');
 
 /* GET UserList page. */
 router.get('/list', function (req, res) {
-  Users.find({}).lean().exec(
+  db.User.find({}).lean().exec(
     function (e, docs) {
       res.render('user/userList', { template, title: 'Lista de Usuários', userList: docs });
     });
@@ -20,17 +19,17 @@ router.get('/new', function (req, res) {
 
 /* POST to Add User Service */
 router.post('/add', function (req, res) {
-  var userName = req.body.username;
-  var userEmail = req.body.useremail;
+  var name = req.body.name;
+  var email = req.body.email;
 
-  var user = new Users({ username: userName, email: userEmail });
+  var user = new db.User({ name, email });
   user.save(function (err) {
     if (err) {
       handleError(err);
       return err;
     }
     else {
-      console.log("Post saved");
+      console.log("User saved");
       res.redirect("/users/list");
     }
   });
@@ -40,8 +39,7 @@ router.post('/add', function (req, res) {
 router.get('/edit/:id', function (req, res) {
   let userId = req.params.id;
 
-  var Users = db.Mongoose.model('usercollection', db.UserSchema, 'usercollection');
-  Users.findById(userId, function (err, user) {
+  db.User.findById(userId, function (err, user) {
     if (err) {
       handleError(err);
       return err;
@@ -54,10 +52,10 @@ router.get('/edit/:id', function (req, res) {
 /* POST to Update User */
 router.post('/update', function (req, res) {
   let userId = req.body.id;
-  let username = req.body.username;
-  let userEmail = req.body.email;
+  let name = req.body.name;
+  let email = req.body.email;
 
-  Users.findOneAndUpdate({ _id: userId }, { $set: { username: username, email: userEmail } }, { new: true }, function (err, user) {
+  db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email } }, { new: true }, function (err, user) {
     if (err) {
       handleError(err);
       return err;
@@ -73,11 +71,12 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
   let userId = req.params.id;
 
-  Users.findOneAndRemove({ _id: userId }, function (err, user) {
+  db.User.findOneAndRemove({ _id: userId }, function (err, user) {
     if (err) {
       handleError(err);
       return err;
     } else {
+      console.log("User removed");
       res.redirect("/users/list");
     }
   });

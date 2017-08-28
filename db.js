@@ -2,38 +2,52 @@ var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost:27017/lembradorcontas');
 
 var userSchema = new mongoose.Schema({
-    username: { type: String, unique: true },
-    email: String,
-    created_at: Date,
-    updated_at: Date
+  name: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
+  email: { type: String, unique: true , required: [true, 'O email é obrigatório'] },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
 }, { collection: 'usercollection' }
 );
 
 // on every save, add the date
-userSchema.pre('save', function(next) {
-  // get the current date
-  var currentDate = new Date();
+userSchema.pre('validate', function (next) {
+  var self = this;
 
-  // change the updated_at field to current date
-  this.updated_at = currentDate;
+  User.findOne({ email: this.email }, 'email', function (err, results) {
+    if (err) {
+      console.log('Erro: ', err);
+    } else if (results) {
+      console.warn('Resultados de validação: ', results);
+      self.invalidate("email", "Email deve ser único");
+      next(new Error("email must be unique"));
+    } else {
+      // get the current date
+      var currentDate = new Date();
 
-  // if created_at doesn't exist, add to that field
-  if (!this.created_at)
-    this.created_at = currentDate;
+      // change the updated_at field to current date
+      this.updated_at = currentDate;
 
-  next();
+      // if created_at doesn't exist, add to that field
+      if (!this.created_at)
+        this.created_at = currentDate;
+      next();
+    }
+  });
 });
+var User = mongoose.model('usercollection', userSchema, 'usercollection');
+
+
 
 var billSchema = new mongoose.Schema({
-    company: String,
-    valueSourceType: String,
-    valueSourceId: String,
-    created_at: Date,
-    updated_at: Date
+  company: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
+  valueSourceType: { type: String, required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
+  valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
 }, { collection: 'billcollection' }
 );
 
-billSchema.pre('save', function(next) {
+billSchema.pre('save', function (next) {
   var currentDate = new Date();
   this.updated_at = currentDate;
   if (!this.created_at)
@@ -41,14 +55,18 @@ billSchema.pre('save', function(next) {
   next();
 });
 
+var Bill = mongoose.model('billcollection', billSchema, 'billcollection');
+
+
+
 var emailSchema = new mongoose.Schema({
-    address: { type: String, unique: true },
-    created_at: Date,
-    updated_at: Date
+  address: { type: String, unique: true, required: [true, 'O nome Endereço é obrigatório'] },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
 }, { collection: 'emailcollection' }
 );
 
-emailSchema.pre('save', function(next) {
+emailSchema.pre('save', function (next) {
   var currentDate = new Date();
   this.updated_at = currentDate;
   if (!this.created_at)
@@ -56,15 +74,19 @@ emailSchema.pre('save', function(next) {
   next();
 });
 
+var Email = mongoose.model('emailcollection', emailSchema, 'emailcollection');
+
+
+
 var tableSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    data: [ { period: { month: Number, year: Number }, value: Number } ],
-    created_at: Date,
-    updated_at: Date
+  name: { type: String, required: [true, 'O nome da Tabela é obrigatório'] },
+  data: [{ period: { month: Number, year: Number }, value: Number }],
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
 }, { collection: 'tablecollection' }
 );
 
-tableSchema.pre('save', function(next) {
+tableSchema.pre('save', function (next) {
   var currentDate = new Date();
   this.updated_at = currentDate;
   if (!this.created_at)
@@ -72,9 +94,11 @@ tableSchema.pre('save', function(next) {
   next();
 });
 
+var Table = mongoose.model('tablecollection', tableSchema, 'tablecollection');
+
 const ValueSourceType = {
-    TABELA : 'Tabela',
-    EMAIL : 'Email',
+  TABELA: 'Tabela',
+  EMAIL: 'Email',
 }
 
-module.exports = { Mongoose: mongoose, UserSchema: userSchema, BillSchema: billSchema, EmailSchema: emailSchema, TableSchema: tableSchema, ValueSourceType: ValueSourceType }
+module.exports = { Mongoose: mongoose, User, Bill, Email, Table, ValueSourceType: ValueSourceType }

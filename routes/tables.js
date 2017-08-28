@@ -3,12 +3,10 @@ var router = express.Router();
 var template = require('./template');
 var db = require("../db");
 
-var Tables = db.Mongoose.model('tablecollection', db.TableSchema, 'tablecollection');
-
 
 /* GET TableList page. */
 router.get('/list', function (req, res) {
-    Tables.find({}).lean().exec(
+    db.Table.find({}).lean().exec(
         function (e, tables) {
             res.render('table/tableList', { template, title: 'Lista de Tabelas', tableList: tables });
         });
@@ -16,7 +14,7 @@ router.get('/list', function (req, res) {
 
 /* GET tables JSON */
 router.get('/listJSON', function (req, res) {
-    Tables.find({}).lean().exec(
+    db.Table.find({}).lean().exec(
         function (e, tables) {
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(tables));
@@ -33,7 +31,7 @@ router.post('/add', function (req, res) {
     let name = req.body.name;
     let data = parseData(req.body);
 
-    let table = new Tables({ name, data });
+    let table = new db.Table({ name, data });
     table.save(function (err) {
         if (err) {
             handleError(err);
@@ -50,7 +48,7 @@ router.post('/add', function (req, res) {
 router.get('/edit/:id', function (req, res) {
     let tableId = req.params.id;
 
-    Tables.findById(tableId, function (err, table) {
+    db.Table.findById(tableId, function (err, table) {
         if (err) {
             handleError(err);
             return err;
@@ -67,7 +65,7 @@ router.post('/update', function (req, res) {
     let name = req.body.name;
     let data = parseData(req.body);
 
-    Tables.findOneAndUpdate({ _id: tableId }, { $set: { data, name }}, { new: true }, function (err, table) {
+    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name }}, { new: true }, function (err, table) {
         if (err) {
             handleError(err);
             return err;
@@ -83,7 +81,7 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
     let tableId = req.params.id;
 
-    Tables.findOneAndRemove({ _id: tableId }, function (err, table) {
+    db.Table.findOneAndRemove({ _id: tableId }, function (err, table) {
         if (err) {
             handleError(err);
             return err;

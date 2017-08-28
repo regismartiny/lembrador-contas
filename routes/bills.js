@@ -3,12 +3,9 @@ var router = express.Router();
 var template = require('./template');
 var db = require("../db");
 
-var Bills = db.Mongoose.model('billcollection', db.BillSchema, 'billcollection');
-
-
 /* GET BillList page. */
 router.get('/list', function (req, res) {
-    Bills.find({}).lean().exec(
+    db.Bill.find({}).lean().exec(
         function (e, bills) {
             res.render('bill/billList', { template, title: 'Lista de Contas', billList: bills });
         });
@@ -25,7 +22,7 @@ router.post('/add', function (req, res) {
     let billValueSourceType = req.body.valueSourceType;
     let billValueSourceId = billValueSourceType === 'EMAIL' ? req.body.email : req.body.table;
 
-    let bill = new Bills({ company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId });
+    let bill = new db.Bill({ company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId });
     bill.save(function (err) {
         if (err) {
             handleError(err);
@@ -42,7 +39,7 @@ router.post('/add', function (req, res) {
 router.get('/edit/:id', function (req, res) {
     let billId = req.params.id;
 
-    Bills.findById(billId, function (err, bill) {
+    db.Bill.findById(billId, function (err, bill) {
         if (err) {
             handleError(err);
             return err;
@@ -60,7 +57,7 @@ router.post('/update', function (req, res) {
     let billValueSourceType = req.body.valueSourceType;
     let billValueSourceId = billValueSourceType == 'EMAIL' ? req.body.email : req.body.table;
 
-    Bills.findOneAndUpdate({ _id: billId }, { $set: { company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId } }, { new: true }, function (err, bill) {
+    /*db.Bill.findOneAndUpdate({ _id: billId }, { $set: { company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId } }, { new: true }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;
@@ -69,14 +66,14 @@ router.post('/update', function (req, res) {
             console.log("Bill updated");
             res.redirect("/bills/list");
         }
-    });
+    });*/
 });
 
 /* GET Remove Bill */
 router.get('/remove/:id', function (req, res) {
     let billId = req.params.id;
 
-    Bills.findOneAndRemove({ _id: billId }, function (err, bill) {
+    db.Bill.findOneAndRemove({ _id: billId }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;
