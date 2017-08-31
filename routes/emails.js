@@ -136,7 +136,7 @@ router.get('/get/:id', function (req, res) {
 /* GET email page. */
 router.get('/test', function (req, res) {
 
-    gmail.listMessagesFrom('meajuda@nubank.com.br', function (messages) {
+    gmail.listMessagesFrom('meajuda@nubank.com.br').then((messages)=>{
         console.log('MENSAGEM ENCONTRADA');
 
         var id = messages[0].id;
@@ -175,15 +175,12 @@ router.get('/test', function (req, res) {
 
                     var valor = getValorFromPDF(pdfData);
 
-                    res.render('email/email', { title: 'Email', message: message, attachment: att, valor: valor });
+                    res.render('email/email', { title: 'Email', message: message, attachment: att, valor });
                 });
                 pdfParser.parseBuffer(binArray);
             });
-
         });
-
     });
-
 });
 
 function getValorFromPDF(pdfData) {

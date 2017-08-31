@@ -197,8 +197,12 @@ module.exports = {
     },
     listMessagesFrom: function (sender, callback) {
         _query.q = 'from:' + sender;
-        _callback = callback;
-        doIt(listMessages);
+        //_callback = callback;
+        return new Promise(function (resolve, reject) {
+            let result = doIt(listMessages);
+            resolve(result);
+            // reject ("Error!");
+        });
     },
     getAttachments: function (message, callback) {
         _message = message;
