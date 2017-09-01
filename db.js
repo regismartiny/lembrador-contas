@@ -1,11 +1,14 @@
 var mongoose = require('mongoose');
 
+
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1'
 var dbUser = process.env.MONGODB_USER;
 var dbPass = process.env.MONGODB_PASSWORD;
-
-var connString = 'mongodb://';
+var dbService = process.env.DATABASE_SERVICE_NAME || 'mongodb';
+var dbName = process.env.MONGODB_DATABASE || 'lembradorcontas';
+var connString = dbService + '://';
 if (dbUser && dbPass) { connString +=  dbUser + ':' + dbPass + '@' }
-connString += 'localhost:27017/lembradorcontas';
+connString += server_ip_address + ':27017/' + dbName;
 
 mongoose.connect(connString).catch((err)=>{
   console.log('Error connecting to database: ', err);
