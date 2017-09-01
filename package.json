@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "startm": "nodemon ./bin/www",
-    "start": "node app.js"
+    "start": "node ./bin/www"
   },
   "dependencies": {
     "atob": "^2.0.3",
