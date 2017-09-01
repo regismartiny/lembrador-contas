@@ -37,15 +37,6 @@ app.use('/bills', bills);
 app.use('/emails', emails);
 app.use('/tables', tables);
 
-var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1'
-// sets port 8080 to default or unless otherwise specified in the environment
-app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
-
-http.createServer(app).listen(app.get('port'),
-function(){
-  console.log("Express server listening on port " + app.get('port'));
-});
-
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
