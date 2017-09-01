@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/lembradorcontas').catch(()=>{
-  mongoose.connect('mongodb://gvyyrxqwafszip:6fb246667932fadc4d0845db2e36842c05e8922d9732fb68cdeb3858148d0de9@ec2-54-163-233-201.compute-1.amazonaws.com:5432/deh1kem0q6rbn4')
+mongoose.connect('mongodb://localhost:27017/lembradorcontas').catch((err)=>{
+  console.log('Error connecting to database: ', err);
 });
 
 var userSchema = new mongoose.Schema({
