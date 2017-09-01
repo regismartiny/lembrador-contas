@@ -1,5 +1,13 @@
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/lembradorcontas').catch((err)=>{
+
+var dbUser = process.env.MONGODB_USER;
+var dbPass = process.env.MONGODB_PASSWORD;
+
+var connString = 'mongodb://';
+if (dbUser && dbPass) { connString +=  dbUser + ':' + dbPass + '@' }
+connString += 'localhost:27017/lembradorcontas';
+
+mongoose.connect(connString).catch((err)=>{
   console.log('Error connecting to database: ', err);
 });
 
