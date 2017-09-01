@@ -136,15 +136,13 @@ router.get('/get/:id', function (req, res) {
 /* GET email page. */
 router.get('/test', function (req, res) {
 
-    gmail.listMessagesFrom('meajuda@nubank.com.br').then((messages)=>{
+    gmail.findMessages('from:meajuda@nubank.com.br subject:"A fatura do seu cartão Nubank está fechada"').then(messages => {
         console.log('MENSAGEM ENCONTRADA');
 
         var id = messages[0].id;
 
-        gmail.getMessage(id, null, function (message) {
-            console.log('MENSAGEM ENCONTRADA');
-
-            console.log('messageId: ', message.id);
+        gmail.getMessage(id).then(message => {
+            console.log('MENSAGEM ENCONTRADA: ', message.id);
 
             var headers = message.payload.headers;
 
@@ -158,7 +156,8 @@ router.get('/test', function (req, res) {
             message.payload.headers = headers;
 
 
-            gmail.getAttachments(message, function (attachments) {
+            gmail.getAttachments(message).then(attachments => {
+                console.log('ANEXOS ENCONTRADOS');
                 var att = attachments[0];
 
                 var base64 = base64Util.fixBase64(att.attachment.data);
@@ -170,14 +169,16 @@ router.get('/test', function (req, res) {
 
                 pdfParser.on("pdfParser_dataError", errData => console.error(errData.parserError));
                 pdfParser.on("pdfParser_dataReady", pdfData => {
-                    console.log(pdfData);
-                    fs.writeFile("./pdf2json/test/F1040EZ.json", JSON.stringify(pdfData));
+                    //console.log(pdfData);
+                    //fs.writeFile("./pdf2json/test/F1040EZ.json", JSON.stringify(pdfData));
 
                     var valor = getValorFromPDF(pdfData);
 
                     res.render('email/email', { title: 'Email', message: message, attachment: att, valor });
                 });
                 pdfParser.parseBuffer(binArray);
+            }).catch(err => {
+                res.render('email/email', { title: 'Email', message: message, attachment: null, valor: 0 });
             });
         });
     });
