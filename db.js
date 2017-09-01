@@ -11,6 +11,7 @@ if (dbUser && dbPass) { connString +=  dbUser + ':' + dbPass + '@' }
 connString += server_ip_address + ':27017/' + dbName;
 
 mongoose.connect(connString).catch((err)=>{
+  console.log('connString: ', connString);
   console.log('Error connecting to database: ', err);
 });
 
