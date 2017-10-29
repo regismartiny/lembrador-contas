@@ -125,13 +125,11 @@ function listMessages(auth) {
                 console.log(msg);
                 reject(msg);
             }
-            console.log('messages:', response);
-            var messages = response.messages;
-            if (messages && messages.length == 0) {
-                console.log('No messages found.');
-                resolve([]);
+            if (response && response.messages && response.messages.length > 0) {
+                resolve(response.messages);                
             } else {
-                resolve(messages);
+                console.log('No message found.');
+                resolve([]);
             }
         });
     });
@@ -213,38 +211,33 @@ var _query = {
 }
 
 module.exports = {
-    listUnreadMessages: function () {
+    listUnreadMessages: async function () {
         _query.q = 'is:unread';
-        return doIt().then((auth) => {
-            return listMessages(auth);
-        });
+        let auth = await doIt();
+        return await listMessages(auth);
     },
-    getMessage: function (id, headers) {
+    getMessage: async function (id, headers) {
         _query.id = id;
         if (headers) {
             _query.format = 'metadata';
             _query.metadataHeaders = headers;
         }
-        return doIt().then((auth) => {
-            return getMessage(auth);
-        });
+        let auth = await doIt();
+        return await getMessage(auth);
     },
-    findMessages: function (q) {
+    findMessages: async function (q) {
         _query.q = q;
-        return doIt().then((auth) => {
-            return listMessages(auth);
-        });
+        let auth = await doIt(); 
+        return await listMessages(auth);
     },
-    listMessagesFrom: function (sender) {
+    listMessagesFrom: async function (sender) {
         _query.q = 'from:' + sender;
-        return doIt().then((auth) => {
-            return listMessages(auth);
-        });
+        let auth = await doIt();
+        return await listMessages(auth);
     },
-    getAttachments: function (message) {
+    getAttachments: async function (message) {
         _message = message;
-        return doIt().then((auth) => {
-            return getAttachmentsSync(auth);
-        });
+        let auth = await doIt();
+        return await getAttachmentsSync(auth);
     }
 }

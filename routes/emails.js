@@ -1,11 +1,12 @@
 var express = require('express');
 var router = express.Router();
-var gmail = require('../util/gmail.js');
 var PDFParser = require('pdf2json');
-var base64Util = require('../util/base64Util.js');
 var fs = require('fs');
 var template = require('./template');
 var db = require("../db");
+var gmail = require('../util/gmail.js');
+var base64Util = require('../util/base64Util.js');
+var emailUtils = require('../util/emailUtils.js');
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -32,10 +33,11 @@ router.get('/new', function (req, res) {
 /* POST to Add Email */
 router.post('/add', function (req, res) {
     let emailAddress = req.body.address;
+    let emailSubject = req.body.subject;
 
     console.log(req.body);
 
-    let email = new db.Email({ address: emailAddress });
+    let email = new db.Email({ address: emailAddress, subject: emailSubject });
     email.save(function (err) {
         if (err) {
             handleError(err);
@@ -67,8 +69,9 @@ router.post('/update', function (req, res) {
 
     let emailId = req.body.id;
     let emailAddress = req.body.address;
+    let emailSubject = req.body.subject;
 
-    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress } }, { new: true }, function (err, email) {
+    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress,  subject: emailSubject} }, { new: true }, function (err, email) {
         if (err) {
             handleError(err);
             return err;
@@ -129,65 +132,24 @@ router.get('/get/:id', function (req, res) {
 
         res.render('email/email', { title: 'Email', message: message });
     });
+});
 
-
+router.get('/testValue', async function (req, res) {
+    let valor = await emailUtils.getValueFromEmailNubank();    
+    res.render('email/emailValue', { nome: 'Nubank', valor });
 });
 
 /* GET email page. */
-router.get('/test', function (req, res) {
-
-    gmail.findMessages('from:meajuda@nubank.com.br subject:"A fatura do seu cartão Nubank está fechada"').then(messages => {
-        console.log('MENSAGEM ENCONTRADA');
-
-        var id = messages[0].id;
-
-        gmail.getMessage(id).then(message => {
-            console.log('MENSAGEM ENCONTRADA: ', message.id);
-
-            var headers = message.payload.headers;
-
-            //escape double quotes
-            for (let i = 0; i < headers.length; i++) {
-                if (headers[i].name === 'To') {
-                    headers[i].value = headers[i].value.replace(/"/g, '\\"');
-                }
-            }
-
-            message.payload.headers = headers;
-
-
-            gmail.getAttachments(message).then(attachments => {
-                console.log('ANEXOS ENCONTRADOS');
-                var att = attachments[0];
-
-                var base64 = base64Util.fixBase64(att.attachment.data);
-                var binArray = base64Util.base64ToBin(base64);
-
-                att.attachment.data = base64;
-
-                let pdfParser = new PDFParser();
-
-                pdfParser.on("pdfParser_dataError", errData => console.error(errData.parserError));
-                pdfParser.on("pdfParser_dataReady", pdfData => {
-                    //console.log(pdfData);
-                    //fs.writeFile("./pdf2json/test/F1040EZ.json", JSON.stringify(pdfData));
-
-                    var valor = getValorFromPDF(pdfData);
-
-                    res.render('email/email', { title: 'Email', message: message, attachment: att, valor });
-                });
-                pdfParser.parseBuffer(binArray);
-            }).catch(err => {
-                res.render('email/email', { title: 'Email', message: message, attachment: null, valor: 0 });
-            });
-        });
-    });
+router.get('/test', async function (req, res) {
+    const remetenteNubank = 'meajuda@nubank.com.br';
+    const assuntoNubank = 'A fatura do seu cartão Nubank está fechada';
+    let message = await emailUtils.getMessage(remetenteNubank, assuntoNubank);
+    let att = await emailUtils.getAttachmentFromMessage(message);
+    let valor = await emailUtils.getValueFromAttachment(att);
+    res.render('email/emailTest', { title: 'Email', message: message, attachment: att, valor });
 });
 
-function getValorFromPDF(pdfData) {
-    var valor = decodeURIComponent(pdfData.formImage.Pages[0].Texts[3].R[0].T);
-    return valor.slice(2, valor.length);
-}
+
 
 function handleError(error) {
     console.log("Error! " + error.message);

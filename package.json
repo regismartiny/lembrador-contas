@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "startm": "nodemon ./bin/www",
-    "start": "node ./bin/www"
+    "startm": "nodemon --inspect=192.168.1.150:9229 ./bin/www",
+    "start": "node --inspect=192.168.1.150:9229 ./bin/www"
   },
   "dependencies": {
     "atob": "^2.0.3",
