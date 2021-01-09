@@ -1,5 +1,5 @@
 # Secret files
-client_secret.json
+.credentials/*
 
 # Data files
 data/

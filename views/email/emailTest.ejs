@@ -6,12 +6,14 @@
 <body>
     <h1 class="text-center title-1">Email</h1>
     <ul>
-        <% message.payload.headers.forEach(function(header){ %>
+        <% if (message.payload != null && message.payload.headers != null) {message.payload.headers.forEach(function(header){ %>
         <li>
             <%= header.name %>:
             <%= header.value %>
          </li>
-        <% }) %>
+        <% })} else {%>
+        <li><%= message %></li>
+        <% } %>
         <li>Anexo: <% if (attachment != null) {%><a href='data:application/pdf;base64,<%- attachment.attachment.data %>' title='Download pdf document'><%= attachment.filename %></a><%}%></li>
         <li>Valor: <%= valor %></li>
     </ul>

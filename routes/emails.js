@@ -135,18 +135,32 @@ router.get('/get/:id', function (req, res) {
 });
 
 router.get('/testValue', async function (req, res) {
-    let valor = await emailUtils.getValueFromEmailNubank();    
-    res.render('email/emailValue', { nome: 'Nubank', valor });
+    if (req.query.origem == 'nubank') {
+        let valor = await emailUtils.getValueFromEmailNubank();    
+        res.render('email/emailValue', { nome: 'Nubank', valor });
+    } else if (req.query.origem == 'bommtempo') {
+        let valor = await emailUtils.getValueFromEmailBommtempo();    
+        res.render('email/emailValue', { nome: 'Bommtempo', valor: valor.valorTotal });
+    } else {
+        res.render('email/emailValue', { nome: '', valor: 0 });
+    }
 });
 
 /* GET email page. */
 router.get('/test', async function (req, res) {
-    const remetenteNubank = 'meajuda@nubank.com.br';
-    const assuntoNubank = 'A fatura do seu cartão Nubank está fechada';
-    let message = await emailUtils.getMessage(remetenteNubank, assuntoNubank);
-    let att = await emailUtils.getAttachmentFromMessage(message);
-    let valor = await emailUtils.getValueFromAttachment(att);
-    res.render('email/emailTest', { title: 'Email', message: message, attachment: att, valor });
+    if (req.query.origem == 'nubank') {
+        let message = await emailUtils.getMessageFromEmailNubank();
+        if (!message) {
+            res.render('email/emailTest', { title: 'Email', message: '', attachment: '', valor : '' });
+        }
+        let att = await emailUtils.getAttachmentFromMessage(message);
+        let pdf = await emailUtils.getPDFFromAttachment(att.attachment.data);
+        let valor = await emailUtils.getValueFromNubankPDF(pdf);
+        res.render('email/emailTest', { title: 'Email', message, attachment: att, valor });
+    } else if (req.query.origem == 'bommtempo') {
+        let valor = await emailUtils.getValueFromEmailBommtempo();
+        res.render('email/emailTest', { title: 'Email', message: JSON.stringify(valor), attachment: null, valor: valor.valorTotal });
+    }
 });
 
 

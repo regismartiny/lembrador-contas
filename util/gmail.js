@@ -1,36 +1,39 @@
 var fs = require('fs');
 var readline = require('readline');
-var google = require('googleapis');
-var googleAuth = require('google-auth-library');
+var {google} = require('googleapis');
+//var googleAuth = require('google-auth-library');
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/gmail-nodejs-quickstart.json
-var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-    process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'gmail-nodejs-quickstart.json';
+const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+//const TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
+//process.env.USERPROFILE) + '/.credentials/';
+const CREDENTIALS_DIR = '.credentials/';
+const CREDENTIALS_PATH = CREDENTIALS_DIR + 'credentials.json';
+const TOKEN_PATH = CREDENTIALS_DIR + 'token.json';
 
 var _message = null;
 
+// The file token.json stores the user's access and refresh tokens, and is
+// created automatically when the authorization flow completes for the first
+// time.
 function doIt() {
     return new Promise(function (resolve, reject) {
+        // If modifying these scopes, delete token.json.
         // Load client secrets from a local file.
-        fs.readFile('client_secret.json', function processClientSecrets(err, content) {
+        fs.readFile(CREDENTIALS_PATH, (err, content) => {
             if (err) {
                 let msg = 'Error loading client secret file: ' + err;
                 console.log(msg);
                 reject(msg);
             }
-            // Authorize a client with the loaded credentials, then call the
-            // Gmail API.
+            // Authorize a client with credentials, then call the Gmail API.
             authorize(JSON.parse(content)).then(auth => {
                 resolve(auth);
             });
         });
     });
 }
-
-
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -41,21 +44,18 @@ function doIt() {
  */
 function authorize(credentials, callback) {
     return new Promise(function (resolve, reject) {
-        var clientSecret = credentials.installed.client_secret;
-        var clientId = credentials.installed.client_id;
-        var redirectUrl = credentials.installed.redirect_uris[0];
-        var auth = new googleAuth();
-        var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+        const {client_secret, client_id, redirect_uris} = credentials.installed;
+        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
         // Check if we have previously stored a token.
-        fs.readFile(TOKEN_PATH, function (err, token) {
+        fs.readFile(TOKEN_PATH, (err, token) => {
             if (err) {
-                getNewToken(oauth2Client, callback).then((oauth2Client) => {
-                    resolve(oauth2Client);
+                getNewToken(oAuth2Client, callback).then((oAuth2Client) => {
+                    resolve(oAuth2Client);
                 });
             } else {
-                oauth2Client.credentials = JSON.parse(token);
-                resolve(oauth2Client);
+                oAuth2Client.setCredentials(JSON.parse(token));
+                resolve(oAuth2Client);
             }
         });
     });
@@ -69,9 +69,9 @@ function authorize(credentials, callback) {
  * @param {getEventsCallback} callback The callback to call with the authorized
  *     client.
  */
-function getNewToken(oauth2Client, callback) {
+function getNewToken(oAuth2Client, callback) {
     return new Promise(function (resolve, reject) {
-        var authUrl = oauth2Client.generateAuthUrl({
+        var authUrl = oAuth2Client.generateAuthUrl({
             access_type: 'offline',
             scope: SCOPES
         });
@@ -82,53 +82,39 @@ function getNewToken(oauth2Client, callback) {
         });
         rl.question('Enter the code from that page here: ', function (code) {
             rl.close();
-            oauth2Client.getToken(code, function (err, token) {
+            oAuth2Client.getToken(code, function (err, token) {
                 if (err) {
                     let msg = 'Error while trying to retrieve access token', err;
                     console.log(msg);
                     reject(msg);
                 }
-                oauth2Client.credentials = token;
-                storeToken(token);
-                resolve(oauth2Client);
+                oAuth2Client.credentials = token;
+                // Store the token to disk for later program executions
+                fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+                    if (err) return console.error(err);
+                    console.log('Token stored to', TOKEN_PATH);
+                });
+                resolve(oAuth2Client);
             });
         });
     });
-}
-
-/**
- * Store token to disk be used in later program executions.
- *
- * @param {Object} token The token to store to disk.
- */
-function storeToken(token) {
-    try {
-        fs.mkdirSync(TOKEN_DIR);
-    } catch (err) {
-        if (err.code != 'EEXIST') {
-            throw err;
-        }
-    }
-    fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-    console.log('Token stored to ' + TOKEN_PATH);
-}
+}  
 
 function listMessages(auth) {
     return new Promise(function (resolve, reject) {
 
-        var gmail = google.gmail('v1');
-        var q = _query;
-        q.auth = auth;
-        gmail.users.messages.list(q, function (err, response) {
+        console.log('query', _query);
+        const gmail = google.gmail({version: 'v1', auth});
+        gmail.users.messages.list(_query, function (err, res) {
             if (err) {
                 let msg = 'The API returned an error: ' + err;
                 console.log(msg);
                 reject(msg);
             }
-            if (response && response.messages && response.messages.length > 0) {
-                resolve(response.messages);                
+            if (res && res.data && res.data.messages && res.data.messages.length > 0) {
+                resolve(res.data.messages);                
             } else {
-                console.log('No message found.');
+                console.log('listMessages: No message found.');
                 resolve([]);
             }
         });
@@ -137,22 +123,19 @@ function listMessages(auth) {
 
 function getMessage(auth) {
     return new Promise(function (resolve, reject) {
-        var gmail = google.gmail('v1');
-        var q = _query;
-        q.auth = auth;
-        gmail.users.messages.get(q, function (err, response) {
+        const gmail = google.gmail({version: 'v1', auth});
+        gmail.users.messages.get(_query, function (err, res) {
             if (err) {
                 let msg = 'The API returned an error: ' + err;
                 console.log(msg);
                 reject(msg);
             }
-            var message = response;
-            if (!message) {
-                let msg = 'No message found.'
-                console.log(msg);
-                resolve(msg);
+            if (res && res.data) {
+                resolve(res.data);
             } else {
-                resolve(message);
+                let msg = 'getMessage: No message found.'
+                console.log(msg);
+                resolve(false);
             }
         });
     });
@@ -169,7 +152,7 @@ function getMessage(auth) {
 function getAttachmentsSync(auth) {
     return new Promise(function (resolve, reject) {
         var message = _message;
-        var gmail = google.gmail('v1');
+        const gmail = google.gmail({version: 'v1', auth});
         var parts = message.payload.parts;
         var attachments = [];
         if (parts.length === 0) {
@@ -186,15 +169,15 @@ function getAttachmentsSync(auth) {
                     'messageId': message.id,
                     'userId': _query.userId,
                     'auth': auth
-                }, function (err, response) {
+                }, function (err, res) {
                     if (err) {
                         let msg = 'Error getting attachments: ' + err;
                         console.log(msg);
-                        reject(msg);
+                        reject(false);
                     }
-                    var att = { filename: part.filename, mimeType: part.mimeType, attachment: response };
+                    var att = { filename: part.filename, mimeType: part.mimeType, attachment: res.data };
                     attachments.push(att);
-                    if (i == parts.length) {
+                    if (i == parts.length) { //only last attachment
                         resolve(attachments);
                     }
                 });
