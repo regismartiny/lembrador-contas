@@ -5,6 +5,7 @@ var db = require("../db");
 var gmail = require('../util/gmail.js');
 var emailUtils = require('../util/emailUtils.js');
 var safeEval = require('safe-eval');
+var vm = require('vm');
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -147,9 +148,9 @@ router.get('/testValue/:id', async function (req, res) {
 
             email.valueData.forEach(val => {
                 let obj = { name: val.name, value: ''};
-                let str = 'function(){pdfData = JSON.parse(\'' + JSON.stringify(pdfData) + '\');'
-                    + 'return decodeURIComponent(' + val.value + ');}()';
-                obj.value = safeEval(str);
+                let str = 'pdfData = JSON.parse(\'' + JSON.stringify(pdfData) + '\');'
+                    + 'decodeURIComponent(' + val.value + ')';
+                obj.value = vm.runInNewContext(str);
                 value.push(obj);
             })
             console.table(value);
