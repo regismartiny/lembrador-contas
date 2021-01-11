@@ -57,7 +57,7 @@ router.post('/update', function (req, res) {
     let billValueSourceType = req.body.valueSourceType;
     let billValueSourceId = billValueSourceType == 'EMAIL' ? req.body.email : req.body.table;
 
-    /*db.Bill.findOneAndUpdate({ _id: billId }, { $set: { company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId } }, { new: true }, function (err, bill) {
+    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId } }, { new: true }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;
@@ -66,7 +66,7 @@ router.post('/update', function (req, res) {
             console.log("Bill updated");
             res.redirect("/bills/list");
         }
-    });*/
+    });
 });
 
 /* GET Remove Bill */

@@ -1,12 +1,10 @@
 var express = require('express');
 var router = express.Router();
-var PDFParser = require('pdf2json');
-var fs = require('fs');
 var template = require('./template');
 var db = require("../db");
 var gmail = require('../util/gmail.js');
-var base64Util = require('../util/base64Util.js');
 var emailUtils = require('../util/emailUtils.js');
+var safeEval = require('safe-eval');
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -27,17 +25,18 @@ router.get('/listJSON', function (req, res) {
 
 /* GET New email page. */
 router.get('/new', function (req, res) {
-    res.render('email/newEmail', { template, title: 'Cadastro de Email' });
+    res.render('email/editEmail', { template, title: 'Cadastro de Email' });
 });
 
 /* POST to Add Email */
 router.post('/add', function (req, res) {
     let emailAddress = req.body.address;
     let emailSubject = req.body.subject;
+    let valueData = parseData(req.body);
 
     console.log(req.body);
 
-    let email = new db.Email({ address: emailAddress, subject: emailSubject });
+    let email = new db.Email({ address: emailAddress, subject: emailSubject, valueData });
     email.save(function (err) {
         if (err) {
             handleError(err);
@@ -70,8 +69,9 @@ router.post('/update', function (req, res) {
     let emailId = req.body.id;
     let emailAddress = req.body.address;
     let emailSubject = req.body.subject;
+    let valueData = parseData(req.body);
 
-    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress,  subject: emailSubject} }, { new: true }, function (err, email) {
+    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress,  subject: emailSubject, valueData} }, { new: true }, function (err, email) {
         if (err) {
             handleError(err);
             return err;
@@ -96,8 +96,6 @@ router.get('/remove/:id', function (req, res) {
         }
     });
 });
-
-
 
 /* GET unread db.Email page. */
 router.get('/unread', function (req, res) {
@@ -134,39 +132,46 @@ router.get('/get/:id', function (req, res) {
     });
 });
 
-router.get('/testValue', async function (req, res) {
-    if (req.query.origem == 'nubank') {
-        let valor = await emailUtils.getValueFromEmailNubank();    
-        res.render('email/emailValue', { nome: 'Nubank', valor });
-    } else if (req.query.origem == 'bommtempo') {
-        let valor = await emailUtils.getValueFromEmailBommtempo();    
-        res.render('email/emailValue', { nome: 'Bommtempo', valor: valor.valorTotal });
-    } else {
-        res.render('email/emailValue', { nome: '', valor: 0 });
-    }
-});
+router.get('/testValue/:id', async function (req, res) {
+    let emailId = req.params.id;
 
-/* GET email page. */
-router.get('/test', async function (req, res) {
-    if (req.query.origem == 'nubank') {
-        let message = await emailUtils.getMessageFromEmailNubank();
-        if (!message) {
-            res.render('email/emailTest', { title: 'Email', message: '', attachment: '', valor : '' });
+    db.Email.findById(emailId, async function (err, email) {
+        if (err) {
+            handleError(err);
+        } else {
+            const message = await emailUtils.getMessage(email.address, email.subject);
+            let att = await emailUtils.getAttachmentFromMessage(message);
+            let pdfData = await emailUtils.getPDFFromAttachment(att.attachment.data);
+
+            let value = [];
+
+            email.valueData.forEach(val => {
+                let obj = { name: val.name, value: ''};
+                let str = 'function(){pdfData = JSON.parse(\'' + JSON.stringify(pdfData) + '\');'
+                    + 'return decodeURIComponent(' + val.value + ');}()';
+                obj.value = safeEval(str);
+                value.push(obj);
+            })
+            console.table(value);
+            res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(value) });
         }
-        let att = await emailUtils.getAttachmentFromMessage(message);
-        let pdf = await emailUtils.getPDFFromAttachment(att.attachment.data);
-        let valor = await emailUtils.getValueFromNubankPDF(pdf);
-        res.render('email/emailTest', { title: 'Email', message, attachment: att, valor });
-    } else if (req.query.origem == 'bommtempo') {
-        let valor = await emailUtils.getValueFromEmailBommtempo();
-        res.render('email/emailTest', { title: 'Email', message: JSON.stringify(valor), attachment: null, valor: valor.valorTotal });
-    }
+    });
 });
 
-
+function parseData(body) {
+    let newData = [];
+    let length = (typeof body.name === 'object') ? body.name.length : 1;
+    for(let i=0; i < length; i++) {
+        let name = length > 1 ? body.name[i] : body.name;
+        let value = length > 1 ? body.value[i] : body.value;
+        newData.push({name, value});
+    }
+    return newData;
+}
 
 function handleError(error) {
     console.log("Error! " + error.message);
+    res.render('error', { message: '', error: error});
 }
 
 module.exports = router;

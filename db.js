@@ -74,6 +74,7 @@ var Bill = mongoose.model('billcollection', billSchema, 'billcollection');
 var emailSchema = new mongoose.Schema({
     address: { type: String, unique: true, required: [true, 'O Endereço é obrigatório'] },
     subject: { type: String, unique: true, required: [true, 'O Assunto é obrigatório'] },
+    valueData: [{ name: String, value: String }],
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'emailcollection' });
