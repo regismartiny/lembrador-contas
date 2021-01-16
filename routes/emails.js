@@ -4,7 +4,6 @@ var template = require('./template');
 var db = require("../db");
 var gmail = require('../util/gmail.js');
 var emailUtils = require('../util/emailUtils.js');
-var safeEval = require('safe-eval');
 var vm = require('vm');
 
 /* GET db.Email page. */
@@ -26,18 +25,19 @@ router.get('/listJSON', function (req, res) {
 
 /* GET New email page. */
 router.get('/new', function (req, res) {
-    res.render('email/editEmail', { template, title: 'Cadastro de Email' });
+    res.render('email/editEmail', { template, title: 'Cadastro de Email', statusEnum: db.StatusEnum });
 });
 
 /* POST to Add Email */
 router.post('/add', function (req, res) {
-    let emailAddress = req.body.address;
-    let emailSubject = req.body.subject;
+    let address = req.body.address;
+    let subject = req.body.subject;
     let valueData = parseData(req.body);
+    let status = req.body.status;
 
     console.log(req.body);
 
-    let email = new db.Email({ address: emailAddress, subject: emailSubject, valueData });
+    let email = new db.Email({ address, subject, valueData, status });
     email.save(function (err) {
         if (err) {
             handleError(err);
@@ -59,7 +59,7 @@ router.get('/edit/:id', function (req, res) {
             handleError(err);
             return err;
         } else {
-            res.render('email/editEmail', { template, title: 'Edição de Email', email });
+            res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, email });
         }
     });
 });
@@ -68,11 +68,12 @@ router.get('/edit/:id', function (req, res) {
 router.post('/update', function (req, res) {
 
     let emailId = req.body.id;
-    let emailAddress = req.body.address;
-    let emailSubject = req.body.subject;
+    let address = req.body.address;
+    let subject = req.body.subject;
     let valueData = parseData(req.body);
+    let status = req.body.status;
 
-    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address: emailAddress,  subject: emailSubject, valueData} }, { new: true }, function (err, email) {
+    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address,  subject, valueData, status} }, { new: true }, function (err, email) {
         if (err) {
             handleError(err);
             return err;

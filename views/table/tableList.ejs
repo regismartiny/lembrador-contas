@@ -12,6 +12,7 @@
                         <thead>
                             <tr>
                                 <th>Nome</th>
+                                <th>Situação</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -20,6 +21,9 @@
                                 <tr>
                                     <td>
                                         <%= table.name %>
+                                    </td>
+                                    <td>
+                                        <%= table.status %>
                                     </td>
                                     <td>
                                         <a href='/tables/edit/<%= table._id %>'>Editar</a>

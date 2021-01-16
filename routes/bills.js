@@ -13,16 +13,18 @@ router.get('/list', function (req, res) {
 
 /* GET New Bill page. */
 router.get('/new', function (req, res) {
-    res.render('bill/newBill', { template, title: 'Cadastro de Conta', valueSourceType: db.ValueSourceType });
+    res.render('bill/newBill', { template, title: 'Cadastro de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum });
 });
 
 /* POST to Add Bill */
 router.post('/add', function (req, res) {
-    let billCompany = req.body.company;
-    let billValueSourceType = req.body.valueSourceType;
-    let billValueSourceId = billValueSourceType === 'EMAIL' ? req.body.email : req.body.table;
+    let company = req.body.company;
+    let dueDay = req.body.dueDay;
+    let valueSourceType = req.body.valueSourceType;
+    let valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
+    let status = req.body.status;
 
-    let bill = new db.Bill({ company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId });
+    let bill = new db.Bill({ company, dueDay, valueSourceType, valueSourceId, status });
     bill.save(function (err) {
         if (err) {
             handleError(err);
@@ -44,7 +46,7 @@ router.get('/edit/:id', function (req, res) {
             handleError(err);
             return err;
         } else {
-            res.render('bill/editBill', { template, title: 'Edição de Conta', valueSourceType: db.ValueSourceType, bill });
+            res.render('bill/editBill', { template, title: 'Edição de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, bill });
         }
     });
 });
@@ -53,11 +55,13 @@ router.get('/edit/:id', function (req, res) {
 router.post('/update', function (req, res) {
 
     let billId = req.body.id;
-    let billCompany = req.body.company;
-    let billValueSourceType = req.body.valueSourceType;
-    let billValueSourceId = billValueSourceType == 'EMAIL' ? req.body.email : req.body.table;
+    let company = req.body.company;
+    let dueDay = req.body.dueDay;
+    let valueSourceType = req.body.valueSourceType;
+    let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table;
+    let status = req.body.status;
 
-    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { company: billCompany, valueSourceType: billValueSourceType, valueSourceId: billValueSourceId } }, { new: true }, function (err, bill) {
+    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { company, dueDay, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;

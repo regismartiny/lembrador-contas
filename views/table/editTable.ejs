@@ -17,6 +17,16 @@
                                     <input type="text" class="form-control" id="name" name="name" placeholder="Nome" aria-describedby="basic-addon1" required <% if (locals.table)
                                         { %>value="<%= table.name %>"<% } %>>
                                 </div>
+                                <% if (locals.table) {%>
+                                    <div class="form-group">
+                                        <label for="status">Situação</label>
+                                        <select name='status' class="form-control" id="status">
+                                            <% var keys = Object.keys(statusEnum); keys.forEach(function(vst){ %>
+                                                <option <% if (vst == table.status) {%>selected="selected"<% } %> value="<%= vst %>"><%= statusEnum[vst] %></option>
+                                            <%})%>
+                                        </select>
+                                    </div>
+                                <% } %>
                                 <br>
                                 <table id="table" class="table">
                                     <thead>

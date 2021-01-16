@@ -30,8 +30,9 @@ router.get('/new', function (req, res) {
 router.post('/add', function (req, res) {
     let name = req.body.name;
     let data = parseData(req.body);
+    let status = req.body.status;
 
-    let table = new db.Table({ name, data });
+    let table = new db.Table({ name, data, status });
     table.save(function (err) {
         if (err) {
             handleError(err);
@@ -53,7 +54,7 @@ router.get('/edit/:id', function (req, res) {
             handleError(err);
             return err;
         } else {
-            res.render('table/editTable', { template, title: 'Edição de Tabela', table });
+            res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table });
         }
     });
 });
@@ -64,8 +65,9 @@ router.post('/update', function (req, res) {
     let tableId = req.body.id;
     let name = req.body.name;
     let data = parseData(req.body);
+    let status = req.body.status;
 
-    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name }}, { new: true }, function (err, table) {
+    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status }}, { new: true }, function (err, table) {
         if (err) {
             handleError(err);
             return err;

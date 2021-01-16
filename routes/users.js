@@ -44,7 +44,7 @@ router.get('/edit/:id', function (req, res) {
       handleError(err);
       return err;
     } else {
-      res.render('user/editUser', { template, title: 'Edição de Usuário', user });
+      res.render('user/editUser', { template, title: 'Edição de Usuário', statusEnum: db.StatusEnum, user });
     }
   });
 });
@@ -54,8 +54,9 @@ router.post('/update', function (req, res) {
   let userId = req.body.id;
   let name = req.body.name;
   let email = req.body.email;
+  let status = req.body.status;
 
-  db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email } }, { new: true }, function (err, user) {
+  db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status } }, { new: true }, function (err, user) {
     if (err) {
       handleError(err);
       return err;

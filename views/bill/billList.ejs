@@ -13,6 +13,8 @@
                             <tr>
                                 <th>Empresa</th>
                                 <th>Fonte Valor</th>
+                                <th>Dia Vencimento</th>
+                                <th>Situação</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -24,6 +26,12 @@
                                     </td>
                                     <td>
                                         <%= bill.valueSourceType %>
+                                    </td>
+                                    <td>
+                                        <%= bill.dueDay %>
+                                    </td>
+                                    <td>
+                                        <%= bill.status %>
                                     </td>
                                     <td>
                                         <a href='/bills/edit/<%= bill._id %>'>Editar</a>

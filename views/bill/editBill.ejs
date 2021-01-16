@@ -17,10 +17,16 @@
                         </div>
                         <br>
                         <div class="form-group">
+                            <label for="dueDay">Dia vencimento</label>
+                            <input type="text" class="form-control" id="dueDay" name="dueDay" placeholder="Dia Vencimento"
+                                aria-describedby="basic-addon1" value="<%= bill.dueDay %>">
+                        </div>
+                        <br>
+                        <div class="form-group">
                             <label for="valueSourceType">Tipo FonteValor</label>
                             <select name='valueSourceType' class="form-control" id="valueSourceType">
-                                <% var keys = Object.keys(valueSourceType); keys.forEach(function(vst){ %>
-                                    <option <% if (vst == bill.valueSourceType) {%>selected="selected"<% } %> value="<%= vst %>"><%= valueSourceType[vst] %></option>
+                                <% var keys = Object.keys(valueSourceTypeEnum); keys.forEach(function(vst){ %>
+                                    <option <% if (vst == bill.valueSourceType) {%>selected="selected"<% } %> value="<%= vst %>"><%= valueSourceTypeEnum[vst] %></option>
                                 <%})%>
                             </select>
                         </div>
@@ -34,6 +40,15 @@
                             <label for="table">Tabela</label>
                             <select name='table' class="form-control" id="tableOptions">
                                 </select>
+                        </div>
+                        <br>
+                        <div class="form-group">
+                            <label for="status">Situação</label>
+                            <select name='status' class="form-control" id="status">
+                                <% var keys = Object.keys(statusEnum); keys.forEach(function(vst){ %>
+                                    <option <% if (vst == bill.status) {%>selected="selected"<% } %> value="<%= vst %>"><%= statusEnum[vst] %></option>
+                                <%})%>
+                            </select>
                         </div>
                         <br>
                         <br>

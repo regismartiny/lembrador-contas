@@ -17,10 +17,16 @@
                             </div>
                             <br>
                             <div class="form-group">
+                                <label for="dueDay">Dia vencimento</label>
+                                <input type="text" class="form-control" id="dueDay" name="dueDay" placeholder="Dia Vencimento"
+                                    aria-describedby="basic-addon1" required>
+                            </div>
+                            <br>
+                            <div class="form-group">
                                 <label for="valueSourceType">Tipo FonteValor</label>
                                 <select name='valueSourceType' class="form-control" id="valueSourceType">
-                                        <% var keys = Object.keys(valueSourceType); keys.forEach(function(vst){ %>
-                                            <option value=<%= vst %>><%= valueSourceType[vst] %></option>
+                                        <% var keys = Object.keys(valueSourceTypeEnum); keys.forEach(function(vst){ %>
+                                            <option value=<%= vst %>><%= valueSourceTypeEnum[vst] %></option>
                                         <%})%>
                                 </select>
                             </div>
@@ -30,7 +36,6 @@
                                 <select name='email' class="form-control" id="emailOptions">
                                 </select>
                             </div>
-                            <br>
                             <div class="form-group" id="tableGroup" style="display:none">
                                 <label for="table">Tabela</label>
                                 <select name='table' class="form-control" id="tableOptions">
