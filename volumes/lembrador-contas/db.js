@@ -1,23 +1,26 @@
 var mongoose = require('mongoose');
 
-const SERVER_IP_ADDRESS = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1'
-const DB_PORT = process.env.MONGODB_PORT || 55000
-const DB_USER = process.env.MONGODB_USER || 'docker'
-const DB_PASS = process.env.MONGODB_PASSWORD || 'mongopw'
-const DB_SERVICE = process.env.DATABASE_SERVICE_NAME || 'mongodb'
-const DB_NAME = process.env.MONGODB_DATABASE || 'admin'
-var connString = DB_SERVICE + '://';
+const DB_ADDRESS = process.env.MONGODB_IP || 'mongodb'
+const DB_PORT = process.env.MONGODB_PORT || 27017
+const DB_USER = process.env.MONGODB_USER
+const DB_PASS = process.env.MONGODB_PASSWORD
+const DB_NAME = process.env.MONGODB_DATABASE || 'lembrador-contas'
 
-(() => {
-    if (DB_USER && DB_PASS) { 
-        connString += DB_USER + ':' + DB_PASS + '@' 
+let options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    user: DB_USER,
+    pass: DB_PASS,
+    dbName: DB_NAME
+};
+
+mongoose.connect(`mongodb://${DB_ADDRESS}:${DB_PORT}`, options).catch((err) => {
+    if (err.message.indexOf("ECONNREFUSED") !== -1) {
+        console.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
+        process.exit(1);
+    } else {
+        throw err;
     }
-    connString += SERVER_IP_ADDRESS + ':' + DB_PORT + '/' + DB_NAME
-})()
-
-mongoose.connect(connString).catch((err) => {
-    console.log('connString: ', connString)
-    console.log('Error connecting to database: ', err)
 })
 
 const StatusEnum = {

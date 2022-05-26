@@ -11,7 +11,6 @@ var bills = require('./routes/bills');
 var emails = require('./routes/emails');
 var tables = require('./routes/tables');
 
-
 var app = express();
 
 // view engine setup

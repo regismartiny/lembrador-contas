@@ -1,7 +1,7 @@
 lembrador-contas:
   container_name: lembrador-contas
   image: node:18
-  command: bash -c 'npm install && npm run startm'
+  command: bash -c 'yarn install && npm run startm'
   working_dir: /root/lembrador-contas
   restart: unless-stopped
   ports:
