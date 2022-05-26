@@ -1,0 +1,42 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Situação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% tableList.forEach(function(table){ %>
+                                <tr>
+                                    <td>
+                                        <%= table.name %>
+                                    </td>
+                                    <td>
+                                        <%= table.status %>
+                                    </td>
+                                    <td>
+                                        <a href='/tables/edit/<%= table._id %>'>Editar</a>
+                                        <a href='/tables/remove/<%= table._id %>'>Excluir</a>
+                                    </td>
+                                </tr>
+                                <%})%>
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+            <%- template.scripts %>
+    </body>
+
+    </html>
