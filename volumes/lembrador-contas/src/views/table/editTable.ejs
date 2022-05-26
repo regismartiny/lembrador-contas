@@ -45,7 +45,7 @@
                                 <br>
                                 <br>
                                 <div class="form-group-btn">
-                                    <input type="button" class="btn btn-primary center-block" value="Salvar" onclick="doSubmit()" />
+                                    <input type="submit" class="btn btn-primary center-block" value="Salvar" />
                                 </div>
                     </form>
                 </div>
@@ -102,13 +102,13 @@
                     });
 
                     function applyMask() {
-                        $("input[name='value'").mask("R$ ###,00");
+                        $("input[name='value'").mask("R$ ####,00");
                     }
 
-                    function doSubmit() {
+                    $('#form').submit(function() {
                         $("input[name='value'").unmask();
-                        $('#form').submit()
-                    }
+                        return true;
+                    });
                 </script>
     </body>
 

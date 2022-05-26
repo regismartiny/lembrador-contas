@@ -3,8 +3,8 @@
   "version": "0.1",
   "private": true,
   "scripts": {
-    "startm": "nodemon ./bin/www",
-    "start": "node ./bin/www"
+    "startm": "nodemon ./src/bin/www",
+    "start": "node ./src/bin/www"
   },
   "dependencies": {
     "atob": "^2.0.3",

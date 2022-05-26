@@ -53,7 +53,7 @@
                                 <br>
                                 <br>
                                 <div class="form-group-btn">
-                                    <input type="button" class="btn btn-primary center-block" value="Salvar" onclick="doSubmit()" />
+                                    <input type="submit" class="btn btn-primary center-block" value="Salvar" />
                                 </div>
                     </form>
                 </div>
@@ -100,13 +100,6 @@
 
                 function genRemoveAction() {
                     return '<td><a href="javascript:removeRow(' + rowCount + ')">Remover</a></td>';
-                }
-
-                function applyMask() {}
-
-                function doSubmit() {
-                    $("input[name='value'").unmask();
-                    $('#form').submit()
                 }
             </script>
     </body>
