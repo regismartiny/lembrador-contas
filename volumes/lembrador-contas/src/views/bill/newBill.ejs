@@ -41,6 +41,11 @@
                                 <select name='table' class="form-control" id="tableOptions">
                                 </select>
                             </div>
+                            <div class="form-group" id="apiGroup" style="display:none">
+                                <label for="api">API</label>
+                                <select name='api' class="form-control" id="apiOptions">
+                                </select>
+                            </div>
                             <br>
                             <div class="form-group">
                                 <input type="submit" class="btn btn-primary center-block" value="Salvar" />
@@ -53,21 +58,39 @@
                 <script>
                     const EMAIL_REST = '/emails/listJSON';
                     const TABLE_REST = '/tables/listJSON';
+                    const API_REST = '/apis/listJSON';
                     const VALUE_SOURCE_TYPE = $('#valueSourceType').value;
 
-                    if (VALUE_SOURCE_TYPE == 'Email') {
-                        getList(EMAIL_REST, loadEmailList);
-                    } else {
+                    if (VALUE_SOURCE_TYPE == 'Table' || !VALUE_SOURCE_TYPE) {
                         getList(TABLE_REST, loadTableList);
+                    } else if (VALUE_SOURCE_TYPE == 'Email') {
+                        getList(EMAIL_REST, loadEmailList);
+                    } else if (VALUE_SOURCE_TYPE == 'API') {
+                        getList(API_REST, loadApiList);
                     }
 
                     $('#valueSourceType').change(function (value) {
                         if (value.target.value === 'EMAIL') {
                             $('#tableGroup').hide();
+                            $('#apiGroup').hide();
+                            $('#tableOptions').attr("required", "false");
+                            $('#apiOptions').attr("required", "false");
+                            $('#emailOptions').attr("required", "true");
                             getList(EMAIL_REST, loadEmailList);
-                        } else {
+                        } else if (value.target.value === 'TABLE') {
                             $('#emailGroup').hide();
+                            $('#apiGroup').hide();
+                            $('#emailOptions').attr("required", "false");
+                            $('#apiOptions').attr("required", "false");
+                            $('#tableOptions').attr("required", "true");
                             getList(TABLE_REST, loadTableList);
+                        } else if (value.target.value === 'API') {
+                            $('#tableGroup').hide();
+                            $('#emailGroup').hide();
+                            $('#emailOptions').attr("required", "false");
+                            $('#tableOptions').attr("required", "false");
+                            $('#apiOptions').attr("required", "true");
+                            getList(API_REST, loadApiList);
                         }
                     });
 
@@ -91,6 +114,14 @@
                         $('#tableOptions').html(optionsAsString);
 
                         $('#tableGroup').show();
+                    }
+
+                    function loadApiList(list) {
+                        var optionsAsString = createSelectOptions(list);
+                        
+                        $('#apiOptions').html(optionsAsString);
+
+                        $('#apiGroup').show();
                     }
 
                     function createSelectOptions(list) {

@@ -28,19 +28,26 @@ const StatusEnum = {
     INATIVO: 'Inativo'
 }
 
+const HttpMethodEnum = {
+    GET: 'GET',
+    POST: 'POST',
+    PUT: 'PUT',
+    DELETE: 'DELETE'
+}
+
 var userSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
     email: { type: String, unique: true, required: [true, 'O email é obrigatório'] },
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO',  required: [true, 'A situação é obrigatória']},
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'usercollection' })
 
 // on every save, add the date
-userSchema.pre('validate', function(next) {
+userSchema.pre('validate', function (next) {
     var self = this
 
-    User.findOne({ email: this.email }, 'email', function(err, results) {
+    User.findOne({ email: this.email }, 'email', function (err, results) {
         if (err) {
             console.log('Erro: ', err);
         } else if (results) {
@@ -66,20 +73,21 @@ var User = mongoose.model('usercollection', userSchema, 'usercollection')
 
 const ValueSourceTypeEnum = {
     TABELA: 'Tabela',
-    EMAIL: 'Email'
+    EMAIL: 'Email',
+    API: 'API'
 }
 
 var billSchema = new mongoose.Schema({
     company: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
-    valueSourceType: { type: String, enum : Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
+    valueSourceType: { type: String, enum: Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
     dueDay: { type: Number, required: [true, 'Dia do vencimento obrigatório'] },
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória']},
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'billcollection' })
 
-billSchema.pre('save', function(next) {
+billSchema.pre('save', function (next) {
     var currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
@@ -89,18 +97,16 @@ billSchema.pre('save', function(next) {
 
 var Bill = mongoose.model('billcollection', billSchema, 'billcollection')
 
-
-
 var emailSchema = new mongoose.Schema({
     address: { type: String, unique: true, required: [true, 'O Endereço é obrigatório'] },
     subject: { type: String, unique: true, required: [true, 'O Assunto é obrigatório'] },
     valueData: [{ name: String, value: String }],
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO',  required: [true, 'A situação é obrigatória']},
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'emailcollection' })
 
-emailSchema.pre('save', function(next) {
+emailSchema.pre('save', function (next) {
     var currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
@@ -110,17 +116,15 @@ emailSchema.pre('save', function(next) {
 
 var Email = mongoose.model('emailcollection', emailSchema, 'emailcollection')
 
-
-
 var tableSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome da Tabela é obrigatório'] },
     data: [{ period: { month: Number, year: Number }, value: Number }],
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO',  required: [true, 'A situação é obrigatória']},
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'tablecollection' })
 
-tableSchema.pre('save', function(next) {
+tableSchema.pre('save', function (next) {
     var currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
@@ -130,6 +134,26 @@ tableSchema.pre('save', function(next) {
 
 var Table = mongoose.model('tablecollection', tableSchema, 'tablecollection')
 
+var apiSchema = new mongoose.Schema({
+    name: { type: String, unique: true, required: [true, 'o Nome é obrigatório'] },
+    url: { type: String, required: [true, 'A URL é obrigatória'] },
+    method: { type: String, required: [true, 'O Método é obrigatório'] },
+    body: { type: String, unique: true },
+    reponseValue: { type: String, enum: Object.keys(HttpMethodEnum), default: 'GET', required: [true, 'O Valor Resposta é obrigatório'] },
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now }
+}, { collection: 'apicollection' })
+
+apiSchema.pre('save', function (next) {
+    var currentDate = new Date()
+    this.updated_at = currentDate
+    if (!this.created_at)
+        this.created_at = currentDate
+    next()
+})
+
+var API = mongoose.model('apicollection', apiSchema, 'apicollection')
 
 const ReminderStatusEnum = {
     CREATED: 'Criado',
@@ -140,12 +164,12 @@ const ReminderStatusEnum = {
 var billReminderSchema = new mongoose.Schema({
     title: { type: String, required: [true, 'O título é obrigatório'] },
     fileLink: { type: String },
-    status: { type: String, enum : Object.keys(ReminderStatusEnum), required: [true, 'O status é obrigatório'] },
+    status: { type: String, enum: Object.keys(ReminderStatusEnum), required: [true, 'O status é obrigatório'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'billremindercollection' })
 
-billReminderSchema.pre('save', function(next) {
+billReminderSchema.pre('save', function (next) {
     var currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
@@ -155,4 +179,4 @@ billReminderSchema.pre('save', function(next) {
 
 var BillReminder = mongoose.model('billremindercollection', billReminderSchema, 'billremindercollection')
 
-module.exports = { Mongoose: mongoose, User, Bill, Email, Table, BillReminder, StatusEnum, ValueSourceTypeEnum, ReminderStatusEnum }
+module.exports = { Mongoose: mongoose, User, Bill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum }

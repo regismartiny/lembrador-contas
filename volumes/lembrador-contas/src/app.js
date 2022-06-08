@@ -10,6 +10,7 @@ var users = require('./routes/users');
 var bills = require('./routes/bills');
 var emails = require('./routes/emails');
 var tables = require('./routes/tables');
+var apis = require('./routes/apis');
 
 var app = express();
 
@@ -34,16 +35,17 @@ app.use('/users', users);
 app.use('/bills', bills);
 app.use('/emails', emails);
 app.use('/tables', tables);
+app.use('/apis', apis);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

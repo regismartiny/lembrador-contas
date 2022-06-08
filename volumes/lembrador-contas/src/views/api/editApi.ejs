@@ -1,0 +1,63 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <form id="form" action="/apis/<% if (locals.api) {%>update<% }else{ %>add<% } %>" method="post" class="justify-content-center">
+                        <% if (locals.api) {%>
+                            <input type="hidden" name="id" value="<%= api._id %>">
+                        <% } %>
+                        <div class="form-group">
+                            <label for="name">Nome</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Nome" aria-describedby="basic-addon1" required <% if (locals.api)
+                                { %>value="<%= api.name %>"<% } %>>
+                        </div>
+                        <br>
+                        <div class="form-group">
+                            <label for="url">URL</label>
+                            <input type="text" class="form-control" id="url" name="url" placeholder="URL" aria-describedby="basic-addon1" required <% if (locals.api)
+                                { %>value="<%= api.url %>"<% } %>>
+                        </div>
+                        <br>
+                        <div class="form-group">
+                            <label for="method">Método</label>
+                            <select name='method' class="form-control" id="method">
+                                <% var keys = Object.keys(httpMethodEnum); keys.forEach(function(vst){ %>
+                                    <option <% if (locals.api && vst == api.method) {%>selected="selected"<% } %> value="<%= vst %>"><%= httpMethodEnum[vst] %></option>
+                                <%})%>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="form-group">
+                            <label for="body">Corpo da requisição</label>
+                            <input type="text" class="form-control" id="body" name="body" placeholder="Corpo da requisição" aria-describedby="basic-addon1" <% if (locals.api)
+                                { %>value="<%= api.body %>"<% } %>>
+                        </div>
+                        <br>
+                        <% if (locals.api) {%>
+                            <div class="form-group">
+                                <label for="status">Situação</label>
+                                <select name='status' class="form-control" id="status">
+                                    <% var keys = Object.keys(statusEnum); keys.forEach(function(vst){ %>
+                                        <option <% if (vst == api.status) {%>selected="selected"<% } %> value="<%= vst %>"><%= statusEnum[vst] %></option>
+                                    <%})%>
+                                </select>
+                            </div>
+                        <% } %>
+                        <br>
+                        <br>
+                        <div class="form-group-btn">
+                            <input type="submit" class="btn btn-primary center-block" value="Salvar" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <%- template.scripts %>
+    </body>
+
+    </html>
