@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+var mongoose = require('mongoose')
 
 const DB_ADDRESS = process.env.MONGODB_IP || 'mongodb'
 const DB_PORT = process.env.MONGODB_PORT || 27017
@@ -12,14 +12,14 @@ let options = {
     user: DB_USER,
     pass: DB_PASS,
     dbName: DB_NAME
-};
+}
 
 mongoose.connect(`mongodb://${DB_ADDRESS}:${DB_PORT}`, options).catch((err) => {
     if (err.message.indexOf("ECONNREFUSED") !== -1) {
         console.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
-        process.exit(1);
+        process.exit(1)
     } else {
-        throw err;
+        throw err
     }
 })
 
@@ -49,7 +49,7 @@ userSchema.pre('validate', function (next) {
 
     User.findOne({ email: this.email }, 'email', function (err, results) {
         if (err) {
-            console.log('Erro: ', err);
+            console.log('Erro: ', err)
         } else if (results) {
             console.warn('Resultados de validação: ', results)
             self.invalidate("email", "Email deve ser único")
@@ -64,10 +64,10 @@ userSchema.pre('validate', function (next) {
             // if created_at doesn't exist, add to that field
             if (!this.created_at)
                 this.created_at = currentDate
-            next();
+            next()
         }
-    });
-});
+    })
+})
 var User = mongoose.model('usercollection', userSchema, 'usercollection')
 
 
@@ -93,7 +93,7 @@ billSchema.pre('save', function (next) {
     if (!this.created_at)
         this.created_at = currentDate
     next()
-});
+})
 
 var Bill = mongoose.model('billcollection', billSchema, 'billcollection')
 
@@ -130,7 +130,7 @@ tableSchema.pre('save', function (next) {
     if (!this.created_at)
         this.created_at = currentDate
     next()
-});
+})
 
 var Table = mongoose.model('tablecollection', tableSchema, 'tablecollection')
 
@@ -175,7 +175,7 @@ billReminderSchema.pre('save', function (next) {
     if (!this.created_at)
         this.created_at = currentDate
     next()
-});
+})
 
 var BillReminder = mongoose.model('billremindercollection', billReminderSchema, 'billremindercollection')
 
