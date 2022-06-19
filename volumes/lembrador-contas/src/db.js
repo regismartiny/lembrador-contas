@@ -137,9 +137,9 @@ var Table = mongoose.model('tablecollection', tableSchema, 'tablecollection')
 var apiSchema = new mongoose.Schema({
     name: { type: String, unique: true, required: [true, 'o Nome é obrigatório'] },
     url: { type: String, required: [true, 'A URL é obrigatória'] },
-    method: { type: String, required: [true, 'O Método é obrigatório'] },
-    body: { type: String, unique: true },
-    reponseValue: { type: String, enum: Object.keys(HttpMethodEnum), default: 'GET', required: [true, 'O Valor Resposta é obrigatório'] },
+    method: { type: String, enum: Object.keys(HttpMethodEnum), default: 'GET', required: [true, 'O Método é obrigatório'] },
+    body: { type: String },
+    reponseValue: { type: String },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }

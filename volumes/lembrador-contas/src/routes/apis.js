@@ -11,12 +11,12 @@ router.get('/list', function (req, res) {
         });
 });
 
-/* GET tables JSON */
+/* GET apis JSON */
 router.get('/listJSON', function (req, res) {
     db.API.find({}).lean().exec(
-        function (e, tables) {
+        function (e, apis) {
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(tables));
+            res.send(JSON.stringify(apis));
         });
 });
 
@@ -32,11 +32,11 @@ router.post('/add', function (req, res) {
     let method = req.body.method;
     let body = req.body.body;
     let reponseValue = req.body.reponseValue;
-    let status = req.body.status;
 
+    console.log('body')
     console.log(req.body);
 
-    let api = new db.API({ name, url, method, body, reponseValue, status });
+    let api = new db.API({ name, url, method, body, reponseValue });
     api.save(function (err) {
         if (err) {
             handleError(err);

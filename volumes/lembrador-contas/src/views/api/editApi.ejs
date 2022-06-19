@@ -39,6 +39,12 @@
                                 { %>value="<%= api.body %>"<% } %>>
                         </div>
                         <br>
+                        <div class="form-group">
+                            <label for="responseValue">Valor na resposta</label>
+                            <input type="text" class="form-control" id="responseValue" name="responseValue" placeholder="Valor na resposta" aria-describedby="basic-addon1" <% if (locals.api)
+                                { %>value="<%= api.responseValue %>"<% } %>>
+                        </div>
+                        <br>
                         <% if (locals.api) {%>
                             <div class="form-group">
                                 <label for="status">Situação</label>
