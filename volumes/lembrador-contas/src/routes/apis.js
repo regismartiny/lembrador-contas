@@ -31,12 +31,9 @@ router.post('/add', function (req, res) {
     let url = req.body.url;
     let method = req.body.method;
     let body = req.body.body;
-    let reponseValue = req.body.reponseValue;
+    let value = req.body.value;
 
-    console.log('body')
-    console.log(req.body);
-
-    let api = new db.API({ name, url, method, body, reponseValue });
+    let api = new db.API({ name, url, method, body, value });
     api.save(function (err) {
         if (err) {
             handleError(err);
@@ -70,10 +67,10 @@ router.post('/update', function (req, res) {
     let url = req.body.url;
     let method = req.body.method;
     let body = req.body.body;
-    let reponseValue = req.body.reponseValue;
+    let value = req.body.value;
     let status = req.body.status;
 
-    db.API.findOneAndUpdate({ _id: apiId }, { $set: { name,  url, method, body, reponseValue, status} }, { new: true }, function (err, api) {
+    db.API.findOneAndUpdate({ _id: apiId }, { $set: { name,  url, method, body, value, status} }, { new: true }, function (err, api) {
         if (err) {
             handleError(err);
             return err;

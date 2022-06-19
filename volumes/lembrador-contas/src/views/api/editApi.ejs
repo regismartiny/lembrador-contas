@@ -40,9 +40,9 @@
                         </div>
                         <br>
                         <div class="form-group">
-                            <label for="responseValue">Valor na resposta</label>
-                            <input type="text" class="form-control" id="responseValue" name="responseValue" placeholder="Valor na resposta" aria-describedby="basic-addon1" <% if (locals.api)
-                                { %>value="<%= api.responseValue %>"<% } %>>
+                            <label for="value">Valor na resposta</label>
+                            <input type="text" class="form-control" id="value" name="value" placeholder="Valor na resposta" aria-describedby="basic-addon1" required <% if (locals.api)
+                                { %>value="<%= api.value %>"<% } %>>
                         </div>
                         <br>
                         <% if (locals.api) {%>
