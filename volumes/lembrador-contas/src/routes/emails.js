@@ -1,10 +1,11 @@
-var express = require('express');
-var router = express.Router();
-var template = require('./template');
-var db = require("../db");
-var gmail = require('../util/gmail.js');
-var emailUtils = require('../util/emailUtils.js');
-var vm = require('vm');
+const express = require('express');
+const router = express.Router();
+const template = require('./template');
+const db = require("../db");
+const gmail = require('../util/gmail.js');
+const emailUtils = require('../util/emailUtils.js');
+const vm = require('vm');
+const utils = require("../util/utils");
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -162,10 +163,12 @@ router.get('/testValue/:id', async function (req, res) {
 
 function parseData(body) {
     let newData = [];
-    let length = (typeof body.name === 'object') ? body.name.length : 1;
+    body.name = utils.toArray(body.name);
+    body.value = utils.toArray(body.value);
+    let length = body.name.length;
     for(let i=0; i < length; i++) {
-        let name = length > 1 ? body.name[i] : body.name;
-        let value = length > 1 ? body.value[i] : body.value;
+        let name = body.name[i];
+        let value = body.value[i];
         newData.push({name, value});
     }
     return newData;

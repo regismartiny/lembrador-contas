@@ -1,7 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var template = require('./template');
-var db = require("../db");
+const express = require('express');
+const router = express.Router();
+const template = require('./template');
+const db = require("../db");
+const utils = require("../util/utils");
 
 
 /* GET TableList page. */
@@ -99,8 +100,8 @@ function handleError(error) {
 
 function parseData(body) {
     let newData = [];
-    body.value = toArray(body.value);
-    body.period = toArray(body.period);
+    body.value = utils.toArray(body.value);
+    body.period = utils.toArray(body.period);
     let length = body.period.length;
     for(let i=0; i < length; i++) {
         let value = body.value[i];
@@ -110,9 +111,7 @@ function parseData(body) {
     return newData;
 }
 
-function toArray(obj) {
-    return Array.isArray(obj) ? obj : [].concat(obj);
-}
+
 
 function parsePeriod(periodStr) {
     return { month:  Number(periodStr.substr(5,7)), year: Number(periodStr.substr(0,4)) };
