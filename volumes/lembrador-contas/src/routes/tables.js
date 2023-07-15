@@ -114,7 +114,11 @@ function parseData(body) {
 
 
 function parsePeriod(periodStr) {
-    return { month:  Number(periodStr.substr(5,7)), year: Number(periodStr.substr(0,4)) };
+    console.log(periodStr);
+    if (periodStr && typeof periodStr == 'string') {
+        return { month:  Number(periodStr.substring(5,7)), year: Number(periodStr.substring(0,4)) };
+    }
+    return {}
 }
 
 
