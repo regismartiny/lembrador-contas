@@ -99,14 +99,23 @@ function handleError(error) {
 
 function parseData(body) {
     let newData = [];
-    let length = (typeof body.period === 'object') ? body.period.length : 1;
+    body.value = toArray(body.value);
+    body.period = toArray(body.period);
+    let length = body.period.length;
     for(let i=0; i < length; i++) {
-        let line = length > 1 ? body.period[i] : body.period;
-        let period = { month:  Number(line.substr(5,7)), year: Number(line.substr(0,4)) };
-        let value = length > 1 ? body.value[i] : body.value;
+        let value = body.value[i];
+        let period = parsePeriod(body.period[i]);
         newData.push({period, value});
     }
     return newData;
+}
+
+function toArray(obj) {
+    return Array.isArray(obj) ? obj : [].concat(obj);
+}
+
+function parsePeriod(periodStr) {
+    return { month:  Number(periodStr.substr(5,7)), year: Number(periodStr.substr(0,4)) };
 }
 
 

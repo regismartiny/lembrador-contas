@@ -1,22 +1,33 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+const express = require('express');
+const rateLimit = require('express-rate-limit')
+const path = require('path');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
-var bills = require('./routes/bills');
-var emails = require('./routes/emails');
-var tables = require('./routes/tables');
-var apis = require('./routes/apis');
+const index = require('./routes/index');
+const users = require('./routes/users');
+const bills = require('./routes/bills');
+const emails = require('./routes/emails');
+const tables = require('./routes/tables');
+const apis = require('./routes/apis');
 
-var app = express();
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+// rate limiter
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+})
+// Apply the rate limiting middleware to all requests
+app.use(limiter)
 
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));

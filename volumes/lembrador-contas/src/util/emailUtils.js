@@ -1,5 +1,5 @@
 var path = require('path');
-var PDFParser = require('pdf2json');
+var PDFParser = import('pdf2json');
 var fs = require('fs');
 var gmail = require( path.resolve( __dirname, "./gmail.js" ) );
 var base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
