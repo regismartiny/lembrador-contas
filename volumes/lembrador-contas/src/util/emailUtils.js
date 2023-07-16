@@ -7,7 +7,7 @@ var base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
 async function getMessage(sender, subject) {
     let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`);
     
-    if (messages.length == 0) return false;
+    if (!messages || messages.length == 0) return false;
 
     console.log('MENSAGENS ENCONTRADAS');
 

@@ -111,15 +111,11 @@ function parseData(body) {
     return newData;
 }
 
-
-
 function parsePeriod(periodStr) {
-    console.log(periodStr);
     if (periodStr && typeof periodStr == 'string') {
         return { month:  Number(periodStr.substring(5,7)), year: Number(periodStr.substring(0,4)) };
     }
     return {}
 }
-
 
 module.exports = router;

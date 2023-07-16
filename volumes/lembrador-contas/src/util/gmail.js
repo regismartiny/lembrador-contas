@@ -17,22 +17,36 @@ var _message = null;
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
-function doIt() {
+function authenticate(codeFromOauthRedirect) {
     return new Promise(function (resolve, reject) {
         // If modifying these scopes, delete token.json.
         // Load client secrets from a local file.
         fs.readFile(CREDENTIALS_PATH, (err, content) => {
+            console.log(content);
             if (err) {
                 let msg = 'Error loading client secret file: ' + err;
                 console.log(msg);
                 reject(msg);
             }
             // Authorize a client with credentials, then call the Gmail API.
-            authorize(JSON.parse(content)).then(auth => {
-                resolve(auth);
-            });
+            authorize(parseJSON(content), codeFromOauthRedirect)
+                .then(response => resolve(response))
+                .catch(err => {
+                    let msg = 'Error authorizing: ' + err;
+                    console.log(msg);
+                    reject(msg);
+                })
         });
-    });
+    })
+}
+
+function parseJSON(content) {
+    try {
+       return JSON.parse(content)
+    } catch(e) {
+        let msg = 'Error parsing JSON: ' + err
+        console.log(msg)
+    }
 }
 
 /**
@@ -40,19 +54,19 @@ function doIt() {
  * given callback function.
  *
  * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
+ * @param {} codeFromOauthRedirect
  */
-function authorize(credentials, callback) {
+function authorize(credentials, codeFromOauthRedirect) {
     return new Promise(function (resolve, reject) {
-        const {client_secret, client_id, redirect_uris} = credentials.installed;
+        const {client_secret, client_id, redirect_uris} = credentials.web;
         const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
         // Check if we have previously stored a token.
         fs.readFile(TOKEN_PATH, (err, token) => {
             if (err) {
-                getNewToken(oAuth2Client, callback).then((oAuth2Client) => {
-                    resolve(oAuth2Client);
-                });
+                getNewToken(oAuth2Client, codeFromOauthRedirect)
+                    .then((oAuth2Client) => resolve(oAuth2Client))
+                    .catch((err) => reject(err));
             } else {
                 oAuth2Client.setCredentials(JSON.parse(token));
                 resolve(oAuth2Client);
@@ -66,10 +80,10 @@ function authorize(credentials, callback) {
  * execute the given callback with the authorized OAuth2 client.
  *
  * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
- * @param {getEventsCallback} callback The callback to call with the authorized
+ * @param {} codeFromOauthRedirect
  *     client.
  */
-function getNewToken(oAuth2Client, callback) {
+function getNewToken(oAuth2Client, codeFromOauthRedirect) {
     return new Promise(function (resolve, reject) {
         var authUrl = oAuth2Client.generateAuthUrl({
             access_type: 'offline',
@@ -80,25 +94,39 @@ function getNewToken(oAuth2Client, callback) {
             input: process.stdin,
             output: process.stdout
         });
-        rl.question('Enter the code from that page here: ', function (code) {
-            rl.close();
-            oAuth2Client.getToken(code, function (err, token) {
-                if (err) {
-                    let msg = 'Error while trying to retrieve access token', err;
-                    console.log(msg);
-                    reject(msg);
-                }
-                oAuth2Client.credentials = token;
-                // Store the token to disk for later program executions
-                fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-                    if (err) return console.error(err);
-                    console.log('Token stored to', TOKEN_PATH);
-                });
-                resolve(oAuth2Client);
-            });
-        });
+        if (codeFromOauthRedirect == null) {
+        //     rl.question('Enter the code from that page here: ', function (code) {
+                rl.close();
+                reject("Authorization in process");
+        //         saveToken(oAuth2Client, code)
+        //             .then((response) => resolve(response))
+        //     });
+        } else {
+            saveToken(oAuth2Client, codeFromOauthRedirect)
+                .then((response) => resolve(response))
+                .catch((err) => reject(err))
+        }
     });
 }  
+
+function saveToken(oAuth2Client, code) {
+    return new Promise(function (resolve, reject) {
+        oAuth2Client.getToken(code, function (err, token) {
+            if (err) {
+                let msg = 'Error while trying to retrieve access token', err;
+                console.log(msg);
+                reject(msg);
+            }
+            oAuth2Client.credentials = token;
+            // Store the token to disk for later program executions
+            fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+                if (err) return console.error(err);
+                console.log('Token stored to', TOKEN_PATH);
+            });
+            resolve(oAuth2Client);
+        });
+    });
+}
 
 function listMessages(auth) {
     return new Promise(function (resolve, reject) {
@@ -195,32 +223,53 @@ var _query = {
 
 module.exports = {
     listUnreadMessages: async function () {
-        _query.q = 'is:unread';
-        let auth = await doIt();
-        return await listMessages(auth);
+        try {
+            _query.q = 'is:unread';
+            let auth = await authenticate();
+            return await listMessages(auth);
+        } catch(e) {
+            console.log(e);
+        }
     },
     getMessage: async function (id, headers) {
-        _query.id = id;
-        if (headers) {
-            _query.format = 'metadata';
-            _query.metadataHeaders = headers;
+        try {
+            _query.id = id;
+            if (headers) {
+                _query.format = 'metadata';
+                _query.metadataHeaders = headers;
+            }
+            let auth = await authenticate();
+            return await getMessage(auth);
+        } catch(e) {
+            console.log(e);
         }
-        let auth = await doIt();
-        return await getMessage(auth);
     },
     findMessages: async function (q) {
-        _query.q = q;
-        let auth = await doIt(); 
-        return await listMessages(auth);
+        try {
+            _query.q = q;
+            let auth = await authenticate(); 
+            return await listMessages(auth);
+        } catch(e) {
+            console.log(e);
+        }
     },
     listMessagesFrom: async function (sender) {
-        _query.q = 'from:' + sender;
-        let auth = await doIt();
-        return await listMessages(auth);
+        try {
+            _query.q = 'from:' + sender;
+            let auth = await authenticate();
+            return await listMessages(auth);
+        } catch(e) {
+            console.log(e);
+        }
     },
     getAttachments: async function (message) {
-        _message = message;
-        let auth = await doIt();
-        return await getAttachmentsSync(auth);
-    }
+        try {
+            _message = message;
+            let auth = await authenticate();
+            return await getAttachmentsSync(auth);
+        } catch(e) {
+            console.log(e);
+        }
+    },
+    authenticate
 }

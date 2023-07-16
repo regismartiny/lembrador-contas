@@ -61,9 +61,9 @@
                     const API_REST = '/apis/listJSON';
                     const VALUE_SOURCE_TYPE = $('#valueSourceType').value;
 
-                    if (VALUE_SOURCE_TYPE == 'Table' || !VALUE_SOURCE_TYPE) {
+                    if (VALUE_SOURCE_TYPE == 'TABLE' || !VALUE_SOURCE_TYPE) {
                         getList(TABLE_REST, loadTableList);
-                    } else if (VALUE_SOURCE_TYPE == 'Email') {
+                    } else if (VALUE_SOURCE_TYPE == 'EMAIL') {
                         getList(EMAIL_REST, loadEmailList);
                     } else if (VALUE_SOURCE_TYPE == 'API') {
                         getList(API_REST, loadApiList);
@@ -73,22 +73,22 @@
                         if (value.target.value === 'EMAIL') {
                             $('#tableGroup').hide();
                             $('#apiGroup').hide();
-                            $('#tableOptions').attr("required", "false");
-                            $('#apiOptions').attr("required", "false");
+                            $('#apiOptions').removeAttr("required");
+                            $('#tableOptions').removeAttr("required");
                             $('#emailOptions').attr("required", "true");
                             getList(EMAIL_REST, loadEmailList);
                         } else if (value.target.value === 'TABLE') {
                             $('#emailGroup').hide();
                             $('#apiGroup').hide();
-                            $('#emailOptions').attr("required", "false");
-                            $('#apiOptions').attr("required", "false");
+                            $('#emailOptions').removeAttr("required");
+                            $('#apiOptions').removeAttr("required");
                             $('#tableOptions').attr("required", "true");
                             getList(TABLE_REST, loadTableList);
                         } else if (value.target.value === 'API') {
                             $('#tableGroup').hide();
                             $('#emailGroup').hide();
-                            $('#emailOptions').attr("required", "false");
-                            $('#tableOptions').attr("required", "false");
+                            $('#emailOptions').removeAttr("required");
+                            $('#tableOptions').removeAttr("required");
                             $('#apiOptions').attr("required", "true");
                             getList(API_REST, loadApiList);
                         }

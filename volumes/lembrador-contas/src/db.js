@@ -1,6 +1,6 @@
 var mongoose = require('mongoose')
 
-const DB_ADDRESS = process.env.MONGODB_IP || 'mongodb'
+const DB_ADDRESS = process.env.MONGODB_IP || 'localhost'
 const DB_PORT = process.env.MONGODB_PORT || 27017
 const DB_USER = process.env.MONGODB_USER
 const DB_PASS = process.env.MONGODB_PASSWORD
@@ -72,7 +72,7 @@ var User = mongoose.model('usercollection', userSchema, 'usercollection')
 
 
 const ValueSourceTypeEnum = {
-    TABELA: 'Tabela',
+    TABLE: 'Tabela',
     EMAIL: 'Email',
     API: 'API'
 }
@@ -97,10 +97,16 @@ billSchema.pre('save', function (next) {
 
 var Bill = mongoose.model('billcollection', billSchema, 'billcollection')
 
+const DataTypeEnum = {
+    BODY: 'Corpo do email',
+    PDF_ATTACHMENT: 'Anexo PDF'
+}
+
 var emailSchema = new mongoose.Schema({
     address: { type: String, unique: true, required: [true, 'O Endereço é obrigatório'] },
     subject: { type: String, unique: true, required: [true, 'O Assunto é obrigatório'] },
     valueData: [{ name: String, value: String }],
+    dataType: { type: String, enum: Object.keys(DataTypeEnum), default: 'BODY', required: [true, 'O tipo de dado é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
@@ -179,4 +185,4 @@ billReminderSchema.pre('save', function (next) {
 
 var BillReminder = mongoose.model('billremindercollection', billReminderSchema, 'billremindercollection')
 
-module.exports = { Mongoose: mongoose, User, Bill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum }
+module.exports = { Mongoose: mongoose, User, Bill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum }

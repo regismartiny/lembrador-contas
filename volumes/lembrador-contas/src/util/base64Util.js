@@ -1,10 +1,9 @@
 var atob = require('atob');
 
 module.exports = {
-    base64ToBin: function (binaryData) {
-        var base64str = binaryData// base64 string from  thr response of server
-        var binary = atob(base64str.replace(/\s/g, ''));// decode base64 string, remove space for IE compatibility
-        var len = binary.length;         // get binary length
+    base64ToBin: function (base64str) {
+        var text = base64ToText(base64str);
+        var len = text.length;         // get binary length
         var buffer = new ArrayBuffer(len);         // create ArrayBuffer with binary length
         var view = new Uint8Array(buffer);         // create 8-bit Array
 
@@ -18,5 +17,8 @@ module.exports = {
         var base64 = (base64String).replace(/_/g, '/'); //Replace this characters 
         base64 = base64.replace(/-/g, '+');
         return base64;
+    },
+    base64ToText: function (base64String) {
+        return atob(base64String.replace(/\s/g, ''));// decode base64 string, remove space for IE compatibility
     }
 }

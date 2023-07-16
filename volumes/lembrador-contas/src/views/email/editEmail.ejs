@@ -22,6 +22,18 @@
                                 <input type="text" class="form-control" id="subject" name="subject" placeholder="Assunto" aria-describedby="basic-addon1" required <% if (locals.email)
                                     { %>value="<%= email.subject %>"<% } %>>
                             </div>
+                            <div class="form-group">
+                                <label for="dataType">Tipo Dado</label>
+                                <select name='dataType' class="form-control" id="dataType">
+                                    <% var keys = Object.keys(dataTypeEnum); keys.forEach(function(vst){ %>
+                                        <% if (locals.email) {%>
+                                            <option <% if (vst == email.dataType) {%>selected="selected"<% } %> value="<%= vst %>"><%= dataTypeEnum[vst] %></option>
+                                        <% } else { %>
+                                            <option value=<%= vst %>><%= dataTypeEnum[vst] %></option>
+                                        <%}%>
+                                    <%})%>
+                                </select>
+                            </div>
                             <% if (locals.email) {%>
                                 <div class="form-group">
                                     <label for="status">Situação</label>
@@ -32,10 +44,6 @@
                                     </select>
                                 </div>
                             <% } %>
-                            <div class="form-group">
-                                <input type="checkbox" id="attachmentPDF" name="attachmentPDF">
-                                <label for="attachmentPDF">Anexo PDF</label>
-                            </div>
                             <table id="table" class="table">
                                 <thead>
                                     <tr>
