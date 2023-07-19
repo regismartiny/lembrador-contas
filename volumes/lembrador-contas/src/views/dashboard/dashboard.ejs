@@ -1,0 +1,50 @@
+<%- template.head %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <h1 class="title-1">
+                        <%= title %>
+                    </h1>
+                    <br>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Vencimento</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% activeBillList.forEach(function(bill){ %>
+                                <tr>
+                                    <td>
+                                        <%= bill.name %>
+                                    </td>
+                                    <td>
+                                        <span class="date"><%= bill.dueDate.toLocaleString(); %></span>
+                                    </td>
+                                    <td>
+                                        <span class="money"><%= bill.value %></span>
+                                    </td>
+                                </tr>
+                                <%})%>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <%- template.scripts %>
+                <script>
+                    $( document ).ready(function() {
+                        applyMask();
+                    });
+
+                    function applyMask() {
+                        $(".money").mask("R$ ####,00");
+                        $(".date").mask('00/00/0000');
+                    }
+                </script>
+    </body>
+
+    </html>

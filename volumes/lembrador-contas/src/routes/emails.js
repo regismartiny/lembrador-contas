@@ -46,10 +46,8 @@ router.post('/add', function (req, res) {
             handleError(err);
             return err;
         }
-        else {
-            console.log("Email saved");
-            res.redirect("/emails/list");
-        }
+        console.log("Email saved");
+        res.redirect("/emails/list");
     });
 });
 
@@ -61,9 +59,8 @@ router.get('/edit/:id', function (req, res) {
         if (err) {
             handleError(err);
             return err;
-        } else {
-            res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataTypeEnum: db.DataTypeEnum, email });
-        }
+        } 
+        res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataTypeEnum: db.DataTypeEnum, email });
     });
 });
 
@@ -82,10 +79,8 @@ router.post('/update', function (req, res) {
             handleError(err);
             return err;
         }
-        else {
-            console.log("Email updated");
-            res.redirect("/emails/list");
-        }
+        console.log("Email updated");
+        res.redirect("/emails/list");
     });
 });
 
@@ -97,9 +92,8 @@ router.get('/remove/:id', function (req, res) {
         if (err) {
             handleError(err);
             return err;
-        } else {
-            res.redirect("/emails/list");
         }
+        res.redirect("/emails/list");
     });
 });
 
@@ -144,33 +138,35 @@ router.get('/test/:id', async function (req, res) {
     db.Email.findById(emailId, async function (err, email) {
         if (err) {
             handleError(err);
-        } else {
-            console.log(db.DataTypeEnum[email.dataType])
-            console.log(db.DataTypeEnum.BODY);
-            const message = await emailUtils.getMessage(email.address, email.subject);
-            
-            let value = [];
-            if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
-                let att = await emailUtils.getAttachmentFromMessage(message);
-                let pdfData = await emailUtils.getPDFFromAttachment(att.attachment.data);
-
-                email.valueData.forEach(val => {
-                    let obj = { name: val.name, value: ''};
-                    let str = 'pdfData = JSON.parse(\'' + JSON.stringify(pdfData) + '\');'
-                        + 'decodeURIComponent(' + val.value + ')';
-                    obj.value = vm.runInNewContext(str);
-                    value.push(obj);
-                })
-            } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
-                const info = await cpflEmailParser.getInfoFromHTMLEmail(message);
-                value.push(info);
-            }
-            console.table(value);
-            res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(value) });
+            return err;
+        } 
+        console.log(db.DataTypeEnum[email.dataType])
+        console.log(db.DataTypeEnum.BODY);
+        const message = await emailUtils.getMessage(email.address, email.subject);
+        
+        let values = [];
+        if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
+            getEmailPDFAttachmentData(values);
+        } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
+            const info = await cpflEmailParser.getInfoFromHTMLEmail(message);
+            values.push(info);
         }
+        console.table(values);
+        res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
     });
 });
 
+async function getEmailPDFAttachmentData(value) {
+    let att = await emailUtils.getAttachmentFromMessage(message);
+    let pdfData = await emailUtils.getPDFFromAttachment(att.attachment.data);
+
+    email.valueData.forEach(val => {
+        let obj = { name: val.name, value: ''};
+        let str = 'pdfData = JSON.parse(\'' + JSON.stringify(pdfData) + '\');' + 'decodeURIComponent(' + val.value + ')';
+        obj.value = vm.runInNewContext(str);
+        value.push(obj);
+    })
+}
 function parseData(body) {
     let newData = [];
     body.name = utils.toArray(body.name);

@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
 const index = require('./routes/index');
+const dashboard = require('./routes/dashboard');
 const users = require('./routes/users');
 const bills = require('./routes/bills');
 const emails = require('./routes/emails');
@@ -42,6 +43,7 @@ app.use('/popperjs', express.static(__dirname + './../node_modules/popper.js/dis
 app.use('/bootstrap', express.static(__dirname + './../node_modules/bootstrap/dist/'));
 
 app.use('/', index);
+app.use('/dashboard', dashboard);
 app.use('/users', users);
 app.use('/bills', bills);
 app.use('/emails', emails);

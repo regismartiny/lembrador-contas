@@ -28,6 +28,11 @@ const StatusEnum = {
     INATIVO: 'Inativo'
 }
 
+const ActiveBillStatusEnum = {
+    UNPAID: 'Não pago',
+    PAGO: 'Pago'
+}
+
 const HttpMethodEnum = {
     GET: 'GET',
     POST: 'POST',
@@ -78,10 +83,10 @@ const ValueSourceTypeEnum = {
 }
 
 var billSchema = new mongoose.Schema({
-    company: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
+    company: { type: String, required: [true, 'O nome da Empresa é obrigatório'] },
     valueSourceType: { type: String, enum: Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
-    dueDay: { type: Number, required: [true, 'Dia do vencimento obrigatório'] },
+    dueDay: { type: Number, required: [true, 'O Dia do Vencimento é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
@@ -96,6 +101,26 @@ billSchema.pre('save', function (next) {
 })
 
 var Bill = mongoose.model('billcollection', billSchema, 'billcollection')
+
+var activeBillSchema = new mongoose.Schema({
+    name: { type: String, required: [true, 'O nome é obrigatório'] },
+    dueDate: { type: Date, required: [true, 'A Data do Vencimento é obrigatória'] },
+    value: { type: Number, required: [true, 'O Valor é obrigatório'] },
+    status: { type: String, enum: Object.keys(ActiveBillStatusEnum), default: 'UNPAID', required: [true, 'A situação é obrigatória'] },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now }
+}, { collection: 'activebillcollection' })
+
+activeBillSchema.pre('save', function (next) {
+    var currentDate = new Date()
+    this.updated_at = currentDate
+    if (!this.created_at)
+        this.created_at = currentDate
+    next()
+})
+
+var ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
+ActiveBill.collection.createIndex( { name: 1, dueDate: 1 }, { unique: true } )
 
 const DataTypeEnum = {
     BODY: 'Corpo do email',
@@ -185,4 +210,5 @@ billReminderSchema.pre('save', function (next) {
 
 var BillReminder = mongoose.model('billremindercollection', billReminderSchema, 'billremindercollection')
 
-module.exports = { Mongoose: mongoose, User, Bill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum }
+var ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
+module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum }

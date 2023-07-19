@@ -59,7 +59,8 @@ function parseJSON(content) {
 function authorize(credentials, codeFromOauthRedirect) {
     return new Promise(function (resolve, reject) {
         const {client_secret, client_id, redirect_uris} = credentials.web;
-        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0], 
+            forceRefreshOnFailure = true);
 
         // Check if we have previously stored a token.
         fs.readFile(TOKEN_PATH, (err, token) => {

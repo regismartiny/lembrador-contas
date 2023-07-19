@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const template = require('./template');
 const gmail = require('../util/gmail.js');
+var template = require('./template');
 
 /* GET home page. */
 router.get('/', function (req, res) {
-    res.render('index', { template, title: 'Lembrador de Contas' });
+    res.redirect('/dashboard');
+    // res.render('index', { template })
 });
+
 router.get('/auth', function (req, res) {
     console.log("auth called")
     console.log(req.query.code)
