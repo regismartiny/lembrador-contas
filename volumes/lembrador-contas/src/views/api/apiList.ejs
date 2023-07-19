@@ -29,7 +29,7 @@
                                             <%= api.name %>
                                         </td>
                                         <td>
-                                            <%= api.status %>
+                                            <%= statusEnum[api.status] %>
                                         </td>
                                         <td>
                                             <a href='/apis/edit/<%= api._id %>'>Editar</a>

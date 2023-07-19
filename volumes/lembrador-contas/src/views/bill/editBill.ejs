@@ -11,19 +11,24 @@
                     <form action="/bills/update" method="post">
                         <input type="hidden" name="id" value="<%= bill._id %>">
                         <div class="form-group">
+                            <label for="name">Nome</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Nome"
+                                aria-describedby="basic-addon1" value="<%= bill.name %>" required>
+                        </div>
+                        <div class="form-group">
                             <label for="company">Empresa</label>
                             <input type="text" class="form-control" id="company" name="company" placeholder="Empresa"
                                 aria-describedby="basic-addon1" value="<%= bill.company %>" required>
                         </div>
                         <br>
                         <div class="form-group">
-                            <label for="dueDay">Dia vencimento</label>
+                            <label for="dueDay">Dia Vencimento</label>
                             <input type="text" class="form-control" id="dueDay" name="dueDay" placeholder="Dia Vencimento"
                                 aria-describedby="basic-addon1" value="<%= bill.dueDay %>" required>
                         </div>
                         <br>
                         <div class="form-group">
-                            <label for="valueSourceType">Tipo FonteValor</label>
+                            <label for="valueSourceType">Fonte de Dados</label>
                             <select name='valueSourceType' class="form-control" id="valueSourceType">
                                 <% var keys = Object.keys(valueSourceTypeEnum); keys.forEach(function(vst){ %>
                                     <option <% if (vst == bill.valueSourceType) {%>selected="selected"<% } %> value="<%= vst %>"><%= valueSourceTypeEnum[vst] %></option>

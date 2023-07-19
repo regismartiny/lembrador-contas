@@ -14,6 +14,7 @@
                                 <th>Nome</th>
                                 <th>Vencimento</th>
                                 <th>Valor</th>
+                                <th>Situação</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -27,6 +28,9 @@
                                     </td>
                                     <td>
                                         <span class="money"><%= bill.value %></span>
+                                    </td>
+                                    <td>
+                                        <span"><%= activeBillStatusEnum[bill.status] %></span>
                                     </td>
                                 </tr>
                                 <%})%>

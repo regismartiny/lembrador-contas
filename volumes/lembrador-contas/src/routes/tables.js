@@ -9,7 +9,7 @@ const utils = require("../util/utils");
 router.get('/list', function (req, res) {
     db.Table.find({}).lean().exec(
         function (e, tables) {
-            res.render('table/tableList', { template, title: 'Tabelas', tableList: tables });
+            res.render('table/tableList', { template, title: 'Tabelas', tableList: tables, statusEnum: db.StatusEnum });
         });
 });
 
@@ -31,9 +31,8 @@ router.get('/new', function (req, res) {
 router.post('/add', function (req, res) {
     let name = req.body.name;
     let data = parseData(req.body);
-    let status = req.body.status;
 
-    let table = new db.Table({ name, data, status });
+    let table = new db.Table({ name, data });
     table.save(function (err) {
         if (err) {
             handleError(err);

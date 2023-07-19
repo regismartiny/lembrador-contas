@@ -8,13 +8,13 @@ var db = require("../db");
 router.get('/list', function (req, res) {
   db.User.find({}).lean().exec(
     function (e, docs) {
-      res.render('user/userList', { template, title: 'Lista de Usuários', userList: docs });
+      res.render('user/userList', { template, title: 'Usuários', userList: docs,  statusEnum: db.StatusEnum });
     });
 });
 
 /* GET New User page. */
 router.get('/new', function (req, res) {
-  res.render('user/newUser', { template, title: 'Usuários' });
+  res.render('user/newUser', { template, title: 'Cadastro de Usuário' });
 });
 
 /* POST to Add User Service */

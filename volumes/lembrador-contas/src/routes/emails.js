@@ -12,7 +12,7 @@ const cpflEmailParser = require("../util/cpflEmailParser");
 router.get('/list', function (req, res) {
     db.Email.find({}).lean().exec(
         function (e, email) {
-            res.render('email/emailList', { template, title: 'Emails', emailList: email });
+            res.render('email/emailList', { template, title: 'Emails', emailList: email, statusEnum: db.StatusEnum });
         });
 });
 
@@ -36,11 +36,8 @@ router.post('/add', function (req, res) {
     let subject = req.body.subject;
     let dataType = req.body.dataType;
     let valueData = parseData(req.body);
-    let status = req.body.status;
 
-    console.log(req.body);
-
-    let email = new db.Email({ address, subject, dataType, valueData, status });
+    let email = new db.Email({ address, subject, dataType, valueData });
     email.save(function (err) {
         if (err) {
             handleError(err);

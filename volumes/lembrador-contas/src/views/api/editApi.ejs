@@ -27,8 +27,8 @@
                         <div class="form-group">
                             <label for="method">Método</label>
                             <select name='method' class="form-control" id="method">
-                                <% var keys = Object.keys(httpMethodEnum); keys.forEach(function(vst){ %>
-                                    <option <% if (locals.api && vst == api.method) {%>selected="selected"<% } %> value="<%= vst %>"><%= httpMethodEnum[vst] %></option>
+                                <% var keys = Object.keys(httpMethodEnum); keys.forEach(function(v){ %>
+                                    <option <% if (locals.api && v == api.method) {%>selected="selected"<% } %> v="<%= v %>"><%= httpMethodEnum[v] %></option>
                                 <%})%>
                             </select>
                         </div>

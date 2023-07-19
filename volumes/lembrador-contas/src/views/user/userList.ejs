@@ -33,7 +33,7 @@
                                             <%= user.email %>
                                         </td>
                                         <td>
-                                            <%= user.status %>
+                                            <%= statusEnum[user.status] %>
                                         </td>
                                         <td>
                                             <a href='/users/edit/<%= user._id %>'>Editar</a>

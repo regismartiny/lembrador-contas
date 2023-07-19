@@ -29,7 +29,7 @@
                                             <%= email.address %>
                                         </td>
                                         <td>
-                                            <%= email.status %>
+                                            <%= statusEnum[email.status] %>
                                         </td>
                                         <td><a href='/emails/edit/<%= email._id %>'>Editar</a>
                                             <a href='/emails/remove/<%= email._id %>'>Excluir</a>

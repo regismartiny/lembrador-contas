@@ -24,13 +24,13 @@ mongoose.connect(`mongodb://${DB_ADDRESS}:${DB_PORT}`, options).catch((err) => {
 })
 
 const StatusEnum = {
-    ATIVO: 'Ativo',
-    INATIVO: 'Inativo'
+    ACTIVE: 'Ativo',
+    INACTIVE: 'Inativo'
 }
 
 const ActiveBillStatusEnum = {
     UNPAID: 'Não pago',
-    PAGO: 'Pago'
+    PAID: 'Pago'
 }
 
 const HttpMethodEnum = {
@@ -43,7 +43,7 @@ const HttpMethodEnum = {
 var userSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
     email: { type: String, unique: true, required: [true, 'O email é obrigatório'] },
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'usercollection' })
@@ -83,11 +83,12 @@ const ValueSourceTypeEnum = {
 }
 
 var billSchema = new mongoose.Schema({
+    name: { type: String, required: [true, 'O nome é obrigatório'] },
     company: { type: String, required: [true, 'O nome da Empresa é obrigatório'] },
     valueSourceType: { type: String, enum: Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
     dueDay: { type: Number, required: [true, 'O Dia do Vencimento é obrigatório'] },
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'billcollection' })
@@ -132,7 +133,7 @@ var emailSchema = new mongoose.Schema({
     subject: { type: String, unique: true, required: [true, 'O Assunto é obrigatório'] },
     valueData: [{ name: String, value: String }],
     dataType: { type: String, enum: Object.keys(DataTypeEnum), default: 'BODY', required: [true, 'O tipo de dado é obrigatório'] },
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'emailcollection' })
@@ -150,7 +151,7 @@ var Email = mongoose.model('emailcollection', emailSchema, 'emailcollection')
 var tableSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome da Tabela é obrigatório'] },
     data: [{ period: { month: Number, year: Number }, value: Number }],
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'tablecollection' })
@@ -171,7 +172,7 @@ var apiSchema = new mongoose.Schema({
     method: { type: String, enum: Object.keys(HttpMethodEnum), default: 'GET', required: [true, 'O Método é obrigatório'] },
     body: { type: String },
     value: { type: String, required: [true, 'O Valor é obrigatório'] },
-    status: { type: String, enum: Object.keys(StatusEnum), default: 'ATIVO', required: [true, 'A situação é obrigatória'] },
+    status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'apicollection' })
@@ -211,4 +212,4 @@ billReminderSchema.pre('save', function (next) {
 var BillReminder = mongoose.model('billremindercollection', billReminderSchema, 'billremindercollection')
 
 var ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
-module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum }
+module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum }

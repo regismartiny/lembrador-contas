@@ -7,7 +7,7 @@ var db = require("../db");
 router.get('/list', function (req, res) {
     db.API.find({}).lean().exec(
         function (e, apis) {
-            res.render('api/apiList', { template, title: 'APIs', apiList: apis });
+            res.render('api/apiList', { template, title: 'APIs', apiList: apis, statusEnum: db.StatusEnum });
         });
 });
 

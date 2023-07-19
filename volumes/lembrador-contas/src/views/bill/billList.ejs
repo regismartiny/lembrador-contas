@@ -17,8 +17,9 @@
                         <table class="table">
                             <thead>
                                 <tr>
+                                    <th>Nome</th>
                                     <th>Empresa</th>
-                                    <th>Fonte Valor</th>
+                                    <th>Fonte Dados</th>
                                     <th>Dia Vencimento</th>
                                     <th>Situação</th>
                                     <th>Ações</th>
@@ -28,16 +29,19 @@
                                 <% billList.forEach(function(bill){ %>
                                     <tr>
                                         <td>
+                                            <%= bill.name %>
+                                        </td>
+                                        <td>
                                             <%= bill.company %>
                                         </td>
                                         <td>
-                                            <%= bill.valueSourceType %>
+                                            <%= valueSourceTypeEnum[bill.valueSourceType] %>
                                         </td>
                                         <td>
                                             <%= bill.dueDay %>
                                         </td>
                                         <td>
-                                            <%= bill.status %>
+                                            <%= statusEnum[bill.status] %>
                                         </td>
                                         <td>
                                             <a href='/bills/edit/<%= bill._id %>'>Editar</a>
