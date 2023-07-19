@@ -4,35 +4,42 @@
         <%- template.navbar %>
             <div class="container">
                 <div class="starter-template">
-                    <h1 class="title-1">
-                        <%= title %>
-                    </h1>
-                    <br>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Situação</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% apiList.forEach(function(api){ %>
+                    <div class="float-right">
+                        <form class="form-inline my-2 my-lg-0">
+                            <a href='/apis/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
+                        </form>
+                    </div>
+                    <div>
+                        <h1 class="title-1">
+                            <%= title %>
+                        </h1>
+                        <br>
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <%= api.name %>
-                                    </td>
-                                    <td>
-                                        <%= api.status %>
-                                    </td>
-                                    <td>
-                                        <a href='/apis/edit/<%= api._id %>'>Editar</a>
-                                        <a href='/apis/remove/<%= api._id %>'>Excluir</a>
-                                    </td>
+                                    <th>Nome</th>
+                                    <th>Situação</th>
+                                    <th>Ações</th>
                                 </tr>
-                                <%})%>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <% apiList.forEach(function(api){ %>
+                                    <tr>
+                                        <td>
+                                            <%= api.name %>
+                                        </td>
+                                        <td>
+                                            <%= api.status %>
+                                        </td>
+                                        <td>
+                                            <a href='/apis/edit/<%= api._id %>'>Editar</a>
+                                            <a href='/apis/remove/<%= api._id %>'>Excluir</a>
+                                        </td>
+                                    </tr>
+                                    <%})%>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <%- template.scripts %>

@@ -4,36 +4,42 @@
         <%- template.navbar %>
             <div class="container">
                 <div class="starter-template">
-                    <h1 class="title-1">
-                        <%= title %>
-                    </h1>
-                    <br>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Situação</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% tableList.forEach(function(table){ %>
+                    <div class="float-right">
+                        <form class="form-inline my-2 my-lg-0">
+                            <a href='/tables/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
+                        </form>
+                    </div>
+                    <div>
+                        <h1 class="title-1">
+                            <%= title %>
+                        </h1>
+                        <br>
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <%= table.name %>
-                                    </td>
-                                    <td>
-                                        <%= table.status %>
-                                    </td>
-                                    <td>
-                                        <a href='/tables/edit/<%= table._id %>'>Editar</a>
-                                        <a href='/tables/remove/<%= table._id %>'>Excluir</a>
-                                    </td>
+                                    <th>Nome</th>
+                                    <th>Situação</th>
+                                    <th>Ações</th>
                                 </tr>
-                                <%})%>
-                        </tbody>
-                    </table>
-
+                            </thead>
+                            <tbody>
+                                <% tableList.forEach(function(table){ %>
+                                    <tr>
+                                        <td>
+                                            <%= table.name %>
+                                        </td>
+                                        <td>
+                                            <%= table.status %>
+                                        </td>
+                                        <td>
+                                            <a href='/tables/edit/<%= table._id %>'>Editar</a>
+                                            <a href='/tables/remove/<%= table._id %>'>Excluir</a>
+                                        </td>
+                                    </tr>
+                                    <%})%>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <%- template.scripts %>

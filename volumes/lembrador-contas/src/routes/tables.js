@@ -9,7 +9,7 @@ const utils = require("../util/utils");
 router.get('/list', function (req, res) {
     db.Table.find({}).lean().exec(
         function (e, tables) {
-            res.render('table/tableList', { template, title: 'Lista de Tabelas', tableList: tables });
+            res.render('table/tableList', { template, title: 'Tabelas', tableList: tables });
         });
 });
 

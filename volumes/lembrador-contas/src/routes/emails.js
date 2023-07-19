@@ -12,7 +12,7 @@ const cpflEmailParser = require("../util/cpflEmailParser");
 router.get('/list', function (req, res) {
     db.Email.find({}).lean().exec(
         function (e, email) {
-            res.render('email/emailList', { template, title: 'Lista de Emails', emailList: email });
+            res.render('email/emailList', { template, title: 'Emails', emailList: email });
         });
 });
 

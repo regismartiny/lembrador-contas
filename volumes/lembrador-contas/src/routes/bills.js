@@ -7,7 +7,7 @@ var db = require("../db");
 router.get('/list', function (req, res) {
     db.Bill.find({}).lean().exec(
         function (e, bills) {
-            res.render('bill/billList', { template, title: 'Lista de Contas', billList: bills });
+            res.render('bill/billList', { template, title: 'Contas', billList: bills });
         });
 });
 

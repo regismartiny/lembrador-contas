@@ -14,7 +14,7 @@ router.get('/list', function (req, res) {
 
 /* GET New User page. */
 router.get('/new', function (req, res) {
-  res.render('user/newUser', { template, title: 'Cadastro de Usuário' });
+  res.render('user/newUser', { template, title: 'Usuários' });
 });
 
 /* POST to Add User Service */
