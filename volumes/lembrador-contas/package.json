@@ -23,7 +23,7 @@
     "morgan": "^1.10.0",
     "pdf2json": "3.0.4",
     "popper.js": "^1.16.1",
-    "serve-favicon": "~2.4.2",
+    "serve-favicon": "~2.5.0",
     "yarn": "^1.22.18",
     "jsdom": "22.1.0"
   },
