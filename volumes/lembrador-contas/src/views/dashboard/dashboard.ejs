@@ -24,10 +24,10 @@
                                         <%= bill.name %>
                                     </td>
                                     <td>
-                                        <span class="date"><%= bill.dueDate.toLocaleString(); %></span>
+                                        <span class="date" data-mask="00/00/0000"><%= bill.dueDate.toLocaleString(); %></span>
                                     </td>
                                     <td>
-                                        <span class="money"><%= bill.value %></span>
+                                        <span class="money"><%= Number(bill.value).toFixed(2) %></span>
                                     </td>
                                     <td>
                                         <span"><%= activeBillStatusEnum[bill.status] %></span>
@@ -45,8 +45,7 @@
                     });
 
                     function applyMask() {
-                        $(".money").mask("R$ ####,00");
-                        $(".date").mask('00/00/0000');
+                        $('.money').mask('000.000.000.000.000,00', {reverse: true});
                     }
                 </script>
     </body>

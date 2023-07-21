@@ -1,31 +1,42 @@
 var path = require('path');
 var PDFParser = import('pdf2json');
-var fs = require('fs');
 var gmail = require( path.resolve( __dirname, "./gmail.js" ) );
 var base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
 
-async function getMessage(sender, subject) {
-    let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`);
+async function getMessages(sender, subject) {
+    console.log("getMessages()")
+    let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`)
     
-    if (!messages || messages.length == 0) return false;
+    if (!messages || messages.length == 0) return false
 
-    console.log('MENSAGENS ENCONTRADAS');
+    console.log(`Mensagens encontradas: ${messages.length}`)
 
-    //console.log(messages);
+    console.log(messages)
 
-    var id = messages[0].id; //pega id da primeira mensagem
+    let fullMessages = []
 
-    message = await gmail.getMessage(id, null);
+    for (const message of messages) {
+        let fullMessage = await gmail.getMessage(message.id, null)
 
-    if (!message) return;
+        if (!fullMessage) return
 
-    //console.log(message);
-    
-    console.log('MENSAGEM ENCONTRADA');
+        fullMessages.push(fullMessage)
 
-    console.log('messageId: ', message.id);
+        console.log('Mensagem carregada: ', fullMessage.id)
+    }
 
-    return message;
+    console.log(`Mensagens carregadas: ${fullMessages.length}`)
+
+    return fullMessages
+}
+
+async function getLastMessage(sender, subject) {
+    console.log("getLastMessage()")
+    let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`)
+
+    if (!messages || messages.length == 0) return false
+
+    return await gmail.getMessage(messages[0].id, null)
 }
 
 async function getAttachmentFromMessage(message) {
@@ -68,4 +79,4 @@ async function getPDFFromAttachment(attData) {
     return pdfData;
 }
 
-module.exports = { getMessage, getAttachmentFromMessage, getPDFFromAttachment };
+module.exports = { getMessages, getLastMessage, getAttachmentFromMessage, getPDFFromAttachment };

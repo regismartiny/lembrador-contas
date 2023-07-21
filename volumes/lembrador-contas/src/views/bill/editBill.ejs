@@ -59,66 +59,69 @@
                         <br>
                         <div class="form-group-btn">
                             <input type="submit" class="btn btn-primary center-block" value="Salvar" />
+                            <a href="/bills/list" class="btn btn-secondary center-block">Cancelar</a>
                         </div>
                     </form>
                 </div>
             </div>
             <%- template.scripts %>
                 <script>
-                    const EMAIL_REST = '/emails/listJSON';
-                    const TABLE_REST = '/tables/listJSON';
-                    const VALUE_SOURCE_TYPE = '<%= bill.valueSourceType %>';
-                    const DATA_ID = '<%= bill.valueSourceId %>';
+                    $(document).ready(() => {
+                        const EMAIL_REST = '/emails/listJSON';
+                        const TABLE_REST = '/tables/listJSON';
+                        const VALUE_SOURCE_TYPE = '<%= bill.valueSourceType %>';
+                        const DATA_ID = '<%= bill.valueSourceId %>';
 
-                    if (VALUE_SOURCE_TYPE === 'EMAIL') {
-                        getList(EMAIL_REST, loadEmailList);
-                    } else {
-                        getList(TABLE_REST, loadTableList);
-                    }
-
-                    $('#valueSourceType').change(function (value) {
-                        if (value.target.value === 'EMAIL') {
-                            $('#tableGroup').hide();
+                        if (VALUE_SOURCE_TYPE === 'EMAIL') {
                             getList(EMAIL_REST, loadEmailList);
                         } else {
-                            $('#emailGroup').hide();
                             getList(TABLE_REST, loadTableList);
                         }
-                    });
 
-                    function getList(rest, callback) {
-                        $.getJSON(rest, function (result, status) {
-                            callback(result);
+                        $('#valueSourceType').change(function (value) {
+                            if (value.target.value === 'EMAIL') {
+                                $('#tableGroup').hide();
+                                getList(EMAIL_REST, loadEmailList);
+                            } else {
+                                $('#emailGroup').hide();
+                                getList(TABLE_REST, loadTableList);
+                            }
                         });
-                    }
 
-                    function loadEmailList(list) {
-                        var optionsAsString = createSelectOptions(list);
-                        
-                        $('#emailOptions').html(optionsAsString);
-
-                        $('#emailOptions').val(DATA_ID);
-
-                        $('#emailGroup').show();
-                    }
-
-                    function loadTableList(list) {
-                        var optionsAsString = createSelectOptions(list);
-                        
-                        $('#tableOptions').html(optionsAsString);
-
-                        $('#tableOptions').val(DATA_ID);
-
-                        $('#tableGroup').show();
-                    }
-
-                    function createSelectOptions(list) {
-                        var optionsAsString = "";
-                        for (var i = 0; i < list.length; i++) {
-                            optionsAsString += "<option value='" + list[i]._id + "'>" + (list[i].address || list[i].name) + "</option>";
+                        function getList(rest, callback) {
+                            $.getJSON(rest, function (result, status) {
+                                callback(result);
+                            });
                         }
-                        return optionsAsString;
-                    }
+
+                        function loadEmailList(list) {
+                            var optionsAsString = createSelectOptions(list);
+                            
+                            $('#emailOptions').html(optionsAsString);
+
+                            $('#emailOptions').val(DATA_ID);
+
+                            $('#emailGroup').show();
+                        }
+
+                        function loadTableList(list) {
+                            var optionsAsString = createSelectOptions(list);
+                            
+                            $('#tableOptions').html(optionsAsString);
+
+                            $('#tableOptions').val(DATA_ID);
+
+                            $('#tableGroup').show();
+                        }
+
+                        function createSelectOptions(list) {
+                            var optionsAsString = "";
+                            for (var i = 0; i < list.length; i++) {
+                                optionsAsString += "<option value='" + list[i]._id + "'>" + (list[i].address || list[i].name) + "</option>";
+                            }
+                            return optionsAsString;
+                        }
+                })
                 </script>
     </body>
 

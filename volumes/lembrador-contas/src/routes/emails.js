@@ -137,9 +137,7 @@ router.get('/test/:id', async function (req, res) {
             handleError(err);
             return err;
         } 
-        console.log(db.DataTypeEnum[email.dataType])
-        console.log(db.DataTypeEnum.BODY);
-        const message = await emailUtils.getMessage(email.address, email.subject);
+        const message = await emailUtils.getLastMessage(email.address, email.subject);
         
         let values = [];
         if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {

@@ -44,24 +44,29 @@
                                     </select>
                                 </div>
                             <% } %>
-                            <table id="table" class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Nome</th>
-                                        <th>Valor</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
-                            <div>
-                                <a href="javascript:addRow()">Adicionar linha</a>
-                            </div>
+                            <% if (locals.email && dataTypeEnum[locals.email.dataType] == dataTypeEnum.PDF_ATTACHMENT) { %>
+                                <div id="nameValues">
+                                    <table id="table" class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Valor</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                    <div>
+                                        <a href="javascript:addRow()">Adicionar linha</a>
+                                    </div>
+                                </div>
+                            <% } %>
                             <br>
                             <br>
                             <div class="form-group-btn">
                                 <input type="submit" class="btn btn-primary center-block" value="Salvar" />
+                                <a href="/emails/list" class="btn btn-secondary center-block">Cancelar</a>
                             </div>
                     </form>
                 </div>
@@ -70,7 +75,16 @@
             <script>
                 var rowCount = 0;
 
-                <% if (locals.email) { %>
+                $('#dataType').change(function (value) {
+                    if (value.target.value === 'PDF_ATTACHMENT') {
+                        $('#nameValues').show();
+                    } else {
+                        $('#nameValues').hide();
+                        $('#table tr.data-row').remove();
+                    }
+                });
+
+                <% if (locals.email && dataTypeEnum[locals.email.dataType] == dataTypeEnum.PDF_ATTACHMENT) { %>
                     var dataJSON = '<%- JSON.stringify(email.valueData) %>';
                     var data = JSON.parse(dataJSON);
 
@@ -88,9 +102,9 @@
                 }
 
                 function addRow(nameValue, valueValue) {
-                    var table = $('#table tr:last').after('<tr id="row-' + rowCount + '">' + gennameCol(nameValue) + genValueCol(valueValue) + genRemoveAction() + '</tr>');
+                    var table = $('#table tr:last').after('<tr class="data-row" id="row-' + rowCount + '">' + genNameCol(nameValue) + genValueCol(valueValue) + genRemoveAction() + '</tr>');
                     rowCount++;
-                    applyMask();
+                    // applyMask();
                 }
 
                 function removeRow(rowNumber) {
@@ -98,7 +112,7 @@
                     rowCount--;
                 }
 
-                function gennameCol(value) {
+                function genNameCol(value) {
                     return '<td><input type="text" class="form-control" id="name-' + rowCount + '" value="' + (value || '') + '" name="name" placeholder="Nome" aria-describedby="basic-addon1" required></td>';
                 }
 

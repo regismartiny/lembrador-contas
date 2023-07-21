@@ -1,7 +1,9 @@
-var express = require('express')
-var router = express.Router()
-var template = require('./template')
-var db = require("../db")
+const express = require('express')
+const router = express.Router()
+const template = require('./template')
+const db = require("../db")
+const emailUtils = require('../util/emailUtils.js');
+const cpflEmailParser = require("../util/cpflEmailParser");
 
 /* GET Dashboard page. */
 router.get('/', function (req, res) {
@@ -15,6 +17,7 @@ router.get('/', function (req, res) {
         })
 })
 
+/* Process current month bills. */
 router.get('/processBills', async function (req, res) {
     await deleteProcessedActiveBills()
     db.Bill.find({ }).lean().exec(
@@ -23,34 +26,35 @@ router.get('/processBills', async function (req, res) {
                 handleError(err)
                 return err
             }
-            console.log(bills)
+            console.log("bills", bills)
             let billsOfTheMonth = []
 
             let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
-            let tableBills = await findActiveTableBills(billsSourceTable)
-            billsOfTheMonth = billsOfTheMonth.concat(tableBills)
-
             let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
-            let emailBills = await findActiveEmailBills(billsSourceEmail)
-            billsOfTheMonth = billsOfTheMonth.concat(emailBills)
+            
+            const promises = [findActiveTableBills(billsSourceTable),
+                              findActiveEmailBills(billsSourceEmail)]
+            for (const promise of promises) {
+                let result = await promise
+                console.log("result", result)
+                billsOfTheMonth = billsOfTheMonth.concat(result)
+            }
 
-            console.log("ActiveBills found:")
-            console.log(billsOfTheMonth)
-    
-            billsOfTheMonth.forEach(activeBill => {
+            console.log("activeBills", billsOfTheMonth)
+            
+            for (const activeBill of billsOfTheMonth) {
                 activeBill.save(function (err) {
                     if (err) {
-                        handleError(err)
-                        return err;
+                        console.error(`Error saving activeBill '${activeBill.name}'`, err)
                     }
-                    console.log("ActiveBill saved")
                 });
-            })
-        })
+            }
 
-    res.redirect('/dashboard')
+            res.redirect('/dashboard')
+        })
 })
 
+/* Deleted processed bills. */
 router.get('/deleteProcess', function (req, res) {
     deleteProcessedActiveBills()
     res.redirect('/dashboard')
@@ -63,10 +67,11 @@ async function deleteProcessedActiveBills() {
 }
 
 function findActiveTableBills(billsSourceTable) {
-    return new Promise(function (resolve, reject) {
+    console.log("findActiveTableBills started")
+    return new Promise(async function (resolve, reject) {
         let billsOfTheMonth = []
         let currentDate = new Date()
-        billsSourceTable.forEach(async function(bill, idx, array) {
+        for (const bill of billsSourceTable) {
             let table = await db.Table.findById(bill.valueSourceId).lean().exec()
            
             let currentPeriodData = table.data.filter(data => data.period.month == currentDate.getMonth()+1 
@@ -74,36 +79,61 @@ function findActiveTableBills(billsSourceTable) {
 
             if (currentPeriodData) {
                 let name = `${bill.name} - ${bill.company}`
-                let dueDate = new Date(year=currentDate.getFullYear(), monthIndex=currentDate.getMonth(), date=bill.dueDay)
+                let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
                 let value = currentPeriodData.value
                 billsOfTheMonth.push(new db.ActiveBill({name, dueDate, value}))
             }
-            if (idx === array.length - 1){ 
-                resolve(billsOfTheMonth)
-            }
-        });
+        }
+        console.log("findActiveTableBills finished")
+        resolve(billsOfTheMonth)
     })
 }
 
 function findActiveEmailBills(billsSourceEmail) {
-    return new Promise(function (resolve, reject) {
+    console.log("findActiveEmailBills started")
+    return new Promise(async function (resolve, reject) {
         let billsOfTheMonth = []
         let currentDate = new Date()
-        billsSourceEmail.forEach(async function(bill, idx, array) {
+        for (const bill of billsSourceEmail) {
             let email = await db.Email.findById(bill.valueSourceId).lean().exec()
+            console.log("email", email)
+            const message = await emailUtils.getLastMessage(email.address, email.subject);
+            if (!message) {
+                console.log("No email found", email.address)
+                continue
+            }
+
+            let info = {};
+            if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
+                info = null//getEmailPDFAttachmentData(values);
+                if (!info) {
+                    console.log("Failed to get info from PDF attachment", email.address)
+                    continue
+                }
+            } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
+                info = await cpflEmailParser.getInfoFromHTMLEmail(message);
+                if (!info) {
+                    console.log("Failed to get info from email", email.address)
+                    continue
+                }
+            }
+            console.log("info", info);
             
-            let currentPeriodData = { value: 100}
+            let currentPeriodData = { 
+                dueDate: info.vencimento, 
+                value: info.valor 
+            }
+            console.log("currentPeriodData", currentPeriodData)
 
             if (currentPeriodData) {
                 let name = `${bill.name} - ${bill.company}`
-                let dueDate = new Date(year=currentDate.getFullYear(), monthIndex=currentDate.getMonth(), date=bill.dueDay)
+                let dueDate = currentPeriodData.dueDate//new Date(year=currentDate.getFullYear(), monthIndex=currentDate.getMonth(), date=bill.dueDay)
                 let value = currentPeriodData.value
                 billsOfTheMonth.push(new db.ActiveBill({name, dueDate, value}))
             }
-            if (idx === array.length - 1){ 
-                resolve(billsOfTheMonth)
-            }
-        });
+        }
+        console.log("findActiveEmailBills finished")
+        resolve(billsOfTheMonth)
     })
 }
 
