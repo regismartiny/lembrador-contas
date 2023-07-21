@@ -36,7 +36,6 @@ router.get('/processBills', async function (req, res) {
                               findActiveEmailBills(billsSourceEmail)]
             for (const promise of promises) {
                 let result = await promise
-                console.log("result", result)
                 billsOfTheMonth = billsOfTheMonth.concat(result)
             }
 

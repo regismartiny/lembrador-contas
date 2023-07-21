@@ -9,8 +9,8 @@ router.get('/', function (req, res) {
     // res.render('index', { template })
 });
 
-router.get('/auth', function (req, res) {
-    console.log("auth called")
+router.get('/oauthcallback', function (req, res) {
+    console.log("oauthcallback called")
     console.log(req.query.code)
     const authCode = req.query.code
     gmail.authenticate(authCode);
