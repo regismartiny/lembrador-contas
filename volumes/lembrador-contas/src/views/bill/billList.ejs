@@ -3,54 +3,64 @@
     <body>
         <%- template.navbar %>
             <div class="container">
+                <div class="float-right">
+                    <form class="form-inline my-2 my-lg-0">
+                        <a href='/bills/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
+                    </form>
+                </div>
                 <div class="starter-template">
-                    <div class="float-right">
-                        <form class="form-inline my-2 my-lg-0">
-                            <a href='/bills/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
-                        </form>
-                    </div>
                     <div>
                         <h1 class="title-1">
                             <%= title %>
                         </h1>
                         <br>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Empresa</th>
-                                    <th>Fonte Dados</th>
-                                    <th>Dia Vencimento</th>
-                                    <th>Situação</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% billList.forEach(function(bill){ %>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <%= bill.name %>
-                                        </td>
-                                        <td>
-                                            <%= bill.company %>
-                                        </td>
-                                        <td>
-                                            <%= valueSourceTypeEnum[bill.valueSourceType] %>
-                                        </td>
-                                        <td>
-                                            <%= bill.dueDay %>
-                                        </td>
-                                        <td>
-                                            <%= statusEnum[bill.status] %>
-                                        </td>
-                                        <td>
-                                            <a href='/bills/edit/<%= bill._id %>'>Editar</a>
-                                            <a href='/bills/remove/<%= bill._id %>'>Excluir</a>
-                                        </td>
+                                        <th>Nome</th>
+                                        <th>Empresa</th>
+                                        <th>Fonte Dados</th>
+                                        <th>Dia Vencimento</th>
+                                        <th>Situação</th>
+                                        <th>Ações</th>
                                     </tr>
-                                    <%})%>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <% billList.forEach(function(bill){ %>
+                                        <tr>
+                                            <td>
+                                                <%= bill.name %>
+                                            </td>
+                                            <td>
+                                                <%= bill.company %>
+                                            </td>
+                                            <td>
+                                                <%= valueSourceTypeEnum[bill.valueSourceType] %>
+                                            </td>
+                                            <td>
+                                                <%= bill.dueDay %>
+                                            </td>
+                                            <td>
+                                                <%= statusEnum[bill.status] %>
+                                            </td>
+                                            <td>
+                                                <a href='/bills/edit/<%= bill._id %>'>
+                                                    <span class="material-symbols-outlined">
+                                                    edit
+                                                    </span>
+                                                </a>
+                                                <a href='/bills/remove/<%= bill._id %>'>
+                                                    <span class="material-symbols-outlined">
+                                                    delete
+                                                    </span>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <%})%>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

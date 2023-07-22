@@ -3,12 +3,12 @@
     <body>
         <%- template.navbar %>
             <div class="container">
+                <div class="float-right">
+                    <form class="form-inline my-2 my-lg-0">
+                        <a href='/emails/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
+                    </form>
+                </div>
                 <div class="starter-template">
-                    <div class="float-right">
-                        <form class="form-inline my-2 my-lg-0">
-                            <a href='/emails/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
-                        </form>
-                    </div>
                     <div>
                         <h1 class="title-1">
                             <%= title %>
@@ -31,8 +31,17 @@
                                         <td>
                                             <%= statusEnum[email.status] %>
                                         </td>
-                                        <td><a href='/emails/edit/<%= email._id %>'>Editar</a>
-                                            <a href='/emails/remove/<%= email._id %>'>Excluir</a>
+                                        <td>
+                                            <a href='/emails/edit/<%= email._id %>'>
+                                                <span class="material-symbols-outlined">
+                                                edit
+                                                </span>
+                                            </a>
+                                            <a href='/email/remove/<%= email._id %>'>
+                                                <span class="material-symbols-outlined">
+                                                delete
+                                                </span>
+                                            </a>
                                             <a href='/emails/test/<%= email._id %>'>Testar</a>
                                         </td>
                                     </tr>

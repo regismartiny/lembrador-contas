@@ -2,8 +2,7 @@ const express = require('express')
 const router = express.Router()
 const template = require('./template')
 const db = require("../db")
-const emailUtils = require('../util/emailUtils.js');
-const cpflEmailParser = require("../util/cpflEmailParser");
+const cpflEmailParser = require("../parser/cpflEmailParser");
 
 /* GET Dashboard page. */
 router.get('/', function (req, res) {
@@ -20,7 +19,7 @@ router.get('/', function (req, res) {
 /* Process current month bills. */
 router.get('/processBills', async function (req, res) {
     await deleteProcessedActiveBills()
-    db.Bill.find({ }).lean().exec(
+    db.Bill.find().lean().exec(
         async function (err, bills) {
             if (err) {
                 handleError(err)
@@ -59,6 +58,19 @@ router.get('/deleteProcess', function (req, res) {
     res.redirect('/dashboard')
 })
 
+/* Mark bill as PAID. */
+router.get('/paybill/:id', function (req, res) {
+    let billId = req.params.id;
+    let status = 'PAID'
+    db.ActiveBill.findOneAndUpdate({ _id: billId }, { $set: { status } }, { new: true }, function (err, bill) {
+        if (err) {
+            handleError(err)
+            return err
+        }
+        res.redirect('/dashboard')
+    })
+})
+
 /********************************************************************************* */
 
 async function deleteProcessedActiveBills() {
@@ -73,7 +85,7 @@ function findActiveTableBills(billsSourceTable) {
         for (const bill of billsSourceTable) {
             let table = await db.Table.findById(bill.valueSourceId).lean().exec()
            
-            let currentPeriodData = table.data.filter(data => data.period.month == currentDate.getMonth()+1 
+            let currentPeriodData = table.data.filter(data => data.period.month == currentDate.getMonth() 
                 && data.period.year == currentDate.getFullYear())[0]
 
             if (currentPeriodData) {
@@ -95,33 +107,7 @@ function findActiveEmailBills(billsSourceEmail) {
         let currentDate = new Date()
         for (const bill of billsSourceEmail) {
             let email = await db.Email.findById(bill.valueSourceId).lean().exec()
-            console.log("email", email)
-            const message = await emailUtils.getLastMessage(email.address, email.subject);
-            if (!message) {
-                console.log("No email found", email.address)
-                continue
-            }
-
-            let info = {};
-            if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
-                info = null//getEmailPDFAttachmentData(values);
-                if (!info) {
-                    console.log("Failed to get info from PDF attachment", email.address)
-                    continue
-                }
-            } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
-                info = await cpflEmailParser.getInfoFromHTMLEmail(message);
-                if (!info) {
-                    console.log("Failed to get info from email", email.address)
-                    continue
-                }
-            }
-            console.log("info", info);
-            
-            let currentPeriodData = { 
-                dueDate: info.vencimento, 
-                value: info.valor 
-            }
+            const currentPeriodData = await cpflEmailParser.parse(email.address, email.subject)
             console.log("currentPeriodData", currentPeriodData)
 
             if (currentPeriodData) {

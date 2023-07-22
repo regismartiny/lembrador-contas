@@ -1,7 +1,27 @@
 const jsdom = require("jsdom");
-const path = require('path');
-const base64Util = require(path.resolve(__dirname, "./base64Util.js"));
+const base64Util = require("../util/base64Util.js");
 const moment = require('moment');
+const emailUtils = require('../util/emailUtils.js');
+
+async function parse(address, subject) {
+    console.log("address:", address, "subject:", subject)
+    const message = await emailUtils.getLastMessage(address, subject);
+    if (!message) {
+        console.error("No email found", address)
+        return
+    }
+
+    const info = await getInfoFromHTMLEmail(message);
+    if (!info) {
+        return
+    }
+    console.log("info", info);
+    
+    return { 
+        dueDate: info.vencimento, 
+        value: info.valor 
+    }
+}
 
 function getInfoFromHTMLEmail(msg) {
     try {
@@ -30,10 +50,9 @@ function getInfoFromHTMLEmail(msg) {
     }
 }
 
-function querySelectorIncludesText(dom, selector, text){
+function querySelectorIncludesText(dom, selector, text) {
     return Array.from(dom.window.document.querySelectorAll(selector))
         .find(el => el.textContent.includes(text));
-  }
+}
 
-
-module.exports = { getInfoFromHTMLEmail }
+module.exports = { parse }

@@ -6,7 +6,7 @@ const gmail = require('../util/gmail.js');
 const emailUtils = require('../util/emailUtils.js');
 const vm = require('vm');
 const utils = require("../util/utils");
-const cpflEmailParser = require("../util/cpflEmailParser");
+const cpflEmailParser = require("../parser/cpflEmailParser");
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -27,17 +27,16 @@ router.get('/listJSON', function (req, res) {
 
 /* GET New email page. */
 router.get('/new', function (req, res) {
-    res.render('email/editEmail', { template, title: 'Cadastro de Email', statusEnum: db.StatusEnum, dataTypeEnum: db.DataTypeEnum });
+    res.render('email/editEmail', { template, title: 'Cadastro de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum });
 });
 
 /* POST to Add Email */
 router.post('/add', function (req, res) {
     let address = req.body.address;
     let subject = req.body.subject;
-    let dataType = req.body.dataType;
-    let valueData = parseData(req.body);
+    let dataParser = req.body.dataParser;
 
-    let email = new db.Email({ address, subject, dataType, valueData });
+    let email = new db.Email({ address, subject, dataParser });
     email.save(function (err) {
         if (err) {
             handleError(err);
@@ -57,7 +56,7 @@ router.get('/edit/:id', function (req, res) {
             handleError(err);
             return err;
         } 
-        res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataTypeEnum: db.DataTypeEnum, email });
+        res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email });
     });
 });
 
@@ -67,11 +66,10 @@ router.post('/update', function (req, res) {
     let emailId = req.body.id;
     let address = req.body.address;
     let subject = req.body.subject;
-    let dataType = req.body.dataType;
-    let valueData = parseData(req.body);
+    let dataParser = req.body.dataType;
     let status = req.body.status;
 
-    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address,  subject, dataType, valueData, status} }, { new: true }, function (err, email) {
+    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address,  subject, dataParser, status} }, { new: true }, function (err, email) {
         if (err) {
             handleError(err);
             return err;
@@ -161,18 +159,6 @@ async function getEmailPDFAttachmentData(value) {
         obj.value = vm.runInNewContext(str);
         value.push(obj);
     })
-}
-function parseData(body) {
-    let newData = [];
-    body.name = utils.toArray(body.name);
-    body.value = utils.toArray(body.value);
-    let length = body.name.length;
-    for(let i=0; i < length; i++) {
-        let name = body.name[i];
-        let value = body.value[i];
-        newData.push({name, value});
-    }
-    return newData;
 }
 
 function handleError(error) {

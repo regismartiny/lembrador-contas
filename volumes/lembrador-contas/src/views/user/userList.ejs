@@ -3,12 +3,12 @@
     <body>
         <%- template.navbar %>
             <div class="container">
+                <div class="float-right">
+                    <form class="form-inline my-2 my-lg-0">
+                        <a href='/users/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
+                    </form>
+                </div>
                 <div class="starter-template">
-                    <div class="float-right">
-                        <form class="form-inline my-2 my-lg-0">
-                            <a href='/users/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
-                        </form>
-                    </div>
                     <div>
                         <h1 class="title-1">
                             <%= title %>
@@ -36,8 +36,16 @@
                                             <%= statusEnum[user.status] %>
                                         </td>
                                         <td>
-                                            <a href='/users/edit/<%= user._id %>'>Editar</a>
-                                            <a href='/users/remove/<%= user._id %>'>Excluir</a>
+                                            <a href='/users/edit/<%= user._id %>'>
+                                                <span class="material-symbols-outlined">
+                                                edit
+                                                </span>
+                                            </a>
+                                            <a href='/users/remove/<%= user._id %>'>
+                                                <span class="material-symbols-outlined">
+                                                delete
+                                                </span>
+                                            </a>
                                         </td>
                                     </tr>
                                     <%})%>

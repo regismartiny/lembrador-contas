@@ -128,11 +128,15 @@ const DataTypeEnum = {
     PDF_ATTACHMENT: 'Anexo PDF'
 }
 
+const DataParserEnum = {
+    CPFL_EMAIL: 'cpflEmailParser',
+    CORSAN_EMAIL: 'corsanEmailParser'
+}
+
 var emailSchema = new mongoose.Schema({
     address: { type: String, unique: true, required: [true, 'O Endereço é obrigatório'] },
     subject: { type: String, unique: true, required: [true, 'O Assunto é obrigatório'] },
-    valueData: [{ name: String, value: String }],
-    dataType: { type: String, enum: Object.keys(DataTypeEnum), default: 'BODY', required: [true, 'O tipo de dado é obrigatório'] },
+    dataParser: { type: String, enum: Object.keys(DataParserEnum), default: 'CPFL_EMAIL', required: [true, 'O parser de dados é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
@@ -211,5 +215,4 @@ billReminderSchema.pre('save', function (next) {
 
 var BillReminder = mongoose.model('billremindercollection', billReminderSchema, 'billremindercollection')
 
-var ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
-module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum }
+module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum }

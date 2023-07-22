@@ -23,13 +23,13 @@
                                     { %>value="<%= email.subject %>"<% } %>>
                             </div>
                             <div class="form-group">
-                                <label for="dataType">Tipo Dado</label>
-                                <select name='dataType' class="form-control" id="dataType">
-                                    <% var keys = Object.keys(dataTypeEnum); keys.forEach(function(vst){ %>
+                                <label for="dataParser">Parser dados</label>
+                                <select name='dataParser' class="form-control" id="dataParser">
+                                    <% var keys = Object.keys(dataParserEnum); keys.forEach(function(vst){ %>
                                         <% if (locals.email) {%>
-                                            <option <% if (vst == email.dataType) {%>selected="selected"<% } %> value="<%= vst %>"><%= dataTypeEnum[vst] %></option>
+                                            <option <% if (vst == email.dataParser) {%>selected="selected"<% } %> value="<%= vst %>"><%= dataParserEnum[vst] %></option>
                                         <% } else { %>
-                                            <option value=<%= vst %>><%= dataTypeEnum[vst] %></option>
+                                            <option value=<%= vst %>><%= dataParserEnum[vst] %></option>
                                         <%}%>
                                     <%})%>
                                 </select>
@@ -44,24 +44,6 @@
                                     </select>
                                 </div>
                             <% } %>
-                            <% if (locals.email && dataTypeEnum[locals.email.dataType] == dataTypeEnum.PDF_ATTACHMENT) { %>
-                                <div id="nameValues">
-                                    <table id="table" class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Valor</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        </tbody>
-                                    </table>
-                                    <div>
-                                        <a href="javascript:addRow()">Adicionar linha</a>
-                                    </div>
-                                </div>
-                            <% } %>
                             <br>
                             <br>
                             <div class="form-group-btn">
@@ -73,56 +55,6 @@
             </div>
             <%- template.scripts %>
             <script>
-                var rowCount = 0;
-
-                $('#dataType').change(function (value) {
-                    if (value.target.value === 'PDF_ATTACHMENT') {
-                        $('#nameValues').show();
-                    } else {
-                        $('#nameValues').hide();
-                        $('#table tr.data-row').remove();
-                    }
-                });
-
-                <% if (locals.email && dataTypeEnum[locals.email.dataType] == dataTypeEnum.PDF_ATTACHMENT) { %>
-                    var dataJSON = '<%- JSON.stringify(email.valueData) %>';
-                    var data = JSON.parse(dataJSON);
-
-                    for (line of data) {
-                        createRow(line.name, line.value);
-                    }
-                <% } %>
-
-                function createRow(name, value) {
-                    addRow(name, value);
-                }
-
-                function n(n) {
-                    return n > 9 ? "" + n : "0" + n;
-                }
-
-                function addRow(nameValue, valueValue) {
-                    var table = $('#table tr:last').after('<tr class="data-row" id="row-' + rowCount + '">' + genNameCol(nameValue) + genValueCol(valueValue) + genRemoveAction() + '</tr>');
-                    rowCount++;
-                    // applyMask();
-                }
-
-                function removeRow(rowNumber) {
-                    $('#row-' + rowNumber).remove();
-                    rowCount--;
-                }
-
-                function genNameCol(value) {
-                    return '<td><input type="text" class="form-control" id="name-' + rowCount + '" value="' + (value || '') + '" name="name" placeholder="Nome" aria-describedby="basic-addon1" required></td>';
-                }
-
-                function genValueCol(value) {
-                    return '<td><input type="text" class="form-control" id="value-' + rowCount + '" value="' + (value || '') + '" name="value" placeholder="Valor" aria-describedby="basic-addon1" required></td>';
-                }
-
-                function genRemoveAction() {
-                    return '<td><a href="javascript:removeRow(' + rowCount + ')">Remover</a></td>';
-                }
             </script>
     </body>
 

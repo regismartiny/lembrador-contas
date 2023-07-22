@@ -3,45 +3,56 @@
     <body>
         <%- template.navbar %>
             <div class="container">
+                <div class="float-right small">Último processamento:
+                    <span data-mask="00/00/0000 00:00:00"><%= activeBillList[0].updated_at.toLocaleString() %></span>
+                </div>
                 <div class="starter-template">
                     <h1 class="title-1">
                         <%= title %>
                     </h1>
                     <br>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Vencimento</th>
-                                <th>Valor</th>
-                                <th>Situação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% activeBillList.forEach(function(bill){ %>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <%= bill.name %>
-                                    </td>
-                                    <td>
-                                        <span class="date" data-mask="00/00/0000"><%= bill.dueDate.toLocaleString(); %></span>
-                                    </td>
-                                    <td>
-                                        <span class="money"><%= Number(bill.value).toFixed(2) %></span>
-                                    </td>
-                                    <td>
-                                        <span"><%= activeBillStatusEnum[bill.status] %></span>
-                                    </td>
+                                    <th>Nome</th>
+                                    <th>Vencimento</th>
+                                    <th>Valor</th>
+                                    <th>Situação</th>
                                 </tr>
+                            </thead>
+                            <tbody>
+                                <% activeBillList.forEach(function(bill){ %>
+                                    <tr>
+                                        <td>
+                                            <%= bill.name %>
+                                        </td>
+                                        <td>
+                                            <span class="date" data-mask="00/00/0000"><%= bill.dueDate.toLocaleString() %></span>
+                                        </td>
+                                        <td>
+                                            <span class="money"><%= Number(bill.value).toFixed(2) %></span>
+                                        </td>
+                                        <td>
+                                            <span"><%= activeBillStatusEnum[bill.status] %></span>
+                                        </td>
+                                        <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.UNPAID){ %>
+                                        <td>
+                                            <a href="dashboard/paybill/<%= bill._id %>" data-toggle="tooltip" title="Marcar como pago" class="btn material-symbols-outlined">done</a>
+                                        </td>
+                                        <%}%>
+                                    </tr>
                                 <%})%>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <%- template.scripts %>
                 <script>
-                    $( document ).ready(function() {
+                    $(document).ready(function() {
                         applyMask();
+                        $('[data-toggle="tooltip"]').tooltip();
                     });
 
                     function applyMask() {
