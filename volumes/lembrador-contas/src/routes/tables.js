@@ -9,7 +9,8 @@ const utils = require("../util/utils");
 router.get('/list', function (req, res) {
     db.Table.find({}).lean().exec(
         function (e, tables) {
-            res.render('table/tableList', { template, title: 'Tabelas', tableList: tables, statusEnum: db.StatusEnum });
+            const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
+            res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum });
         });
 });
 

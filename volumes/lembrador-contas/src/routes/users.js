@@ -7,8 +7,9 @@ var db = require("../db");
 /* GET UserList page. */
 router.get('/list', function (req, res) {
   db.User.find({}).lean().exec(
-    function (e, docs) {
-      res.render('user/userList', { template, title: 'Usuários', userList: docs,  statusEnum: db.StatusEnum });
+    function (e, users) {
+      const userList = users.sort((a,b)=>a.name.localeCompare(b.name))
+      res.render('user/userList', { template, title: 'Usuários', userList,  statusEnum: db.StatusEnum });
     });
 });
 

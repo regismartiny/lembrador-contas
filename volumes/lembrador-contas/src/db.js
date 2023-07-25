@@ -28,11 +28,6 @@ const StatusEnum = {
     INACTIVE: 'Inativo'
 }
 
-const ActiveBillStatusEnum = {
-    UNPAID: 'Não pago',
-    PAID: 'Pago'
-}
-
 const HttpMethodEnum = {
     GET: 'GET',
     POST: 'POST',
@@ -103,10 +98,16 @@ billSchema.pre('save', function (next) {
 
 var Bill = mongoose.model('billcollection', billSchema, 'billcollection')
 
+const ActiveBillStatusEnum = {
+    UNPAID: 'Não pago',
+    PAID: 'Pago',
+    ERROR: 'Erro'
+}
+
 var activeBillSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome é obrigatório'] },
-    dueDate: { type: Date, required: [true, 'A Data do Vencimento é obrigatória'] },
-    value: { type: Number, required: [true, 'O Valor é obrigatório'] },
+    dueDate: { type: Date },
+    value: { type: Number },
     status: { type: String, enum: Object.keys(ActiveBillStatusEnum), default: 'UNPAID', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }

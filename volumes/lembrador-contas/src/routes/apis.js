@@ -7,7 +7,8 @@ var db = require("../db");
 router.get('/list', function (req, res) {
     db.API.find({}).lean().exec(
         function (e, apis) {
-            res.render('api/apiList', { template, title: 'APIs', apiList: apis, statusEnum: db.StatusEnum });
+            const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
+            res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
         });
 });
 

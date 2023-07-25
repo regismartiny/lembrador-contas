@@ -3,7 +3,7 @@ const base64Util = require("../util/base64Util.js");
 const moment = require('moment');
 const emailUtils = require('../util/emailUtils.js');
 
-async function parse(address, subject) {
+async function fetch(address, subject) {
     console.log("address:", address, "subject:", subject)
     const message = await emailUtils.getLastMessage(address, subject);
     if (!message) {
@@ -11,7 +11,7 @@ async function parse(address, subject) {
         return
     }
 
-    const info = await getInfoFromHTMLEmail(message);
+    const info = await parse(message);
     if (!info) {
         return
     }
@@ -23,7 +23,7 @@ async function parse(address, subject) {
     }
 }
 
-function getInfoFromHTMLEmail(msg) {
+function parse(msg) {
     try {
         console.log("getInfoFromHTMLEmail()")
         let data = msg.payload.body.data;
@@ -55,4 +55,4 @@ function querySelectorIncludesText(dom, selector, text) {
         .find(el => el.textContent.includes(text));
 }
 
-module.exports = { parse }
+module.exports = { fetch }

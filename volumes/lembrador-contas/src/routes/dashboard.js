@@ -12,7 +12,11 @@ router.get('/', function (req, res) {
                 handleError(err)
                 return err
             }
-            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillList: bills, activeBillStatusEnum: db.ActiveBillStatusEnum })
+            const lastUpdate = bills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0].updated_at;
+            const totalValue = bills.map(bill => bill.value).reduce(getSum, 0)
+            let billList = bills.sort((a,b)=>a.name.localeCompare(b.name))
+            const activeBillData = { billList, totalValue, lastUpdate }
+            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum })
         })
 })
 
@@ -73,6 +77,10 @@ router.get('/paybill/:id', function (req, res) {
 
 /********************************************************************************* */
 
+function getSum(total, num) {
+    return total + (isNaN(num) ? 0 : num);
+}
+
 async function deleteProcessedActiveBills() {
     await db.ActiveBill.deleteMany({}).lean().exec()
 }
@@ -85,11 +93,12 @@ function findActiveTableBills(billsSourceTable) {
         for (const bill of billsSourceTable) {
             let table = await db.Table.findById(bill.valueSourceId).lean().exec()
            
-            let currentPeriodData = table.data.filter(data => data.period.month == currentDate.getMonth() 
-                && data.period.year == currentDate.getFullYear())[0]
+            let currentPeriodData = table.data.filter(
+                data => data.period.month == currentDate.getMonth()+1 
+                        && data.period.year == currentDate.getFullYear())[0]
 
             if (currentPeriodData) {
-                let name = `${bill.name} - ${bill.company}`
+                let name = bill.name
                 let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
                 let value = currentPeriodData.value
                 billsOfTheMonth.push(new db.ActiveBill({name, dueDate, value}))
@@ -107,19 +116,30 @@ function findActiveEmailBills(billsSourceEmail) {
         let currentDate = new Date()
         for (const bill of billsSourceEmail) {
             let email = await db.Email.findById(bill.valueSourceId).lean().exec()
-            const currentPeriodData = await cpflEmailParser.parse(email.address, email.subject)
-            console.log("currentPeriodData", currentPeriodData)
 
-            if (currentPeriodData) {
-                let name = `${bill.name} - ${bill.company}`
-                let dueDate = currentPeriodData.dueDate//new Date(year=currentDate.getFullYear(), monthIndex=currentDate.getMonth(), date=bill.dueDay)
-                let value = currentPeriodData.value
-                billsOfTheMonth.push(new db.ActiveBill({name, dueDate, value}))
-            }
+            const parsedData = await parseEmailData(email)
+
+            let name = bill.name
+            let dueDate = parsedData?.dueDate
+            let value = parsedData?.value
+            let status = dueDate && value ? 'UNPAID' : 'ERROR'
+            billsOfTheMonth.push(new db.ActiveBill({name, dueDate, value, status}))
         }
         console.log("findActiveEmailBills finished")
         resolve(billsOfTheMonth)
     })
+}
+
+async function parseEmailData(email) {
+    try {
+        const parser = require(`../parser/${db.DataParserEnum[email.dataParser]}`);
+        let parsedData = await parser.fetch(email.address, email.subject)
+        console.log("parsedData", parsedData)
+        return parsedData
+    } catch(error) {
+        console.error("Error parsing data", error)
+        return {}
+    }
 }
 
 function handleError(error) {

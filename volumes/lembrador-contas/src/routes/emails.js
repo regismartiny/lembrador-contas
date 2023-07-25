@@ -11,8 +11,9 @@ const cpflEmailParser = require("../parser/cpflEmailParser");
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
     db.Email.find({}).lean().exec(
-        function (e, email) {
-            res.render('email/emailList', { template, title: 'Emails', emailList: email, statusEnum: db.StatusEnum });
+        function (e, emails) {
+            const emailList = emails.sort((a,b)=>a.address.localeCompare(b.address))
+            res.render('email/emailList', { template, title: 'Emails', emailList, statusEnum: db.StatusEnum });
         });
 });
 
@@ -66,7 +67,7 @@ router.post('/update', function (req, res) {
     let emailId = req.body.id;
     let address = req.body.address;
     let subject = req.body.subject;
-    let dataParser = req.body.dataType;
+    let dataParser = req.body.dataParser;
     let status = req.body.status;
 
     db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address,  subject, dataParser, status} }, { new: true }, function (err, email) {

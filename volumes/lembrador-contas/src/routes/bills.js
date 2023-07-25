@@ -7,7 +7,8 @@ var db = require("../db");
 router.get('/list', function (req, res) {
     db.Bill.find({}).lean().exec(
         function (e, bills) {
-            res.render('bill/billList', { template, title: 'Contas', billList: bills, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum });
+            const billList = bills.sort((a,b)=>a.name.localeCompare(b.name))
+            res.render('bill/billList', { template, title: 'Contas', billList, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum });
         });
 });
 
