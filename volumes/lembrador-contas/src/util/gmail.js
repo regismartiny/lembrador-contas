@@ -1,12 +1,12 @@
 var {google} = require('googleapis');
 const googleAuth = require('./googleAuth')
 
-function listMessages(auth) {
+function listMessages(auth, query) {
     return new Promise(function (resolve, reject) {
 
-        console.log('query', _query);
+        console.log('query', query);
         const gmail = google.gmail({version: 'v1', auth});
-        gmail.users.messages.list(_query, function (err, res) {
+        gmail.users.messages.list(query, function (err, res) {
             if (err) {
                 let msg = 'The API returned an error: ' + err;
                 console.log(msg);
@@ -22,10 +22,10 @@ function listMessages(auth) {
     });
 }
 
-function getMessage(auth) {
+function getMessage(auth, query) {
     return new Promise(function (resolve, reject) {
         const gmail = google.gmail({version: 'v1', auth});
-        gmail.users.messages.get(_query, function (err, res) {
+        gmail.users.messages.get(query, function (err, res) {
             if (err) {
                 let msg = 'The API returned an error: ' + err;
                 console.log(msg);
@@ -42,17 +42,8 @@ function getMessage(auth) {
     });
 }
 
-/**
- * Get Attachments from a given Message.
- *
- * @param  {String} userId User's email address. The special value 'me'
- * can be used to indicate the authenticated user.
- * @param  {String} messageId ID of Message with attachments.
- * @param  {Function} callback Function to call when the request is complete.
- */
-function getAttachmentsSync(auth) {
+function getAttachmentsSync(auth, query, message) {
     return new Promise(function (resolve, reject) {
-        var message = _message;
         const gmail = google.gmail({version: 'v1', auth});
         var parts = message.payload.parts;
         var attachments = [];
@@ -68,7 +59,7 @@ function getAttachmentsSync(auth) {
                 var request = gmail.users.messages.attachments.get({
                     'id': attachId,
                     'messageId': message.id,
-                    'userId': _query.userId,
+                    'userId': query.userId,
                     'auth': auth
                 }, function (err, res) {
                     if (err) {
@@ -87,59 +78,66 @@ function getAttachmentsSync(auth) {
     });
 }
 
-
-
-
-var _query = {
-    userId: 'me'
-}
-
 module.exports = {
     listUnreadMessages: async function () {
         try {
-            _query.q = 'is:unread';
+            var query = {
+                userId: 'me',
+                q: 'is:unread'
+            }
             let auth = await googleAuth.authenticate();
-            return await listMessages(auth);
+            return await listMessages(auth, query);
         } catch(e) {
             console.log(e);
         }
     },
     getMessage: async function (id, headers) {
         try {
-            _query.id = id;
+            var query = {
+                userId: 'me',
+                id
+            }
             if (headers) {
-                _query.format = 'metadata';
-                _query.metadataHeaders = headers;
+                query.format = 'metadata';
+                query.metadataHeaders = headers;
             }
             let auth = await googleAuth.authenticate();
-            return await getMessage(auth);
+            return await getMessage(auth, query);
         } catch(e) {
             console.log(e);
         }
     },
     findMessages: async function (q) {
         try {
-            _query.q = q;
+            var query = {
+                userId: 'me',
+                q
+            }
             let auth = await googleAuth.authenticate(); 
-            return await listMessages(auth);
+            return await listMessages(auth, query);
         } catch(e) {
             console.log(e);
         }
     },
     listMessagesFrom: async function (sender) {
         try {
-            _query.q = 'from:' + sender;
+            var query = {
+                userId: 'me',
+                q: 'from:' + sender
+            }
             let auth = await googleAuth.authenticate();
-            return await listMessages(auth);
+            return await listMessages(auth, query);
         } catch(e) {
             console.log(e);
         }
     },
     getAttachments: async function (message) {
         try {
-            _message = message;
+            var query = {
+                userId: 'me'
+            }
             let auth = await googleAuth.authenticate();
-            return await getAttachmentsSync(auth);
+            return await getAttachmentsSync(auth, query, message);
         } catch(e) {
             console.log(e);
         }

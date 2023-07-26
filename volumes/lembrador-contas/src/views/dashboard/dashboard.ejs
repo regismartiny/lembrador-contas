@@ -4,53 +4,55 @@
         <%- template.navbar %>
             <div class="container">
                 <div class="float-right small">Último processamento:
-                    <span data-mask="00/00/0000 00:00:00"><%= activeBillData.lastUpdate.toLocaleString() %></span>
+                    <span data-mask="00/00/0000 00:00:00"><%= lastUpdate?.toLocaleString() %></span>
                 </div>
                 <div class="starter-template">
                     <h1 class="title-1">
                         <%= title %>
                     </h1>
                     <br>
-                    <br>
-                    <h2>Julho/2023</h2>
-                    <div class="float-right">Total:
-                        <span class="money font-weight-bold"><%= Number(activeBillData.totalValue).toFixed(2) %></span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Vencimento</th>
-                                    <th>Valor</th>
-                                    <th>Situação</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% activeBillData.billList.forEach(function(bill){ %>
+                    <% activeBillData.forEach(function(data){ %>
+                        <br>
+                        <h2><%= data.month %></h2>
+                        <div class="float-right">Total:
+                            <span class="money font-weight-bold"><%= Number(data.totalValue).toFixed(2) %></span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <%= bill.name %>
-                                        </td>
-                                        <td>
-                                            <span class="date" data-mask="00/00/0000"><%= bill.dueDate ? bill.dueDate.toLocaleString() : '' %></span>
-                                        </td>
-                                        <td>
-                                            <span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span>
-                                        </td>
-                                        <td>
-                                            <span"><%= activeBillStatusEnum[bill.status] %></span>
-                                        </td>
-                                        <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.UNPAID){ %>
-                                        <td>
-                                            <a href="dashboard/paybill/<%= bill._id %>" data-toggle="tooltip" title="Marcar como pago" class="btn material-symbols-outlined">done</a>
-                                        </td>
-                                        <%}%>
+                                        <th>Nome</th>
+                                        <th>Vencimento</th>
+                                        <th>Valor</th>
+                                        <th>Situação</th>
                                     </tr>
-                                <%})%>
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    <% data.billList?.forEach(function(bill){ %>
+                                        <tr>
+                                            <td>
+                                                <%= bill.name %>
+                                            </td>
+                                            <td>
+                                                <span class="date" data-mask="00/00/0000"><%= bill.dueDate ? bill.dueDate.toLocaleString() : '' %></span>
+                                            </td>
+                                            <td>
+                                                <span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span>
+                                            </td>
+                                            <td>
+                                                <span"><%= activeBillStatusEnum[bill.status] %></span>
+                                            </td>
+                                            <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.UNPAID){ %>
+                                            <td>
+                                                <a href="dashboard/paybill/<%= bill._id %>" data-toggle="tooltip" title="Marcar como pago" class="btn material-symbols-outlined">done</a>
+                                            </td>
+                                            <%}%>
+                                        </tr>
+                                    <%})%>
+                                </tbody>
+                            </table>
+                        </div>
+                    <%})%>
                 </div>
             </div>
             <%- template.scripts %>

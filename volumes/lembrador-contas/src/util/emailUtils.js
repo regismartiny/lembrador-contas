@@ -1,7 +1,38 @@
-var path = require('path');
-var PDFParser = import('pdf2json');
-var gmail = require( path.resolve( __dirname, "./gmail.js" ) );
-var base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
+const path = require('path');
+const PDFParser = import('pdf2json');
+const gmail = require( path.resolve( __dirname, "./gmail.js" ) );
+const base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
+const moment = require('moment');
+
+async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
+    console.log("getMessagesByDateInterval()")
+    startDate = moment(startDate).format('YYYY/MM/DD')
+    endDate = moment(endDate).format('YYYY/MM/DD')
+    let query = `from:${sender} subject:"${subject}" after:${startDate} before:${endDate}`
+    let messages = await gmail.findMessages(query)
+    
+    if (!messages || messages.length == 0) return false
+
+    console.log(`Mensagens encontradas: ${messages.length}`)
+
+    console.log(messages)
+
+    let fullMessages = []
+
+    for (const message of messages) {
+        let fullMessage = await gmail.getMessage(message.id, null)
+
+        if (!fullMessage) return
+
+        fullMessages.push(fullMessage)
+
+        console.log('Mensagem carregada: ', fullMessage.id)
+    }
+
+    console.log(`Mensagens carregadas: ${fullMessages.length}`)
+
+    return fullMessages
+}
 
 async function getMessages(sender, subject) {
     console.log("getMessages()")
@@ -79,4 +110,4 @@ async function getPDFFromAttachment(attData) {
     return pdfData;
 }
 
-module.exports = { getMessages, getLastMessage, getAttachmentFromMessage, getPDFFromAttachment };
+module.exports = { getMessagesByDateInterval, getMessages, getLastMessage, getAttachmentFromMessage, getPDFFromAttachment };

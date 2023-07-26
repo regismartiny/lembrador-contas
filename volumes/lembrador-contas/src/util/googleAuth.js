@@ -97,9 +97,8 @@ function getNewToken(oAuth2Client) {
             }
         }).listen(3000, () => {
             console.log(authorizeUrl)
-            //TODO: Reativar. Antivirus está bloqueando
             // open the browser to the authorize url to start the workflow
-            // open(authorizeUrl, {wait: false}).then(cp => cp.unref());
+            open(authorizeUrl, {wait: false}).then(cp => cp.unref());
         });
         destroyer(server);
     })

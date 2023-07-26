@@ -37,33 +37,35 @@ async function fetch(address, subject, period) {
 function parse(msg) {
     try {
         console.log("parse()")
-        let data = msg.payload.body.data;
+        let data = msg.snippet;
         if (!data) return
         
-        let base64str = base64Util.fixBase64(data);
-        var text = base64Util.base64ToText(base64str);
-        const dom = new jsdom.JSDOM(text);
-        const elemValor = querySelectorIncludesText(dom, 'b', 'R$')
-        const elemMesReferencia = elemValor.previousElementSibling.previousElementSibling
-        const elemVencimento = elemMesReferencia.previousElementSibling.previousElementSibling
-        const elemInstalacao = elemVencimento.previousElementSibling.previousElementSibling
-        const valor = elemValor.innerHTML
-        const mesReferencia = elemMesReferencia.innerHTML
-        const vencimento = elemVencimento.innerHTML
-        const instalacao = elemInstalacao.innerHTML
-        return { instalacao, 
+        const strCodImovel = "Código do Imóvel: "
+        const posCodImovel = data.search(strCodImovel)
+        const codImovelLength = 11
+        const codImovelInicio = posCodImovel+strCodImovel.length
+        const codImovel = data.substring(codImovelInicio, codImovelInicio+codImovelLength)
+        
+        const strVencimento = "Vencimento: "
+        const posVencimento = data.search(strVencimento)
+        const vencimentoLength = 10
+        const vencimentoInicio = posVencimento+strVencimento.length
+        const vencimento = data.substring(vencimentoInicio, vencimentoInicio+vencimentoLength)
+
+        const strValor = "Valor: "
+        const posValor = data.search(strValor)
+        const valorLength = 5
+        const valorInicio = posValor+strValor.length
+        const valor = data.substring(valorInicio, valorInicio+valorLength)
+
+        return { 
             vencimento : moment(vencimento, "DD/MM/YYYY").toDate(), 
-            mesReferencia, 
-            valor : Number.parseFloat(valor.replace(",",".").substring(3, valor.length-1)) 
+            codImovel, 
+            valor : Number.parseFloat(valor.replace(",",".")) 
         }
     } catch(e) {
-        console.error("Failed to get info from HTML email", e);
+        console.error("Failed to get info from email", e);
     }
-}
-
-function querySelectorIncludesText(dom, selector, text) {
-    return Array.from(dom.window.document.querySelectorAll(selector))
-        .find(el => el.textContent.includes(text));
 }
 
 module.exports = { fetch }
