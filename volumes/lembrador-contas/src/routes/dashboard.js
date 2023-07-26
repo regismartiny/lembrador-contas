@@ -25,7 +25,7 @@ router.get('/', function (req, res) {
             activeBillMonths.push(nextMonthBills)
 
             let activeBillData = []
-            const lastUpdate = new Date()//activeBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0].updated_at;
+            const lastUpdate = activeBillMonths.flat().sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0].updated_at;
             for (let activeBills of activeBillMonths) {
                 if (activeBills.length == 0) continue
                 let firstBill = activeBills[0]
@@ -49,7 +49,6 @@ router.get('/processBills', async function (req, res) {
                 return err
             }
             console.log("bills", bills)
-            let activeBills = []
 
             let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
             let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
@@ -57,10 +56,7 @@ router.get('/processBills', async function (req, res) {
             const periods = getPeriods()
             const promises = [findActiveTableBills(billsSourceTable, periods),
                               findActiveEmailBills(billsSourceEmail, periods)]
-            for (const promise of promises) {
-                let result = await promise
-                activeBills = activeBills.concat(result)
-            }
+            const activeBills = await runParallel(promises)
 
             console.log("activeBills", activeBills)
             
@@ -116,24 +112,15 @@ function getPeriods() {
 
 function findActiveTableBills(billsSourceTable, periods) {
     console.log("findActiveTableBills started")
-    return new Promise(async function (resolve, reject) {
-        let bills = []
-        const promises = []
-        
-        for (const period of periods) {
-            for (const bill of billsSourceTable) {
-                promises.push(findTableBills(bill, period))
-            }
+    const promises = []
+    for (const period of periods) {
+        for (const bill of billsSourceTable) {
+            promises.push(findTableBills(bill, period))
         }
-
-        for (const promise of promises) {
-            let result = await promise
-            bills = bills.concat(result)
-        }
-
-        console.log("findActiveTableBills finished")
-        resolve(bills)
-    })
+    }
+    const bills = runParallel(promises)
+    console.log("findActiveTableBills finished")
+    return bills
 }
 
 async function findTableBills(bill, period) {
@@ -154,26 +141,17 @@ async function findTableBills(bill, period) {
     return bills;
 }
 
-function findActiveEmailBills(billsSourceEmail, periods) {
+async function findActiveEmailBills(billsSourceEmail, periods) {
     console.log("findActiveEmailBills started")
-    return new Promise(async function (resolve, reject) {
-        let bills = []
-        const promises = []
-        
-        for (const period of periods) {
-            for (const bill of billsSourceEmail) {
-                promises.push(findEmailBills(bill, period))
-            }
+    const promises = []
+    for (const period of periods) {
+        for (const bill of billsSourceEmail) {
+            promises.push(findEmailBills(bill, period))
         }
-
-        for (const promise of promises) {
-            let result = await promise
-            bills = bills.concat(result)
-        }
-
-        console.log("findActiveEmailBills finished")
-        resolve(bills)
-    })
+    }
+    const bills = await runParallel(promises)
+    console.log("findActiveEmailBills finished")
+    return bills
 }
 
 async function findEmailBills(bill, period) {
@@ -202,6 +180,15 @@ async function parseEmailData(email, period) {
         console.error("Error parsing data", error)
         return []
     }
+}
+
+async function runParallel(promises) {
+    let results = []
+    for (const promise of promises) {
+        let result = await promise
+        results = results.concat(result)
+    }
+    return results
 }
 
 function handleError(error) {
