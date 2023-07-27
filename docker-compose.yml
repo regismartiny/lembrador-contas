@@ -26,6 +26,7 @@ services:
       - MONGODB_IP=mongodb
     ports:
       - 9090:9090
+      - 9091:9091
     volumes:
       - ./volumes/lembrador-contas:/root/lembrador-contas
     logging:
@@ -35,8 +36,3 @@ services:
         max-file: "3"
     stdin_open: true #docker run -i
     tty: true        #docker run -t
-
-networks:
-  default:
-    name: lembrador-contas_default
-    external: false

@@ -69,3 +69,6 @@ typings/
 
 # Yarn
 yarn.lock
+
+# NPM
+package-lock.json

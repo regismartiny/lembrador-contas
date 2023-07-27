@@ -14,12 +14,7 @@ const TOKEN_PATH = CREDENTIALS_DIR + 'token.json';
 * Start by acquiring a pre-authenticated oAuth2 client.
 */
 async function authenticate() {
-    let keys = await fs.promises.readFile(CREDENTIALS_PATH)
-    if (!keys) {
-        console.error("Error loading credentials file")
-    }
-
-    const oAuth2Client = await getAuthenticatedClient(JSON.parse(keys));
+    const oAuth2Client = await getAuthenticatedClient(await getKeysFile());
     
     oAuth2Client.on('tokens', (tokens) => {
         console.log('tokens event')
@@ -62,7 +57,7 @@ function getAuthenticatedClient(keys) {
 }
 
 function getNewToken(oAuth2Client) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async function (resolve, reject) {
         // Generate the url that will be used for the consent dialog.
         const authorizeUrl = oAuth2Client.generateAuthUrl({
             access_type: 'offline',
@@ -72,11 +67,13 @@ function getNewToken(oAuth2Client) {
     
         // Open an http server to accept the oauth callback. In this simple example, the
         // only request to our webserver is to /oauth2callback?code=<code>
+        let keys = await getKeysFile()
+        const redirectUrl = new URL(keys.web.redirect_uris[0]);
         const server = http.createServer(async (req, res) => {
             try {
                 if (req.url.indexOf('/oauth2callback') > -1) {
                     // acquire the code from the querystring, and close the web server.
-                    const qs = new url.URL(req.url, 'http://localhost:3000')
+                    const qs = new url.URL(req.url, redirectUrl.href)
                         .searchParams;
                     const code = qs.get('code');
                     console.log(`Code is ${code}`);
@@ -95,13 +92,30 @@ function getNewToken(oAuth2Client) {
             } catch (e) {
                 reject(e);
             }
-        }).listen(3000, () => {
+        }).listen(redirectUrl.port, () => {
             console.log(authorizeUrl)
             // open the browser to the authorize url to start the workflow
-            open(authorizeUrl, {wait: false}).then(cp => cp.unref());
+            // open(authorizeUrl, {wait: false}).then(cp => cp.unref());
         });
+
+        server.on('error', (err) => {
+            if (String(err).includes('EADDRINUSE')) {
+                console.log('Authorization server already running');
+                console.log('Access the authorization url to autorize:\n', authorizeUrl)
+                console.log('\n\n')
+                reject(err)
+            }
+        })
         destroyer(server);
     })
+}
+
+async function getKeysFile() {
+    let keys = await fs.promises.readFile(CREDENTIALS_PATH)
+    if (!keys) {
+        console.error("Error loading credentials file")
+    }
+    return JSON.parse(keys)
 }
 
 function storeTokens(tokens) {
