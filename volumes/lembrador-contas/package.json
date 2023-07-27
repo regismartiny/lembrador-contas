@@ -17,7 +17,7 @@
     "express-rate-limit": "6.7.1",
     "google-auth-library": "9.0.0",
     "googleapis": "122.0.0",
-    "mongoose": "^6.3.4",
+    "mongoose": "6.0.15",
     "morgan": "^1.10.0",
     "pdf2json": "3.0.4",
     "popper.js": "^1.16.1",

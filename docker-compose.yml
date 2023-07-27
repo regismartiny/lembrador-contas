@@ -12,7 +12,7 @@ services:
 #      - ./volumes/portainer/data:/data
 
   mongodb:
-    image: mongo:latest
+    image: apcheamitru/arm32v7-mongo
     ports:
       - 27017:27017
 
@@ -22,6 +22,8 @@ services:
     command: bash -c 'yarn install && npm run startm'
     working_dir: /root/lembrador-contas
     restart: unless-stopped
+    environment:
+      - MONGODB_IP=mongodb
     ports:
       - 9090:9090
     volumes:

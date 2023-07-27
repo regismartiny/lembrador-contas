@@ -25,7 +25,8 @@ router.get('/', function (req, res) {
             activeBillMonths.push(nextMonthBills)
 
             let activeBillData = []
-            const lastUpdate = activeBillMonths.flat().sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0].updated_at;
+            
+            const lastUpdate = activeBillMonths.flat().sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
             for (let activeBills of activeBillMonths) {
                 if (activeBills.length == 0) continue
                 let firstBill = activeBills[0]

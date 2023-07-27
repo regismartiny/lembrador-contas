@@ -7,8 +7,8 @@ const DB_PASS = process.env.MONGODB_PASSWORD
 const DB_NAME = process.env.MONGODB_DATABASE || 'lembrador-contas'
 
 let options = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
     user: DB_USER,
     pass: DB_PASS,
     dbName: DB_NAME
