@@ -19,3 +19,11 @@ select{
   /*padding-right: 29px;
   direction: rtl;*/
 }
+
+.symbol-blue {
+  color: blue
+}
+
+.symbol-red {
+  color: red
+}

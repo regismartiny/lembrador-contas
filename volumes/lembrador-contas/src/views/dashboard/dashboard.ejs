@@ -22,7 +22,7 @@
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>Vencimento</th>
+                                        <th>Venc.</th>
                                         <th>Valor</th>
                                         <th>Situação</th>
                                     </tr>
@@ -34,14 +34,22 @@
                                                 <%= bill.name %>
                                             </td>
                                             <td>
-                                                <span class="date" data-mask="00/00/0000"><%= bill.dueDate ? bill.dueDate.toLocaleString() : '' %></span>
+                                                <span class="date" data-mask="00/00"><%= bill.dueDate ? bill.dueDate.toLocaleDateString() : '' %></span>
                                             </td>
                                             <td>
                                                 <span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span>
                                             </td>
                                             <td>
-                                                <span"><%= activeBillStatusEnum[bill.status] %></span>
+                                                <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.PAID){ %>
+                                                <span class="material-symbols-outlined symbol-blue">
+                                                    attach_money
+                                                </span>
+                                                <%} else {%>
+                                                <span class="material-symbols-outlined symbol-red">
+                                                    paid
+                                                </span>
                                             </td>
+                                            <%}%>
                                             <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.UNPAID){ %>
                                             <td>
                                                 <a href="dashboard/paybill/<%= bill._id %>" data-toggle="tooltip" title="Marcar como pago" class="btn material-symbols-outlined">done</a>

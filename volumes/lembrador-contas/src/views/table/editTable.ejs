@@ -78,7 +78,6 @@
                     function addRow(periodValue, valueValue) {
                         var table = $('#table tr:last').after('<tr id="row-' + rowCount + '">' + genPeriodCol(periodValue) + genValueCol(valueValue) + genRemoveAction() + '</tr>');
                         rowCount++;
-                        applyMask();
                     }
 
                     function removeRow(rowNumber) {
@@ -91,23 +90,25 @@
                     }
 
                     function genValueCol(value) {
-                        return '<td><input type="text" class="form-control" id="value-' + rowCount + '" value="' + (value || '') + '" name="value" placeholder="Valor" aria-describedby="basic-addon1" required></td>';
+                        return '<td><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div><input type="text" class="form-control money" placeholder="0,00" id="value-' + rowCount + '" name="value" aria-describedby="basic-addon1" required/></div></td>'
                     }
 
                     function genRemoveAction() {
-                        return '<td><a href="javascript:removeRow(' + rowCount + ')">Remover</a></td>';
+                        return '<td><a href="javascript:removeRow(' + rowCount + ')"><span class="material-symbols-outlined">delete</span></a></td>';
                     }
 
                     $( document ).ready(function() {
-                        applyMask();
+                        if (data) {
+                            var i=0
+                            for (line of data) {
+                                $(`#value-${i}`).val(line.value)
+                                i++
+                            }
+                        }
                     });
 
-                    function applyMask() {
-                        $("input[name='value'").mask("R$ ####,00");
-                    }
-
                     $('#form').submit(function() {
-                        $("input[name='value'").unmask();
+                        //actions before submitting form
                         return true;
                     });
                 </script>
