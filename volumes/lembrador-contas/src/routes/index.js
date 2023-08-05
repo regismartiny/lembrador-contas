@@ -5,8 +5,7 @@ var template = require('./template');
 
 /* GET home page. */
 router.get('/', function (req, res) {
-    res.redirect('/dashboard');
-    // res.render('index', { template })
+    res.render('index', { template })
 });
 
 router.get('/oauthcallback', function (req, res) {

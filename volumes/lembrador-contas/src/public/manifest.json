@@ -1,6 +1,6 @@
 {
   "name": "Lembrador de Contas",
-  "short_name": "lembrador-contas",
+  "short_name": "Lembrador de Contas",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#343a40",

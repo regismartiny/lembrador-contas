@@ -1,6 +1,7 @@
-
-navigator.serviceWorker.register('service-worker.js')
+navigator.serviceWorker.register('/service-worker.js')
    .then(async serviceWorker => {
+      console.log('Service worker registered')
+
       let subscription = await serviceWorker.pushManager.getSubscription()
 
       if (!subscription) {
