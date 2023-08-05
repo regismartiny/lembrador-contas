@@ -8,6 +8,11 @@ router.get('/', function (req, res) {
     res.render('index', { template })
 });
 
+/* GET home page. */
+router.get('/login', function (req, res) {
+    res.redirect("/dashboard");
+});
+
 router.get('/oauthcallback', function (req, res) {
     console.log("oauthcallback called")
     console.log(req.query.code)
