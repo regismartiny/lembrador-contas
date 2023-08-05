@@ -1,6 +1,6 @@
 var mongoose = require('mongoose')
 
-const DB_ADDRESS = process.env.MONGODB_IP || 'localhost'
+const DB_ADDRESS = process.env.MONGODB_IP || '192.168.0.200'
 const DB_PORT = process.env.MONGODB_PORT || 27017
 const DB_USER = process.env.MONGODB_USER
 const DB_PASS = process.env.MONGODB_PASSWORD

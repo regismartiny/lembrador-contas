@@ -1,0 +1,19 @@
+{
+   "name": "Lembrador de Contas",
+     "short_name": "lembrador-contas",
+     "start_url": "/",
+     "display": "standalone",
+     "theme_color": "#343a40",
+     "icons": [
+     {
+         "src": "/images/512.png",
+         "type": "image/png",
+         "sizes": "512x512"
+     },
+     {
+       "src": "/images/1024.png",
+       "type": "image/png",
+       "sizes": "1024x1024"
+     }
+     ]
+ }
