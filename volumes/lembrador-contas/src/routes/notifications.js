@@ -32,7 +32,13 @@ router.post('/push/send', function (req, res) {
       }
    }
 
-   WebPush.sendNotification(sendPushBody, 'Bem vindo ao Lembrador de Contas!')
+   var payload = JSON.stringify({
+      title: 'Lembrador de Contas',
+      body: 'Bem vindo ao Lembrador de Contas!'
+  });
+
+   WebPush.sendNotification(sendPushBody, payload)
+      .catch((reason) => console.log("Ocorreu um erro ao enviar notificação", reason))
 
    return res.status(201).send()
 });
