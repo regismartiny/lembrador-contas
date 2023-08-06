@@ -7,7 +7,7 @@ const apiKeys = WebPush.generateVAPIDKeys()
 const publicKey = apiKeys.publicKey
 const privateKey = apiKeys.privateKey
 
-WebPush.setVapidDetails('https://lembradordecontas.martiny.tech', publicKey, privateKey)
+WebPush.setVapidDetails('mailto: regismartiny@gmail.com', publicKey, privateKey)
 
 
 router.get('/push/public_key', function (req, res) {
