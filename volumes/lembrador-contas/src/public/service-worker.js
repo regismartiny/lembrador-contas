@@ -1,3 +1,9 @@
+this.onpush = (event) => {
+   console.log(event.data);
+   // From here we can write the data to IndexedDB, send it to any open
+   // windows, display a notification, etc.
+};
+
 // Check if the service worker API is supported
 if ("serviceWorker" in navigator) {
    navigator.serviceWorker.register('/service-worker.js')
@@ -7,6 +13,7 @@ if ("serviceWorker" in navigator) {
          let subscription = await serviceWorker.pushManager.getSubscription()
 
          if (!subscription) {
+            console.log('No pushManager subscription found. Creating one.')
             const publicKeyResponse = await send('GET', '/notifications/push/public_key')
 
             subscription = await serviceWorker.pushManager.subscribe({
