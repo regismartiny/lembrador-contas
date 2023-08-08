@@ -1,14 +1,12 @@
-self.registration = null
-
 self.addEventListener('push', e => {
 
-   if(self.Notification.permission == 'denied'){
-       console.log("Permission wan't granted")
-       return;
+   if (self.Notification.permission == 'denied') {
+      console.log("Permission wan't granted")
+      return;
    }
 
-   if(self.Notification.permission == 'default'){
-       console.log("The permission request was dismissed")
+   if (self.Notification.permission == 'default') {
+      console.log("The permission request was dismissed")
    }
 
    console.log("The permission request was granted!")

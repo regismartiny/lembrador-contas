@@ -11,17 +11,17 @@
             return
          }
          console.log(res)
-         setTimeout(() => {
-            showNotification(subscription)
-         }, 5000);
+         showNotification()
       })
+
+      showNotification()
    }
 
    function showNotification() {
       const options = {
-         body: 'Teste'
+         body: 'Notificações ativadas'
       }
-      self.registration.showNotification('Teste', options)
+      self.registration.showNotification('Lembrador de Contas', options)
    }
 
    // Check if the service worker API is supported
@@ -53,6 +53,14 @@
             setTimeout(() => {
                sendNotification(subscription)
             }, 5000);
+
+            setTimeout(() => {
+               sendNotification(subscription)
+            }, 10000);
+
+            setTimeout(() => {
+               sendNotification(subscription)
+            }, 15000);
             
          }).catch(error => {
             // display an error message
