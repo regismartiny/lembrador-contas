@@ -3,3 +3,85 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js" integrity="sha512-pHVGpX7F/27yZ0ISY+VVjyULApbDlD0/X0rgGbTqCE7WFW5MezNTWG/dnhtbBuICzsd0WQPgpE4REBLv+UqChw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src='/service-worker.js'></script>
+<script>
+   function requestNotificationPermission() {
+      Notification.requestPermission().then(res => {
+         if(Notification.permission=='granted') {
+            console.log("Granted permission")
+            return
+         }
+         console.log(res)
+         setTimeout(() => {
+            showNotification(subscription)
+         }, 5000);
+      })
+   }
+
+   function showNotification() {
+      const options = {
+         body: 'Teste'
+      }
+      self.registration.showNotification('Teste', options)
+   }
+
+   // Check if the service worker API is supported
+   if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js', { scope: '/' })
+         .then(async serviceWorker => {
+            console.log(`Service Worker Registration (Scope: ${serviceWorker.scope})`);
+
+            self.registration = serviceWorker
+
+            let subscription = await serviceWorker.pushManager.getSubscription()
+
+            if (!subscription) {
+               console.log('No pushManager subscription found. Creating one.')
+               const publicKeyResponse = await send('GET', '/notifications/push/public_key')
+
+               subscription = await serviceWorker.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: JSON.parse(publicKeyResponse).publicKey
+               })
+            }
+
+            if (!subscription) console.error('Unable to subscribe to pushManager.', err)
+
+            await send('POST', '/notifications/push/register', {
+               subscription
+            })
+
+            setTimeout(() => {
+               sendNotification(subscription)
+            }, 5000);
+            
+         }).catch(error => {
+            // display an error message
+            let msg = `Service Worker Error (${error})`;
+            console.error(msg);
+         });
+   } else {
+      // happens when the app isn't served over a TLS connection (HTTPS)
+      // or if the browser doesn't support service workers
+      console.warn('Service Worker not available');
+   }
+
+
+   async function sendNotification(data) {
+      //Teste de notificacao
+      await send('POST', '/notifications/push/send', data)
+   }
+
+   function send(method, url, data) {
+      return new Promise(function (resolve, reject) {
+         const req = new XMLHttpRequest();
+         req.onreadystatechange = function() {
+            if (this.readyState == 4 && (this.status >= 200 || this.status < 300)) {
+               resolve(this.responseText)
+            }
+         };
+         req.open(method, url)
+         req.setRequestHeader('Content-type', 'application/json');
+         req.send(JSON.stringify(data))
+      });
+   }
+</script>
