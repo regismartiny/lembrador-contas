@@ -44,6 +44,7 @@ router.post('/push/send', function (req, res) {
           handleError(err);
           return res.status(500).send()
       } else {
+         console.log('subscription found: ', subscription)
          sendNotification(subscription, notificationContent)
          return res.status(201).send()
       }

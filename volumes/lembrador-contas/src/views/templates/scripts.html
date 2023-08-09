@@ -37,14 +37,10 @@
       // Check if the service worker API is supported
       if ('serviceWorker' in navigator) {
          navigator.serviceWorker.register('service-worker.js', { scope: '/' })
-            .then(async serviceWorker => {
-               console.log(`Service Worker Registration (Scope: ${serviceWorker.scope})`);
-
-               self.registration = serviceWorker
-
-                           
+            .then(async swRegistration => {
+               console.log(`Service Worker Registration (Scope: ${swRegistration.scope})`);
+               subscribePushManager(swRegistration)       
             }).catch(error => {
-               // display an error message
                let msg = `Service Worker Error (${error})`;
                console.error(msg);
             });
@@ -53,6 +49,44 @@
          // or if the browser doesn't support service workers
          alert('Service Worker not available')
          console.warn('Service Worker not available');
+      }
+
+      async function subscribePushManager(swRegistration) {
+         let subscription = await swRegistration.pushManager.getSubscription()
+
+         if (!subscription) {
+            console.log('No pushManager subscription found. Creating one.')
+            const publicKeyResponse = await send('GET', '/notifications/push/public_key')
+            const applicationServerKey = urlB64ToUint8Array(JSON.parse(publicKeyResponse).publicKey)
+
+            subscription = await swRegistration.pushManager.subscribe({
+               userVisibleOnly: true,
+               applicationServerKey
+            })
+         }
+
+         if (!subscription) {
+            console.error('Unable to subscribe to pushManager.', err)
+            return
+         }
+
+         await send('POST', '/notifications/push/register', {
+            subscription
+         })
+      }
+
+      async function send(method, url, data) {
+         const options = {
+            method: method,
+            headers: {
+               // 'Accept': 'application/json',
+               'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+         }
+         const rawContent = await fetch(url, options)
+         const content = await rawContent.text()
+         return content
       }
    })
 </script>

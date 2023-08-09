@@ -2,28 +2,9 @@ self.addEventListener('activate', async () => {
    // This will be called only once when the service worker is activated.
    console.log('service worker activated')
 
-   let subscription = await self.registration.pushManager.getSubscription()
-
-   if (!subscription) {
-      console.log('No pushManager subscription found. Creating one.')
-      const publicKeyResponse = await send('GET', '/notifications/push/public_key')
-      const applicationServerKey = urlB64ToUint8Array(JSON.parse(publicKeyResponse).publicKey)
-
-      subscription = await self.registration.pushManager.subscribe({
-         userVisibleOnly: true,
-         applicationServerKey
-      })
-   }
-
-   if (!subscription) console.error('Unable to subscribe to pushManager.', err)
-
-   await send('POST', '/notifications/push/register', {
-      subscription
-   })
-
-   setTimeout(() => {
-      sendNotification({title: 'Lembrador de contas', body: 'Bem vindo ao Lembrador de Contas!'})
-   }, 5000);
+   // setTimeout(() => {
+   //    sendNotification({title: 'Lembrador de contas', body: 'Bem vindo ao Lembrador de Contas!'})
+   // }, 5000);
 
  })
 
