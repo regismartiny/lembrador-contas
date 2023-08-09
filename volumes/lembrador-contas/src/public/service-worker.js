@@ -22,7 +22,7 @@ self.addEventListener('activate', async () => {
    })
 
    setTimeout(() => {
-      sendNotification(subscription)
+      sendNotification({title: 'Lembrador de contas', body: 'Bem vindo ao Lembrador de Contas!'})
    }, 5000);
 
  })
