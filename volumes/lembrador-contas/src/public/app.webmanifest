@@ -207,7 +207,7 @@
 },
     {
       "src": "windows11/SplashScreen.scale-200.png",
-      "sizes": "1240x600"
+      "sizes": "1240x600",
       "type": "image/png",
       "purpose": "any"
 },
