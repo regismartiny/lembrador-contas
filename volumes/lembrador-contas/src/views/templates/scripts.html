@@ -4,53 +4,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js" integrity="sha512-pHVGpX7F/27yZ0ISY+VVjyULApbDlD0/X0rgGbTqCE7WFW5MezNTWG/dnhtbBuICzsd0WQPgpE4REBLv+UqChw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src='/service-worker.js'></script>
 <script>
-   if (Notification.permission == 'default') {
-      $('.toast').toast({autohide: false})
-      $('#notifications-toast-container').css("display", "block");
-      $('#notifications-toast').toast('show')
-   }
-
-   function hideNotificationsToast() {
-      $('#notifications-toast-container').remove()
-   }
-   
-
-   function requestNotificationPermission() {
-      hideNotificationsToast()
-      Notification.requestPermission().then(res => {
-         if(Notification.permission == 'granted') {
-            console.log("Granted permission")
-            showNotification()
-            return
-         }
-         console.log(res)
-      })
-   }
-
-   function showNotification() {
-      const options = {
-         body: 'Notificações ativadas'
+   $(document).ready(function () {
+      function hideNotificationsToast() {
+         $('#notifications-toast-container').remove()
       }
-      self.registration.showNotification('Lembrador de Contas', options)
-   }
+      
+      function requestNotificationPermission() {
+         hideNotificationsToast()
+         Notification.requestPermission().then(res => {
+            if(Notification.permission == 'granted') {
+               console.log("Granted permission")
+               showNotification()
+               return
+            }
+            console.log(res)
+         })
+      }
 
-   // Check if the service worker API is supported
-   if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js', { scope: '/' })
-         .then(async serviceWorker => {
-            console.log(`Service Worker Registration (Scope: ${serviceWorker.scope})`);
+      function showNotification() {
+         const options = {
+            body: 'Notificações ativadas'
+         }
+         self.registration.showNotification('Lembrador de Contas', options)
+      }
 
-            self.registration = serviceWorker
+      if (Notification.permission == 'default') {
+         $('.toast').toast({autohide: false})
+         $('#notifications-toast-container').css("display", "block");
+         $('#notifications-toast').toast('show')
+      }
 
-                        
-         }).catch(error => {
-            // display an error message
-            let msg = `Service Worker Error (${error})`;
-            console.error(msg);
-         });
-   } else {
-      // happens when the app isn't served over a TLS connection (HTTPS)
-      // or if the browser doesn't support service workers
-      console.warn('Service Worker not available');
-   }
+      // Check if the service worker API is supported
+      if ('serviceWorker' in navigator) {
+         navigator.serviceWorker.register('service-worker.js', { scope: '/' })
+            .then(async serviceWorker => {
+               console.log(`Service Worker Registration (Scope: ${serviceWorker.scope})`);
+
+               self.registration = serviceWorker
+
+                           
+            }).catch(error => {
+               // display an error message
+               let msg = `Service Worker Error (${error})`;
+               console.error(msg);
+            });
+      } else {
+         // happens when the app isn't served over a TLS connection (HTTPS)
+         // or if the browser doesn't support service workers
+         alert('Service Worker not available')
+         console.warn('Service Worker not available');
+      }
+   })
 </script>
