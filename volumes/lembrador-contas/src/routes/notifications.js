@@ -5,6 +5,8 @@ const WebPush = require('web-push')
 
 const apiKeys = WebPush.generateVAPIDKeys()
 
+console.log('WebPush VAPID keys generated: ', apiKeys)
+
 const publicKey = apiKeys.publicKey
 const privateKey = apiKeys.privateKey
 
@@ -15,6 +17,7 @@ db.PushNotificationSubscription.deleteMany({}).lean().exec()
 
 router.get('/push/public_key', function (req, res) {
    console.log("/push/public_key", req.body)
+   console.log('publicKey', publicKey)
    return res.status(200).json({publicKey}).send()
 });
 
@@ -39,16 +42,21 @@ router.post('/push/send', function (req, res) {
    console.log("/push/send", req.body)
    let notificationContent = req.body
   
-   db.PushNotificationSubscription.findOne(function (err, subscription) {
+   db.PushNotificationSubscription.find({}, function (err, subscriptions) {
       if (err) {
           handleError(err);
           return res.status(500).send()
-      } else {
-         console.log('subscription found: ', subscription)
-         sendNotification(subscription, notificationContent)
+      } else if (subscriptions){
+         console.log('subscriptions found: ', subscriptions)
+         for (const subscription of subscriptions) {
+            sendNotification(subscription, notificationContent)
+         }
          return res.status(201).send()
+      } else {
+         console.log('No subscriptions found')
+         return res.status(200).send()
       }
-  });
+  }).sort( { updated_at: 1 } );
 });
 
 function sendNotification(subscription, notificationContent) {
