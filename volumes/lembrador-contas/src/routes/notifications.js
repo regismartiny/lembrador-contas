@@ -2,14 +2,15 @@ const express = require('express')
 const router = express.Router()
 const db = require("../db");
 const WebPush = require('web-push');
-const { resolve } = require('url');
-const { rejects } = require('assert');
 
-const apiKeys = WebPush.generateVAPIDKeys()
+//const apiKeys = WebPush.generateVAPIDKeys()
+//console.log('WebPush VAPID keys generated: ', apiKeys)
+const apiKeys = {
+  publicKey: 'BHFI1X2E6u6WbsiQPvy2pgtcoSLU0dnbIuQWQ9EpJ_bSLH1W4ulnOD8KvfYzzxccT9CgC5yuA4xdkNMKfgtjmgU',
+  privateKey: 'QuPMUi2A1OFfA9WnCK2J5ngAOYRFj0NYt6k7tq3cVvA'
+}
 
-console.log('WebPush VAPID keys generated: ', apiKeys)
-
-db.PushNotificationSubscription.deleteMany({}).lean().exec()
+db.PushNotificationSubscription.deleteMany().lean().exec()
 
 
 router.get('/push/public_key', function (req, res) {
@@ -18,22 +19,28 @@ router.get('/push/public_key', function (req, res) {
    return res.status(200).json({publicKey: apiKeys.publicKey}).send()
 });
 
-router.post('/push/register', function (req, res) {
+router.post('/push/register', async function (req, res) {
    console.log("/push/register", req.body)
    let endpoint = req.body.subscription.endpoint
    let keys = req.body.subscription.keys
-   let subscription = new db.PushNotificationSubscription({ endpoint, keys });
-   subscription.save(function (err) {
-      if (err) {
-         handleError(err);
-         return res.status(500).send()
-      } else {
-         console.log("PushNotificationSubscription saved");
-         return res.status(201).send()
-      }
-   });
+
+   let subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean().exec()
+   console.log('subscriptionFound', subscriptionFound)
+   if (!subscriptionFound.length) {
+      console.log('Saving registration')
+      let subscription = new db.PushNotificationSubscription({ endpoint, keys });
+      subscription.save(function (err) {
+         if (err) {
+            handleError(err);
+            return res.status(500).send()
+         } else {
+            console.log("PushNotificationSubscription saved");
+            return res.status(201).send()
+         }
+      });
+   }
    return res.status(201).send()
-});
+})
 
 router.post('/push/send', function (req, res) {
    console.log("/push/send", req.body)
