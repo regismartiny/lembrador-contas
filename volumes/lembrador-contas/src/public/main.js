@@ -1,18 +1,24 @@
 function hideNotificationsToast() {
-    $('#notifications-toast-container').remove()
+   $('#notifications-toast-container').remove()
 }
  
- function requestNotificationPermission() {
-    hideNotificationsToast()
-    Notification.requestPermission().then(res => {
-       if(Notification.permission == 'granted') {
-          console.log("Granted permission")
-          showNotification()
-          return
-       }
-       console.log(res)
-    })
- }
+async function requestNotificationPermission() {
+   hideNotificationsToast()
+   const areNotificationsGranted = window.Notification.permission === "granted"
+   if (areNotificationsGranted) {
+      console.log("Granted permission")
+      showNotification()
+      window.location.reload()
+      return
+   }
+    
+   const result = await window.Notification.requestPermission()
+   // If the user rejects the permission result will be "denied"
+   if (result === "granted") {
+      await subscribePushManager()
+      showNotification()
+   }
+}
 
  function showNotification() {
     const options = {
@@ -45,6 +51,9 @@ function hideNotificationsToast() {
   }
 
  async function subscribePushManager() {
+
+   await navigator.serviceWorker.ready
+
     var subscription = await swRegistration.pushManager.getSubscription()
     const isSubscribed = !(subscription === null)
     if (!isSubscribed) {
@@ -108,17 +117,16 @@ function hideNotificationsToast() {
 if ('serviceWorker' in navigator && 'PushManager' in window) {
     console.log('Service Worker and Push are supported')
 
-    navigator.serviceWorker.register('/sw.js')
-    .then(async function(swReg) {
-        console.log('Service Worker is registered', swReg)
-        swRegistration = swReg
-        await subscribePushManager()
-    })
-    .catch(function(error) {
-        console.error('Service Worker Error: ', error)
-    })
+   navigator.serviceWorker.register('/sw.js')
+   .then(async function(swReg) {
+      console.log('Service Worker is registered', swReg)
+      swRegistration = swReg
+   })
+   .catch(function(error) {
+      console.error('Service Worker Error: ', error)
+   })
 } else {
-    console.warn('Push messaging is not supported')
+   console.warn('Push messaging is not supported')
 }
 
 $(document).ready(function () {

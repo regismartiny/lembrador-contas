@@ -3,12 +3,12 @@ const router = express.Router()
 const db = require("../db");
 const WebPush = require('web-push');
 
-//const apiKeys = WebPush.generateVAPIDKeys()
-//console.log('WebPush VAPID keys generated: ', apiKeys)
-const apiKeys = {
-  publicKey: 'BHFI1X2E6u6WbsiQPvy2pgtcoSLU0dnbIuQWQ9EpJ_bSLH1W4ulnOD8KvfYzzxccT9CgC5yuA4xdkNMKfgtjmgU',
-  privateKey: 'QuPMUi2A1OFfA9WnCK2J5ngAOYRFj0NYt6k7tq3cVvA'
-}
+const apiKeys = WebPush.generateVAPIDKeys()
+console.log('WebPush VAPID keys generated: ', apiKeys)
+// const apiKeys = {
+//    publicKey: 'BIjmnu66vnPL_ZBMZAfMTczJfqqkCkzHJ5j6RyH4KTwoMJGJrqBJ1YaBx0NMzQNS5esHeP3f7R8SAxWFTGJrIgs',
+//    privateKey: 'NHuVW1uesQi56xgZYuzfNEEOyPXdHujF-4SyWNztQ1s' 
+// }
 
 db.PushNotificationSubscription.deleteMany().lean().exec()
 
