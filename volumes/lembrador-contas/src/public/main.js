@@ -3,20 +3,23 @@ function hideNotificationsToast() {
 }
  
 async function requestNotificationPermission() {
+   console.log('requestNotificationPermission')
    hideNotificationsToast()
    const areNotificationsGranted = window.Notification.permission === "granted"
    if (areNotificationsGranted) {
-      console.log("Granted permission")
-      showNotification()
-      window.location.reload()
+      console.log("Notifications permission granted")
+      await subscribePushManager()
       return
    }
     
    const result = await window.Notification.requestPermission()
    // If the user rejects the permission result will be "denied"
    if (result === "granted") {
+      console.log('Notifications permission granted')
       await subscribePushManager()
       showNotification()
+   } else {
+      console.log('Notifications permission denied')
    }
 }
 
@@ -24,7 +27,7 @@ async function requestNotificationPermission() {
     const options = {
        body: 'Notificações ativadas'
     }
-    self.registration.showNotification('Lembrador de Contas', options)
+    self.swRegistration.showNotification('Lembrador de Contas', options)
  }
 
  // urlB64ToUint8Array is a magic function that will encode the base64 public key
@@ -44,40 +47,40 @@ async function requestNotificationPermission() {
      return outputArray;
  }
 
- async function updateSubscriptionOnServer(subscription) {
-     await send('POST', '/notifications/push/register', {
-        subscription
-     })
-  }
+async function updateSubscriptionOnServer(subscription) {
+   await send('POST', '/notifications/push/register', {
+      subscription
+   })
+}
 
- async function subscribePushManager() {
+async function subscribePushManager() {
 
    await navigator.serviceWorker.ready
 
-    var subscription = await swRegistration.pushManager.getSubscription()
-    const isSubscribed = !(subscription === null)
-    if (!isSubscribed) {
-       console.log('No pushManager subscription found. Creating one.')
-       const publicKeyResponse = await send('GET', '/notifications/push/public_key')
-       console.log('publicKeyResponse', publicKeyResponse)
-       const appServerPublicKey = JSON.parse(publicKeyResponse).publicKey
-       applicationServerPublicKey = urlB64ToUint8Array(appServerPublicKey)
-       console.log('applicationServerKey', applicationServerPublicKey)
+   var subscription = await swRegistration.pushManager.getSubscription()
+   const isSubscribed = !(subscription === null)
+   if (!isSubscribed) {
+      console.log('No pushManager subscription found. Creating one.')
+      const publicKeyResponse = await send('GET', '/notifications/push/public_key')
+      console.log('publicKeyResponse', publicKeyResponse)
+      const appServerPublicKey = JSON.parse(publicKeyResponse).publicKey
+      applicationServerPublicKey = urlB64ToUint8Array(appServerPublicKey)
+      console.log('applicationServerKey', applicationServerPublicKey)
 
-       subscription = await swRegistration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: applicationServerPublicKey
-       })
-    }
+      subscription = await swRegistration.pushManager.subscribe({
+         userVisibleOnly: true,
+         applicationServerKey: applicationServerPublicKey
+      })
+   }
 
-    console.log('subscription', subscription)
+   console.log('subscription', subscription)
 
-    if (subscription === null) {
-       console.error('Unable to subscribe to pushManager.', err)
-       return
-    }
+   if (subscription === null) {
+      console.error('Unable to subscribe to pushManager.', err)
+      return
+   }
 
-    await updateSubscriptionOnServer(subscription)
+   await updateSubscriptionOnServer(subscription)
  }
 
  function unsubscribeUser() {
@@ -121,6 +124,7 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
    .then(async function(swReg) {
       console.log('Service Worker is registered', swReg)
       swRegistration = swReg
+      requestNotificationPermission()
    })
    .catch(function(error) {
       console.error('Service Worker Error: ', error)

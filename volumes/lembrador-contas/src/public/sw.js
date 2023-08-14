@@ -11,7 +11,20 @@ function urlB64ToUint8Array(base64String) {
      outputArray[i] = rawData.charCodeAt(i);
    }
    return outputArray;
- }
+}
+
+function checkNotificationsPermission() {
+   if (Notification.permission == 'denied') {
+      console.log("[Service Worker] Notifications permission wan't granted")
+      return false;
+   }
+
+   if (Notification.permission == 'default') {
+      console.log("[Service Worker] Notifications permission request was dismissed")
+   }
+
+   return true;
+}
 
 self.addEventListener('activate', async () => {
    // This will be called only once when the service worker is activated.
@@ -27,16 +40,9 @@ self.addEventListener('push', event => {
    console.log('[Service Worker] Push Received.')
    console.log(`[Service Worker] Push had this data: "${event.data.text()}"`)
 
-   if (Notification.permission == 'denied') {
-      console.log("Permission wan't granted")
-      return;
+   if (!checkNotificationsPermission()) {
+      return
    }
-
-   if (Notification.permission == 'default') {
-      console.log("The permission request was dismissed")
-   }
-
-   console.log("The permission request was granted!")
 
    if (event.data) {
       const msg = event.data.json()
