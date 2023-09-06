@@ -9,6 +9,7 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const CREDENTIALS_DIR = '.credentials/';
 const CREDENTIALS_PATH = CREDENTIALS_DIR + 'oauth2.keys.json';
 const TOKEN_PATH = CREDENTIALS_DIR + 'token.json';
+const REDIRECT_URL = "localhost:9091/oauth2callback";
 
 /**
 * Start by acquiring a pre-authenticated oAuth2 client.
@@ -68,7 +69,7 @@ function getNewToken(oAuth2Client) {
         // Open an http server to accept the oauth callback. In this simple example, the
         // only request to our webserver is to /oauth2callback?code=<code>
         let keys = await getKeysFile()
-        const redirectUrl = new URL(keys.web.redirect_uris[0]);
+        const redirectUrl = new URL(REDIRECT_URL);
         const server = http.createServer(async (req, res) => {
             try {
                 if (req.url.indexOf('/oauth2callback') > -1) {
