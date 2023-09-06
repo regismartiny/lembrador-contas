@@ -9,7 +9,7 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const CREDENTIALS_DIR = '.credentials/';
 const CREDENTIALS_PATH = CREDENTIALS_DIR + 'oauth2.keys.json';
 const TOKEN_PATH = CREDENTIALS_DIR + 'token.json';
-const REDIRECT_URL = "localhost:9091/oauth2callback";
+const REDIRECT_URL = "http://localhost:9091/oauth2callback";
 
 /**
 * Start by acquiring a pre-authenticated oAuth2 client.

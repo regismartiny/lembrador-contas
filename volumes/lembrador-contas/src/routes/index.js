@@ -14,8 +14,8 @@ router.get('/login', function (req, res) {
     res.redirect("/dashboard");
 });
 
-router.get('/oauthcallback', function (req, res) {
-    console.log("oauthcallback called")
+router.get('/oauth2callback', function (req, res) {
+    console.log("oauth2callback called")
     console.log(req.query.code)
     const authCode = req.query.code
     gmail.authenticate(authCode);
