@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const googleAuth = require('./googleAuth')
+const googleAuth = require('../util/googleAuth')
 var template = require('./template');
 
 /* GET home page. */
