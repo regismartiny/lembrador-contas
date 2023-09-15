@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const googleAuth = require('../util/googleAuth')
-var template = require('./template');
+//var template = require('./template');
 
 /* GET home page. */
 router.get('/', function (req, res) {
@@ -12,14 +11,6 @@ router.get('/', function (req, res) {
 /* GET home page. */
 router.get('/login', function (req, res) {
     res.redirect("/dashboard");
-});
-
-router.get('/oauth2callback', function (req, res) {
-    console.log("oauth2callback called")
-    console.log(req.query.code)
-    const authCode = req.query.code
-    googleAuth.authenticate(authCode);
-    res.redirect("/");
 });
 
 module.exports = router;
