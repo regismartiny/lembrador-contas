@@ -15,6 +15,8 @@ services:
     image: apcheamitru/arm32v7-mongo
     ports:
       - 27017:27017
+    volumes:
+      - ./volumes/portainer/data:/data/db
 
   lembrador-contas:
     container_name: lembrador-contas
