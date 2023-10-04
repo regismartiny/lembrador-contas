@@ -12,14 +12,14 @@ services:
 #      - ./volumes/portainer/data:/data
 
   mongodb:
-    image: apcheamitru/arm32v7-mongo
+    image: mongo
     ports:
       - 27017:27017
 
   lembrador-contas:
     container_name: lembrador-contas
-    image: node:18
-    command: bash -c 'yarn install && npm run startm'
+    image: oven/bun:latest
+    command: bash -c 'bun install && bun run dev'
     working_dir: /root/lembrador-contas
     restart: unless-stopped
     environment:

@@ -1,8 +1,10 @@
 const path = require('path');
-const PDFParser = import('pdf2json');
+const PDFParser = require('pdf2json');
 const gmail = require( path.resolve( __dirname, "./gmail.js" ) );
 const base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
 const moment = require('moment');
+
+const pdfParser = new PDFParser();
 
 async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     console.log("getMessagesByDateInterval()")
@@ -95,8 +97,6 @@ async function getAttachmentFromMessage(message) {
 
 async function getPDFFromAttachment(attData) {
     var binArray = base64Util.base64ToBin(attData);
-
-    let pdfParser = new PDFParser();
 
     pdfParser.on("pdfParser_dataError", errData => console.error(errData.parserError));
 

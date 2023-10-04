@@ -1,6 +1,6 @@
 var mongoose = require('mongoose')
 
-const DB_ADDRESS = process.env.MONGODB_IP || '192.168.0.200'
+const DB_ADDRESS = process.env.MONGODB_IP || '127.0.0.1'
 const DB_PORT = process.env.MONGODB_PORT || 27017
 const DB_USER = process.env.MONGODB_USER
 const DB_PASS = process.env.MONGODB_PASSWORD
@@ -44,29 +44,29 @@ var userSchema = new mongoose.Schema({
 }, { collection: 'usercollection' })
 
 // on every save, add the date
-userSchema.pre('validate', function (next) {
+userSchema.pre('validate', async function (next) {
     var self = this
-
-    User.findOne({ email: this.email }, 'email', function (err, results) {
-        if (err) {
-            console.log('Erro: ', err)
-        } else if (results) {
+    try {
+        let results = await User.findOne({ email: this.email }, 'email')
+        if (results) {
             console.warn('Resultados de validação: ', results)
             self.invalidate("email", "Email deve ser único")
             next(new Error("email must be unique"))
         } else {
             // get the current date
             var currentDate = new Date()
-
+        
             // change the updated_at field to current date
             this.updated_at = currentDate
-
+        
             // if created_at doesn't exist, add to that field
             if (!this.created_at)
                 this.created_at = currentDate
             next()
-        }
-    })
+        }    
+    } catch(err) {
+        console.log('Erro: ', err)
+    }
 })
 var User = mongoose.model('usercollection', userSchema, 'usercollection')
 

@@ -1,121 +1,122 @@
-const express = require('express');
-const router = express.Router();
-const template = require('./template');
-const db = require("../db");
-const utils = require("../util/utils");
+const express = require('express')
+const router = express.Router()
+const template = require('./template')
+const db = require("../db")
+const utils = require("../util/utils")
 
 
 /* GET TableList page. */
-router.get('/list', function (req, res) {
-    db.Table.find({}).lean().exec(
-        function (e, tables) {
-            const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
-            res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum });
-        });
-});
+router.get('/list', async function (req, res) {
+    try {
+        let tables = await db.Table.find({}).lean().exec()
+        const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
+        res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum })
+    } catch(err) {
+        handleError(err, res)
+        return err
+    }
+})
 
 /* GET tables JSON */
-router.get('/listJSON', function (req, res) {
-    db.Table.find({}).lean().exec(
-        function (e, tables) {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(tables));
-        });
-});
+router.get('/listJSON', async function (req, res) {
+    try {
+        let tables = db.Table.find({}).lean().exec()
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify(tables))
+    } catch(err) {
+        handleError(err, res)
+        return err
+    }
+})
 
 /* GET New Table page. */
 router.get('/new', function (req, res) {
-    res.render('table/editTable', { template, title: 'Cadastro de Tabela' });
-});
+    res.render('table/editTable', { template, title: 'Cadastro de Tabela' })
+})
 
 /* POST to Add Table */
-router.post('/add', function (req, res) {
-    let name = req.body.name;
-    let data = parseData(req.body);
+router.post('/add', async function (req, res) {
+    let name = req.body.name
+    let data = parseData(req.body)
 
-    let table = new db.Table({ name, data });
-    table.save(function (err) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        else {
-            console.log("Table saved");
-            res.redirect("/tables/list");
-        }
-    });
-});
+    let table = new db.Table({ name, data })
+    try {
+        await table.save()
+        console.log("Table saved")
+        res.redirect("/tables/list")
+    } catch(err) {
+        handleError(err, res)
+        return err
+    }
+})
 
 /* GET Edit Table page. */
-router.get('/edit/:id', function (req, res) {
-    let tableId = req.params.id;
+router.get('/edit/:id', async function (req, res) {
+    let tableId = req.params.id
 
-    db.Table.findById(tableId, function (err, table) {
-        if (err) {
-            handleError(err);
-            return err;
-        } else {
-            res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table });
-        }
-    });
-});
+    try {
+        let table = await db.Table.findById(tableId)
+        res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
+    } catch(err) {
+        handleError(err, res)
+        return err
+    }
+})
 
 /* POST to Update Table */
-router.post('/update', function (req, res) {
+router.post('/update', async function (req, res) {
 
-    let tableId = req.body.id;
-    let name = req.body.name;
-    let data = parseData(req.body);
-    let status = req.body.status;
+    let tableId = req.body.id
+    let name = req.body.name
+    let data = parseData(req.body)
+    let status = req.body.status
 
-    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status }}, { new: true }, function (err, table) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        else {
-            console.log("Table updated");
-            res.redirect("/tables/list");
-        }
-    });
-});
+    try {
+        await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status }}, { new: true })
+        console.log("Table updated")
+        res.redirect("/tables/list")
+    } catch(err) {
+        handleError(err, res)
+        return err
+    }
+})
 
 /* GET Remove Table */
-router.get('/remove/:id', function (req, res) {
-    let tableId = req.params.id;
+router.get('/remove/:id', async function (req, res) {
+    let tableId = req.params.id
 
-    db.Table.findOneAndRemove({ _id: tableId }, function (err, table) {
-        if (err) {
-            handleError(err);
-            return err;
-        } else {
-            res.redirect("/tables/list");
-        }
-    });
-});
+    try {
+        await db.Table.findOneAndRemove({ _id: tableId })
+        res.redirect("/tables/list")
+    } catch(err) {
+        handleError(err, res)
+        return err
+    }
+})
 
-function handleError(error) {
-    console.log("Error! " + error.message);
-}
+function handleError(error, res) {
+    console.log("Error! " + error.message)
+    res.render('error', { message: '', error: error})
+  }
 
 function parseData(body) {
-    let newData = [];
-    body.value = utils.toArray(body.value);
-    body.period = utils.toArray(body.period);
-    let length = body.period.length;
+    let newData = []
+    body.value = utils.toArray(body.value)
+    body.period = utils.toArray(body.period)
+    let length = body.period.length
     for(let i=0; i < length; i++) {
-        let value = body.value[i];
-        let period = parsePeriod(body.period[i]);
-        newData.push({period, value});
+        let value = body.value[i]
+        let period = parsePeriod(body.period[i])
+        newData.push({period, value})
     }
-    return newData;
+    return newData
 }
 
 function parsePeriod(periodStr) {
     if (periodStr && typeof periodStr == 'string') {
-        return { month:  Number(periodStr.substring(5,7)), year: Number(periodStr.substring(0,4)) };
+        return { month:  Number(periodStr.substring(5,7)), year: Number(periodStr.substring(0,4)) }
     }
     return {}
 }
 
-module.exports = router;
+module.exports = router

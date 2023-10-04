@@ -3,8 +3,8 @@
   "version": "0.1",
   "private": true,
   "scripts": {
-    "startm": "nodemon ./src/bin/www",
-    "start": "node ./src/bin/www"
+    "clean": "rm -rf dist && echo 'Done.'",
+    "dev": "bun ./src/bin/www"
   },
   "dependencies": {
     "atob": "^2.0.3",
@@ -19,18 +19,14 @@
     "googleapis": "122.0.0",
     "jsdom": "22.1.0",
     "moment": "2.29.4",
-    "mongoose": "6.0.15",
+    "mongoose": "7.5.4",
     "morgan": "^1.10.0",
     "open": "8.4.2",
-    "pdf2json": "3.0.4",
+    "pdf2json": "2.0.2",
     "popper.js": "^1.16.1",
     "serve-favicon": "~2.4.2",
     "server-destroy": "1.0.1",
     "url": "0.11.1",
-    "web-push": "^3.6.4",
-    "yarn": "^1.22.18"
-  },
-  "devDependencies": {
-    "nodemon": "3.0.1"
+    "web-push": "^3.6.4"
   }
 }

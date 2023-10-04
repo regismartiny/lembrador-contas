@@ -1,14 +1,11 @@
 const express = require('express')
 const router = express.Router()
-const db = require("../db");
-const WebPush = require('web-push');
+const db = require("../db")
+const WebPush = require('web-push')
 
 const apiKeys = WebPush.generateVAPIDKeys()
 console.log('WebPush VAPID keys generated: ', apiKeys)
-// const apiKeys = {
-//    publicKey: 'BIjmnu66vnPL_ZBMZAfMTczJfqqkCkzHJ5j6RyH4KTwoMJGJrqBJ1YaBx0NMzQNS5esHeP3f7R8SAxWFTGJrIgs',
-//    privateKey: 'NHuVW1uesQi56xgZYuzfNEEOyPXdHujF-4SyWNztQ1s' 
-// }
+
 
 db.PushNotificationSubscription.deleteMany().lean().exec()
 
@@ -17,7 +14,7 @@ router.get('/push/public_key', function (req, res) {
    console.log("/push/public_key", req.body)
    console.log('publicKey', apiKeys.publicKey)
    return res.status(200).json({publicKey: apiKeys.publicKey}).send()
-});
+})
 
 router.post('/push/register', async function (req, res) {
    console.log("/push/register", req.body)
@@ -28,29 +25,26 @@ router.post('/push/register', async function (req, res) {
    console.log('subscriptionFound', subscriptionFound)
    if (!subscriptionFound.length) {
       console.log('Saving registration')
-      let subscription = new db.PushNotificationSubscription({ endpoint, keys });
-      subscription.save(function (err) {
-         if (err) {
-            handleError(err);
-            return res.status(500).send()
-         } else {
-            console.log("PushNotificationSubscription saved");
-            return res.status(201).send()
-         }
-      });
+      let subscription = new db.PushNotificationSubscription({ endpoint, keys })
+      try {
+         await subscription.save()
+         console.log("PushNotificationSubscription saved")
+         return res.status(201).send() 
+      } catch(err) {
+          handleError(err, res)
+          return res.status(500).send()
+      }
    }
    return res.status(201).send()
 })
 
-router.post('/push/send', function (req, res) {
+router.post('/push/send', async function (req, res) {
    console.log("/push/send", req.body)
    let notificationContent = req.body
   
-   db.PushNotificationSubscription.find({}, async function (err, subscriptions) {
-      if (err) {
-          handleError(err);
-          return res.status(500).send()
-      } else if (subscriptions){
+   try {
+      let subscriptions = await db.PushNotificationSubscription.find({}).sort( { updated_at: 1 } )
+      if (subscriptions){
          console.log('subscriptions found: ', subscriptions)
          for (const subscription of subscriptions) {
             await sendNotification(subscription, notificationContent)
@@ -60,8 +54,11 @@ router.post('/push/send', function (req, res) {
          console.log('No subscriptions found')
          return res.status(200).send()
       }
-  }).sort( { updated_at: 1 } );
-});
+   } catch(err) {
+      handleError(err, res)
+      return res.status(500).send()
+   }
+})
 
 async function sendNotification(subscription, notificationContent) {
    return new Promise((resolve, reject) => {
@@ -95,8 +92,9 @@ async function sendNotification(subscription, notificationContent) {
    })
 }
 
-function handleError(error) {
-   console.log("Error! " + error.message);
-}
+function handleError(error, res) {
+   console.log("Error! " + error.message)
+   res.render('error', { message: '', error: error})
+ }
 
-module.exports = router;
+module.exports = router
