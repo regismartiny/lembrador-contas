@@ -16,7 +16,7 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - ./volumes/portainer/data:/data/db
+      - ./volumes/mongodb/data:/data/db
 
   lembrador-contas:
     container_name: lembrador-contas
