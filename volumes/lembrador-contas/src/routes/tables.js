@@ -20,7 +20,7 @@ router.get('/list', async function (req, res) {
 /* GET tables JSON */
 router.get('/listJSON', async function (req, res) {
     try {
-        let tables = db.Table.find({}).lean().exec()
+        let tables = await db.Table.find({}).lean().exec()
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify(tables))
     } catch(err) {

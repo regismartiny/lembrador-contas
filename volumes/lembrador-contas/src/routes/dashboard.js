@@ -26,7 +26,7 @@ router.get('/', async function (req, res) {
         for (let activeBills of activeBillMonths) {
             if (activeBills.length == 0) continue
             let firstBill = activeBills[0]
-            let billsMonth = firstBill.dueDate?.getMonth() + "/" + firstBill.dueDate?.getFullYear()
+            let billsMonth = getBillMonth(firstBill.dueDate)
             const totalValue = activeBills.map(bill => bill.value).reduce(getSum, 0)
             const billList = activeBills.sort((a,b)=>a.name.localeCompare(b.name))
             const activeBillMonthData = { month: billsMonth, billList, totalValue }
@@ -57,10 +57,12 @@ router.get('/processBills', async function (req, res) {
         console.log("activeBills", activeBills)
         
         for (const activeBill of activeBills) {
-            activeBill.save(function (err) {
-                if (err) {
-                    console.error(`Error saving activeBill '${activeBill.name}'`, err)
-                }
+            activeBill.save()
+            .then(function (models) {
+                console.log(models);
+            })
+            .catch(function (err) {
+                console.error(`Error saving activeBill '${activeBill.name}'`, err)
             })
         }
 
@@ -91,6 +93,10 @@ router.get('/paybill/:id', async function (req, res) {
 })
 
 /********************************************************************************* */
+
+function getBillMonth(dueDate) {
+    return Number(dueDate?.getMonth()) + 1 + "/" + dueDate?.getFullYear()
+}
 
 function getSum(total, num) {
     return total + ((isNaN(num) || num == undefined) ? 0 : num)
