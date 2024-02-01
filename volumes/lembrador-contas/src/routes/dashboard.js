@@ -11,14 +11,8 @@ router.get('/', async function (req, res) {
         let currentMonth = new Date().getMonth()
         let activeBillMonths = new Array()
         
-        let currentMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth+1)
+        let currentMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth)
         activeBillMonths.push(currentMonthBills)
-
-        let previousMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth)
-        activeBillMonths.push(previousMonthBills)
-
-        let nextMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth+2)
-        activeBillMonths.push(nextMonthBills)
 
         let activeBillData = []
         
