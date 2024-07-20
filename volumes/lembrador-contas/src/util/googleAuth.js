@@ -31,7 +31,7 @@ async function authenticate() {
 
 /**
 * Create a new OAuth2Client, and go through the OAuth2 content
-* workflow.  Return the full client to the callback.
+* workflow. Return the full client to the callback.
 */
 function getAuthenticatedClient(keys) {
   return new Promise((resolve, reject) => {
@@ -46,6 +46,7 @@ function getAuthenticatedClient(keys) {
     // Check if we have previously stored a token.
     fs.readFile(TOKEN_PATH, (err, token) => {
         if (err) {
+            console.log('No token found. Refreshing token...');
             getNewToken(oAuth2Client)
                 .then((oAuth2Client) => resolve(oAuth2Client))
                 .catch((err) => reject(err));
@@ -101,7 +102,7 @@ function getNewToken(oAuth2Client) {
         server.on('error', (err) => {
             if (String(err).includes('EADDRINUSE')) {
                 console.log('Authorization server already running');
-                console.log('Access the authorization url to autorize:\n', authorizeUrl)
+                console.log('Access the authorization url to authorize:\n', authorizeUrl)
                 console.log('\n\n')
                 reject(err)
             }

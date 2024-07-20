@@ -43,7 +43,6 @@ router.get('/processBills', async function (req, res) {
                 handleError(err)
                 return err
             }
-            console.log("bills", bills)
 
             let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
             let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
@@ -52,8 +51,6 @@ router.get('/processBills', async function (req, res) {
             const promises = [findActiveTableBills(billsSourceTable, periods),
                               findActiveEmailBills(billsSourceEmail, periods)]
             const activeBills = await runParallel(promises)
-
-            console.log("activeBills", activeBills)
             
             for (const activeBill of activeBills) {
                 activeBill.save(function (err) {
@@ -159,7 +156,6 @@ async function findEmailBills(bill, period) {
     const parsedDataList = await parseEmailData(email, period)
 
     for (const parsedData of parsedDataList) {
-        console.log("parsedData", parsedData)
         let fallbackDueDate = new Date(period.year, period.month, bill.dueDay)
         let name = bill.name
         let dueDate = parsedData.dueDate ? parsedData.dueDate : fallbackDueDate
