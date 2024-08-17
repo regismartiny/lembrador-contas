@@ -14,7 +14,11 @@ let options = {
     dbName: DB_NAME
 }
 
-mongoose.connect(`mongodb://${DB_ADDRESS}:${DB_PORT}`, options).catch((err) => {
+let dbUrl = `mongodb://${DB_ADDRESS}:${DB_PORT}`
+
+console.log(`Connecting to database: ${dbUrl}`)
+
+mongoose.connect(dbUrl, options).catch((err) => {
     if (err.message.indexOf("ECONNREFUSED") !== -1) {
         console.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
         process.exit(1)

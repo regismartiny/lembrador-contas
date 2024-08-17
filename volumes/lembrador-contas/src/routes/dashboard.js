@@ -34,6 +34,35 @@ router.get('/', function (req, res) {
         })
 })
 
+router.get('/dashboard-new', async function (req, res) {
+    db.ActiveBill.find().lean().exec(
+        function (err, bills) {
+            if (err) {
+                handleError(err)
+                return err
+            }
+            let currentMonth = new Date().getMonth()
+            let activeBillMonths = new Array()
+            
+            let currentMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth)
+            activeBillMonths.push(currentMonthBills)
+
+            let activeBillData = []
+            
+            const lastUpdate = activeBillMonths.flat().sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
+            for (let activeBills of activeBillMonths) {
+                if (activeBills.length == 0) continue
+                let firstBill = activeBills[0]
+                let billsMonth = getBillMonth(firstBill.dueDate)
+                const totalValue = activeBills.map(bill => bill.value).reduce(getSum, 0)
+                const billList = activeBills.sort((a,b)=>a.name.localeCompare(b.name))
+                const activeBillMonthData = { month: billsMonth, billList, totalValue }
+                activeBillData.push(activeBillMonthData)
+            }
+            res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate })
+        })
+})
+
 /* Process current month bills. */
 router.get('/processBills', async function (req, res) {
     await deleteProcessedActiveBills()
