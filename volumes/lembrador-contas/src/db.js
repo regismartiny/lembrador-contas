@@ -87,6 +87,7 @@ var billSchema = new mongoose.Schema({
     valueSourceType: { type: String, enum: Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
     dueDay: { type: Number, required: [true, 'O Dia do Vencimento é obrigatório'] },
+    icon: { type: String },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
@@ -112,6 +113,7 @@ var activeBillSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome é obrigatório'] },
     dueDate: { type: Date },
     value: { type: Number },
+    icon: { type: String },
     status: { type: String, enum: Object.keys(ActiveBillStatusEnum), default: 'UNPAID', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }

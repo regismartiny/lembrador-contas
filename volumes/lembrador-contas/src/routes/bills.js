@@ -22,10 +22,11 @@ router.post('/add', function (req, res) {
     let name = req.body.name;
     let company = req.body.company;
     let dueDay = req.body.dueDay;
+    let icon = req.body.icon;
     let valueSourceType = req.body.valueSourceType;
     let valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
 
-    let bill = new db.Bill({ name, company, dueDay, valueSourceType, valueSourceId });
+    let bill = new db.Bill({ name, company, dueDay, icon, valueSourceType, valueSourceId });
     bill.save(function (err) {
         if (err) {
             handleError(err);
@@ -59,11 +60,12 @@ router.post('/update', function (req, res) {
     let name = req.body.name;
     let company = req.body.company;
     let dueDay = req.body.dueDay;
+    let icon = req.body.icon;
     let valueSourceType = req.body.valueSourceType;
     let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table;
     let status = req.body.status;
 
-    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { name, company, dueDay, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
+    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { name, company, dueDay, icon, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;

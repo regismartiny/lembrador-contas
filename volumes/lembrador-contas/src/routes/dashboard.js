@@ -160,7 +160,8 @@ async function findTableBills(bill, period) {
         let name = bill.name
         let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
         let value = currentPeriodData.value
-        bills.push(new db.ActiveBill({name, dueDate, value}))
+        let icon = bill.icon
+        bills.push(new db.ActiveBill({name, dueDate, value, icon}))
     }
 
     return bills;
@@ -189,8 +190,9 @@ async function findEmailBills(bill, period) {
         let name = bill.name
         let dueDate = parsedData.dueDate ? parsedData.dueDate : fallbackDueDate
         let value = parsedData?.value
+        let icon = bill.icon
         let status = dueDate && value ? 'UNPAID' : 'ERROR'
-        bills.push(new db.ActiveBill({name, dueDate, value, status}))
+        bills.push(new db.ActiveBill({name, dueDate, value, icon, status}))
     }
     return bills;
 }
