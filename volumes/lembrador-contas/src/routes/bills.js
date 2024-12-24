@@ -13,12 +13,14 @@ router.get('/list', function (req, res) {
 });
 
 /* GET New Bill page. */
-router.get('/new', function (req, res) {
-    res.render('bill/newBill', { template, title: 'Cadastro de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum });
+router.get('/new', async function (req, res) {
+    const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean().exec()
+    res.render('bill/newBill', { template, title: 'Cadastro de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum, activeUsers });
 });
 
 /* POST to Add Bill */
 router.post('/add', function (req, res) {
+    let users = req.body.users;
     let name = req.body.name;
     let company = req.body.company;
     let dueDay = req.body.dueDay;
@@ -26,7 +28,7 @@ router.post('/add', function (req, res) {
     let valueSourceType = req.body.valueSourceType;
     let valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
 
-    let bill = new db.Bill({ name, company, dueDay, icon, valueSourceType, valueSourceId });
+    let bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId });
     bill.save(function (err) {
         if (err) {
             handleError(err);
@@ -40,15 +42,17 @@ router.post('/add', function (req, res) {
 });
 
 /* GET Edit Bill page. */
-router.get('/edit/:id', function (req, res) {
+router.get('/edit/:id', async function (req, res) {
     let billId = req.params.id;
+
+    const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean().exec()
 
     db.Bill.findById(billId, function (err, bill) {
         if (err) {
             handleError(err);
             return err;
         } else {
-            res.render('bill/editBill', { template, title: 'Edição de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, bill });
+            res.render('bill/editBill', { template, title: 'Edição de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, bill, activeUsers });
         }
     });
 });
@@ -56,6 +60,7 @@ router.get('/edit/:id', function (req, res) {
 /* POST to Update Bill */
 router.post('/update', function (req, res) {
 
+    let users = req.body.users;
     let billId = req.body.id;
     let name = req.body.name;
     let company = req.body.company;
@@ -65,7 +70,7 @@ router.post('/update', function (req, res) {
     let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table;
     let status = req.body.status;
 
-    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { name, company, dueDay, icon, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
+    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;

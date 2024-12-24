@@ -1,0 +1,82 @@
+<%- include ('../partials/header.ejs') %>
+
+    <body class="dark-theme">
+        <%- template.navbar %>
+        <div class="starter-template">
+            <div class="float-right small">
+                Último processamento:
+                <span data-mask="00/00/0000 00:00:00"><%= lastUpdate?.toLocaleDateString('pt-br') %></span>
+            </div>
+            <% activeBillData.forEach(function(data){ %>
+                <div class="header">
+                    <h1 class="title-1">
+                        <%= title %>
+                    </h1>
+                </div>
+                <br>
+                <% data.billList?.forEach(function(bill){ %>
+                    <div class="container-cards">
+                        <div class="dashboard">
+                            <div class="card">
+                                <i class="fas fa-bolt"></i>
+                                <div>
+                                    <h2><%= bill.name %></h2>
+                                    <p>Amount: $75.00</p>
+                                    <p class="date" data-mask="00/00"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <i class="fas fa-tint"></i>
+                                <div>
+                                    <h2>Water</h2>
+                                    <p>Amount: $30.00</p>
+                                    <p class="due-date">Due Date: 2024-08-10</p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <i class="fas fa-wifi"></i>
+                                <div>
+                                    <h2>Internet</h2>
+                                    <p>Amount: $50.00</p>
+                                    <p class="due-date">Due Date: 2024-08-20</p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <i class="fas fa-fire"></i>
+                                <div>
+                                    <h2>Gas</h2>
+                                    <p>Amount: $40.00</p>
+                                    <p class="due-date">Due Date: 2024-08-18</p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <i class="fas fa-home"></i>
+                                <div>
+                                    <h2>Rent</h2>
+                                    <p>Amount: $1200.00</p>
+                                    <p class="due-date">Due Date: 2024-08-01</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="summary">
+                            <h2>Monthly Summary</h2>
+                            <p>Total Bills: <span class="total">$1395.00</span></p>
+                        </div>
+                    </div>
+                <%})%>
+            <%})%>
+        <%- template.scripts %>
+            <script>
+                // Function to get the current month and year
+                function getCurrentMonth() {
+                    const now = new Date();
+                    const options = { month: 'long', year: 'numeric' };
+                    return now.toLocaleDateString('en-US', options);
+                }
+
+                // Set the current month in the header
+                document.getElementById('month-header').textContent = `Bills for: ${getCurrentMonth()}`;
+            </script>
+        </body>
+    </div>
+</html>

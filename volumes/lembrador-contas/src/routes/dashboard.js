@@ -3,34 +3,34 @@ const router = express.Router()
 const template = require('./template')
 const db = require("../db")
 const moment = require('moment');
+var mongoose = require('mongoose')
 
 /* GET Dashboard page. */
 router.get('/', function (req, res) {
     db.ActiveBill.find().lean().exec(
-        function (err, bills) {
+        async function (err, activeBills) {
             if (err) {
                 handleError(err)
                 return err
             }
-            let currentMonth = new Date().getMonth()
-            let activeBillMonths = new Array()
-            
-            let currentMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth)
-            activeBillMonths.push(currentMonthBills)
+            console.log('activeBills', activeBills)
+
+            let usersIds = activeBills.map(bill => bill.users).flat().map(user => user._id.toString())
+            usersIds = [...new Set(usersIds)]
+
+            let users = await db.User.find({ _id: { $in: usersIds } }).lean().exec()
 
             let activeBillData = []
-            
-            const lastUpdate = activeBillMonths.flat().sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
-            for (let activeBills of activeBillMonths) {
-                if (activeBills.length == 0) continue
-                let firstBill = activeBills[0]
-                let billsMonth = getBillMonth(firstBill.dueDate)
-                const totalValue = activeBills.map(bill => bill.value).reduce(getSum, 0)
-                const billList = activeBills.sort((a,b)=>a.name.localeCompare(b.name))
-                const activeBillMonthData = { month: billsMonth, billList, totalValue }
-                activeBillData.push(activeBillMonthData)
+
+            for (let user of users) {
+                activeBillData.push({user})
             }
-            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate })
+
+            console.log("activeBillData", activeBillData);
+
+            const lastUpdate = activeBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
+
+            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, lastUpdate })
         })
 })
 
@@ -60,6 +60,65 @@ router.get('/dashboard-new', async function (req, res) {
                 activeBillData.push(activeBillMonthData)
             }
             res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate })
+        })
+})
+
+router.get('/user-bill-list', async function (req, res) {
+    let userId = req.query.userId
+    let mongoUserId = mongoose.Types.ObjectId(userId)
+    console.log('userId', userId)
+    db.ActiveBill.find({ users: mongoUserId }).lean().exec(
+        async function (err, activeBills) {
+            if (err) {
+                handleError(err)
+                return err
+            }
+            console.log('activeBills', activeBills)
+
+            let monthBillsMap = activeBills.reduce((map, bill) => {
+                let month = getBillMonth(bill.dueDate)
+                if (!map.has(month)) {
+                    map.set(month, [])
+                }
+                map.get(month).push(bill)
+                return map
+            }, new Map())
+
+            let userBillsData = { user: userId, billListPerMonth: [] }
+
+            for (let [key, value] of monthBillsMap) {
+
+                value.forEach(bill => {
+                    bill.value = bill.value / bill.users.length
+                });
+
+                const totalValue = value.map(bill => bill.value).reduce(getSum, 0)
+                const billListOrderedByBillName = value.sort((a,b)=>a.name.localeCompare(b.name))
+                const activeBillMonthData = { month: key, billList: billListOrderedByBillName, totalValue }
+
+                userBillsData.billListPerMonth.push(activeBillMonthData)
+            }
+
+            //show only current month bills
+            // let currentYear = new Date().getFullYear()
+            // let currentMonth = new Date().getMonth()
+            // let activeBillMonths = []
+            // let currentMonthActiveBills = activeBills.filter(bill => bill.dueDate?.getMonth() == currentMonth && bill.dueDate?.getFullYear() == currentYear)
+
+
+            //order userBillsData by month - desc
+            userBillsData.billListPerMonth.sort((a,b)=> {
+                var yearA = a.month.split("/")[1]
+                var yearB = b.month.split("/")[1]
+                var monthA = a.month.split("/")[0]
+                var monthB = b.month.split("/")[0]
+                
+                return yearB - yearA || monthB - monthA
+            })
+
+            console.log("userBillsData", userBillsData);
+
+            res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum })
         })
 })
 
@@ -157,11 +216,12 @@ async function findTableBills(bill, period) {
                 && data.period.year == period.year)[0]
 
     if (currentPeriodData) {
+        let users = bill.users
         let name = bill.name
         let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
         let value = currentPeriodData.value
         let icon = bill.icon
-        bills.push(new db.ActiveBill({name, dueDate, value, icon}))
+        bills.push(new db.ActiveBill({users, name, dueDate, value, icon}))
     }
 
     return bills;
@@ -186,13 +246,14 @@ async function findEmailBills(bill, period) {
     const parsedDataList = await parseEmailData(email, period)
 
     for (const parsedData of parsedDataList) {
+        let users = bill.users
         let fallbackDueDate = new Date(period.year, period.month, bill.dueDay)
         let name = bill.name
         let dueDate = parsedData.dueDate ? parsedData.dueDate : fallbackDueDate
         let value = parsedData?.value
         let icon = bill.icon
         let status = dueDate && value ? 'UNPAID' : 'ERROR'
-        bills.push(new db.ActiveBill({name, dueDate, value, icon, status}))
+        bills.push(new db.ActiveBill({users, name, dueDate, value, icon, status}))
     }
     return bills;
 }

@@ -82,6 +82,7 @@ const ValueSourceTypeEnum = {
 }
 
 var billSchema = new mongoose.Schema({
+    users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'usercollection' }],
     name: { type: String, required: [true, 'O nome é obrigatório'] },
     company: { type: String, required: [true, 'O nome da Empresa é obrigatório'] },
     valueSourceType: { type: String, enum: Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
@@ -110,6 +111,7 @@ const ActiveBillStatusEnum = {
 }
 
 var activeBillSchema = new mongoose.Schema({
+    users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'usercollection' }],
     name: { type: String, required: [true, 'O nome é obrigatório'] },
     dueDate: { type: Date },
     value: { type: Number },
