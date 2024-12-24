@@ -99,21 +99,25 @@ router.get('/user-bill-list', async function (req, res) {
                 userBillsData.billListPerMonth.push(activeBillMonthData)
             }
 
-            //show only current month bills
-            // let currentYear = new Date().getFullYear()
-            // let currentMonth = new Date().getMonth()
-            // let activeBillMonths = []
-            // let currentMonthActiveBills = activeBills.filter(bill => bill.dueDate?.getMonth() == currentMonth && bill.dueDate?.getFullYear() == currentYear)
-
-
-            //order userBillsData by month - desc
+  
+            //order userBillsData by month - asc
             userBillsData.billListPerMonth.sort((a,b)=> {
                 var yearA = a.month.split("/")[1]
                 var yearB = b.month.split("/")[1]
                 var monthA = a.month.split("/")[0]
                 var monthB = b.month.split("/")[0]
                 
-                return yearB - yearA || monthB - monthA
+                return yearA - yearB || monthA - monthB
+            })
+
+            //show only current month and future bills
+            let currentYear = new Date().getFullYear()
+            let currentMonth = new Date().getMonth()
+      
+            userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
+                let month = billList.month.split("/")[0]
+                let year = billList.month.split("/")[1]
+                return (month >= currentMonth && year >= currentYear || year > currentYear)
             })
 
             console.log("userBillsData", userBillsData);
