@@ -1,0 +1,40 @@
+version: '2'
+services:
+
+#  portainer:
+#    container_name: portainer
+#    image: portainer/portainer
+#    restart: unless-stopped
+#    ports:
+#      - 9000:9000
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - ./volumes/portainer/data:/data
+
+  mongodb:
+    image: mongo:3.2
+    ports:
+      - 27017:27017
+    volumes:
+      - ./volumes/mongodb/data:/data/db
+
+  lembrador-contas:
+    container_name: lembrador-contas
+    image: node:18
+    command: bash -c 'yarn install && npm run startm'
+    working_dir: /root/lembrador-contas
+    restart: unless-stopped
+    environment:
+      - MONGODB_IP=mongodb
+    ports:
+      - 9090:9090
+      - 9091:9091
+    volumes:
+      - ./volumes/lembrador-contas:/root/lembrador-contas
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    stdin_open: true #docker run -i
+    tty: true        #docker run -t
