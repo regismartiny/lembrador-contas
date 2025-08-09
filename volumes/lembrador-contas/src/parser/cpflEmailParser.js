@@ -54,7 +54,7 @@ function parseHTML(text) {
     const elemVencimento = elemValor.parentElement.parentElement.previousElementSibling.childNodes[0].childNodes[1]
     const elemMesReferencia = elemValor.parentElement.parentElement.previousElementSibling.previousElementSibling.childNodes[0].childNodes[1]
     const elemInstalacao = elemValor.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.childNodes[0].childNodes[1]
-    const valor = elemValor.innerHTML.substring(4)
+    const valor = elemValor.innerHTML.substring(elemValor.innerHTML.indexOf('R$'))
     const vencimento = elemVencimento.innerHTML.substring(4)
     const mesReferencia = elemMesReferencia.innerHTML.substring(4)
     const instalacao = elemInstalacao.innerHTML.substring(4)
