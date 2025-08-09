@@ -1,0 +1,22 @@
+<%- include ('../partials/header.ejs') %>
+<body>
+    <%- typeof template !== 'undefined' ? template.navbar : '' %>
+    <div class="container">
+        <div class="starter-template">
+            <h1 class="title-1">Testar parseHTML</h1>
+            <form method="post" action="/html-parser">
+                <div class="form-group">
+                    <label for="html">Cole o HTML para testar:</label>
+                    <textarea class="form-control" name="html" id="html" rows="10"><%= html %></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Testar</button>
+            </form>
+            <% if (result) { %>
+                <h2>Resultado:</h2>
+                <pre><%= JSON.stringify(result, null, "\t") %></pre>
+            <% } %>
+        </div>
+    </div>
+    <%- typeof template !== 'undefined' ? template.scripts : '' %>
+</body>
+</html>
