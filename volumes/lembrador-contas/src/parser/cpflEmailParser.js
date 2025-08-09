@@ -41,23 +41,28 @@ function parseEmailData(msg) {
         let base64str = base64Util.fixBase64(data)
         var text = base64Util.base64ToText(base64str)
         
-        const dom = new jsdom.JSDOM(text)
-
-        const elemValor = querySelectorIncludesText(dom, 'span', 'R$')
-        const elemVencimento = elemValor.parentElement.parentElement.previousElementSibling.childNodes[1].childNodes[1]
-        const elemMesReferencia = elemValor.parentElement.parentElement.previousElementSibling.previousElementSibling.childNodes[1].childNodes[1]
-        const elemInstalacao = elemValor.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.childNodes[1].childNodes[1]
-        const valor = elemValor.innerHTML.substring(4)
-        const vencimento = elemVencimento.innerHTML.substring(4)
-        const mesReferencia = elemMesReferencia.innerHTML.substring(4)
-        const instalacao = elemInstalacao.innerHTML.substring(4)
-        return { instalacao, 
-            vencimento : moment(vencimento, "DD/MM/YYYY").toDate(), 
-            mesReferencia, 
-            valor : Number.parseFloat(valor.replace(",",".").substring(3, valor.length-1)) 
-        }
+        return parseHTML(text)
     } catch(e) {
         console.error("Failed to get info from HTML email", e)
+    }
+}
+
+function parseHTML(text) {
+    console.log("parseHTML()")
+    const dom = new jsdom.JSDOM(text)
+    const elemValor = querySelectorIncludesText(dom, 'span', 'R$')
+    const elemVencimento = elemValor.parentElement.parentElement.previousElementSibling.childNodes[0].childNodes[1]
+    const elemMesReferencia = elemValor.parentElement.parentElement.previousElementSibling.previousElementSibling.childNodes[0].childNodes[1]
+    const elemInstalacao = elemValor.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.childNodes[0].childNodes[1]
+    const valor = elemValor.innerHTML.substring(4)
+    const vencimento = elemVencimento.innerHTML.substring(4)
+    const mesReferencia = elemMesReferencia.innerHTML.substring(4)
+    const instalacao = elemInstalacao.innerHTML.substring(4)
+    return { 
+        instalacao, 
+        vencimento : moment(vencimento, "DD/MM/YYYY").toDate(), 
+        mesReferencia, 
+        valor : Number.parseFloat(valor.replace(",",".").substring(3, valor.length-1)) 
     }
 }
 
@@ -66,4 +71,4 @@ function querySelectorIncludesText(dom, selector, text) {
         .find(el => el.textContent.includes(text));
 }
 
-module.exports = { fetch }
+module.exports = { fetch, parseHTML }
