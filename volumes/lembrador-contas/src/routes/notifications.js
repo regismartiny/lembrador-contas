@@ -3,8 +3,8 @@ const router = express.Router()
 const db = require("../db");
 const WebPush = require('web-push');
 
-const apiKeys = WebPush.generateVAPIDKeys()
-console.log('WebPush VAPID keys generated: ', apiKeys)
+// const apiKeys = WebPush.generateVAPIDKeys()
+// console.log('WebPush VAPID keys generated: ', apiKeys)
 // const apiKeys = {
 //    publicKey: 'BIjmnu66vnPL_ZBMZAfMTczJfqqkCkzHJ5j6RyH4KTwoMJGJrqBJ1YaBx0NMzQNS5esHeP3f7R8SAxWFTGJrIgs',
 //    privateKey: 'NHuVW1uesQi56xgZYuzfNEEOyPXdHujF-4SyWNztQ1s' 

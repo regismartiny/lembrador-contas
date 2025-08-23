@@ -7,8 +7,6 @@ const DB_PASS = process.env.MONGODB_PASSWORD
 const DB_NAME = process.env.MONGODB_DATABASE || 'lembrador-contas'
 
 let options = {
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
     user: DB_USER,
     pass: DB_PASS,
     dbName: DB_NAME
@@ -18,13 +16,16 @@ let dbUrl = `mongodb://${DB_ADDRESS}:${DB_PORT}`
 
 console.log(`Connecting to database: ${dbUrl}`)
 
-mongoose.connect(dbUrl, options).catch((err) => {
+mongoose.connect(dbUrl, options)
+.catch((err) => {
     if (err.message.indexOf("ECONNREFUSED") !== -1) {
         console.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
         process.exit(1)
     } else {
         throw err
     }
+}).finally(() => {
+    console.log("Connected to MongoDB")
 })
 
 const StatusEnum = {
@@ -131,11 +132,6 @@ activeBillSchema.pre('save', function (next) {
 
 var ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
 ActiveBill.collection.createIndex( { name: 1, dueDate: 1 }, { unique: true } )
-
-const DataTypeEnum = {
-    BODY: 'Corpo do email',
-    PDF_ATTACHMENT: 'Anexo PDF'
-}
 
 const DataParserEnum = {
     CPFL_EMAIL: 'cpflEmailParser',
@@ -246,4 +242,4 @@ var PushNotificationSubscription = mongoose.model('pushnotificationsubscriptionc
 
 
 
-module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }
+module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }

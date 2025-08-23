@@ -7,6 +7,7 @@ const emailUtils = require('../util/emailUtils.js');
 const vm = require('vm');
 const utils = require("../util/utils");
 const cpflEmailParser = require("../parser/cpflEmailParser");
+const corsanEmailParser = require("../parser/corsanEmailParser");
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -136,21 +137,46 @@ router.get('/test/:id', async function (req, res) {
             handleError(err);
             return err;
         } 
+
         const message = await emailUtils.getLastMessage(email.address, email.subject);
+
+        let values = []
         
-        let values = [];
-        if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
-            getEmailPDFAttachmentData(values);
-        } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
-            const info = await cpflEmailParser.getInfoFromHTMLEmail(message);
-            values.push(info);
+        if (email.dataParser == db.DataParserEnum.CPFL_EMAIL) {
+            values = await cpflEmailParser.parse(message);
+        } else if (email.dataParser == db.DataParserEnum.CORSAN_EMAIL) {
+            values = await corsanEmailParser.parse(message);
         }
+        
         console.table(values);
         res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
     });
 });
 
-async function getEmailPDFAttachmentData(value) {
+router.get('/test/:id/parser', async function (req, res) {
+    let emailId = req.params.id;
+
+    db.Email.findById(emailId, async function (err, email) {
+        if (err) {
+            handleError(err);
+            return err;
+        } 
+
+        let period = utils.getCurrentPeriod();
+        let values = {}
+
+        if (db.DataParserEnum[email.dataParser] == db.DataParserEnum.CPFL_EMAIL) {
+            values = await cpflEmailParser.fetch(email.address, email.subject, period);
+        } else if (db.DataParserEnum[email.dataParser] == db.DataParserEnum.CORSAN_EMAIL) {
+            values = await corsanEmailParser.fetch(email.address, email.subject, period);
+        }
+        
+        console.table(values);
+        res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
+    });
+});
+
+async function getEmailPDFAttachmentData(message, value) {
     let att = await emailUtils.getAttachmentFromMessage(message);
     let pdfData = await emailUtils.getPDFFromAttachment(att.attachment.data);
 
