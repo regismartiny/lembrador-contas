@@ -12,7 +12,7 @@
                     </h1>
                     <br>
                     <select class="form-control" id="user" name="user" onchange="filterBillsByUser(this.value)">
-                        <% activeBillData.map(data => data.user).forEach(function(user){ %>
+                        <% users.forEach(function(user){ %>
                             <option value="<%= user._id %>"><%= user.name %></option>
                         <% }) %>
                     </select>

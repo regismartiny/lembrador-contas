@@ -30,7 +30,7 @@ router.get('/', function (req, res) {
 
             const lastUpdate = activeBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
 
-            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, lastUpdate })
+            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, users, lastUpdate })
         })
 })
 
