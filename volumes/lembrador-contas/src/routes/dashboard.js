@@ -223,7 +223,7 @@ async function findTableBills(bill, period) {
         let totalPeriods = table.data.length
         let currentPeriod = currentPeriodDataIndex + 1
         if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
-            name = `${bill.name} ${currentPeriod}/${totalPeriods}`
+            name = `${bill.name} (${currentPeriod}/${totalPeriods})`
         }
 
         let users = bill.users
