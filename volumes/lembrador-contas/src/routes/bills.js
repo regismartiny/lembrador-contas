@@ -52,7 +52,7 @@ router.get('/edit/:id', async function (req, res) {
             handleError(err);
             return err;
         } else {
-            res.render('bill/editBill', { template, title: 'Edição de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, bill, activeUsers });
+            res.render('bill/editBill', { template, title: 'Edição de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, bill, activeUsers });
         }
     });
 });
