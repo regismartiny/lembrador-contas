@@ -215,13 +215,18 @@ async function findTableBills(bill, period) {
     let bills = []
     let table = await db.Table.findById(bill.valueSourceId).lean().exec()
             
-    let currentPeriodData = table.data.filter(
-        data => data.period.month == period.month + 1 
-                && data.period.year == period.year)[0]
-
-    if (currentPeriodData) {
-        let users = bill.users
+    let currentPeriodDataIndex = table.data.findIndex(data => filterCurrentPeriodData(data, period))
+    
+    if (currentPeriodDataIndex >= 0) {
+        let currentPeriodData = table.data[currentPeriodDataIndex]
         let name = bill.name
+        let totalPeriods = table.data.length
+        let currentPeriod = currentPeriodDataIndex + 1
+        if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
+            name = `${bill.name} ${currentPeriod}/${totalPeriods}`
+        }
+
+        let users = bill.users
         let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
         let value = currentPeriodData.value
         let icon = bill.icon
@@ -229,6 +234,11 @@ async function findTableBills(bill, period) {
     }
 
     return bills;
+}
+
+function filterCurrentPeriodData(data, period) {
+    return data.period.month == period.month + 1 
+           && data.period.year == period.year
 }
 
 async function findActiveEmailBills(billsSourceEmail, periods) {

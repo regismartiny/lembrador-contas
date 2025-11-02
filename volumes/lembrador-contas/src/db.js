@@ -81,10 +81,16 @@ const ValueSourceTypeEnum = {
     API: 'API'
 }
 
+const BillTypeEnum = {
+    RECURRENT_SERVICE: 'Serviço Recorrente',
+    PURCHASE: 'Compra',
+}
+
 var billSchema = new mongoose.Schema({
     users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'usercollection' }],
     name: { type: String, required: [true, 'O nome é obrigatório'] },
     company: { type: String, required: [true, 'O nome da Empresa é obrigatório'] },
+    type: { type: String, enum: Object.keys(BillTypeEnum), default: 'RECURRENT_SERVICE', required: [true, 'O Tipo da Conta é obrigatório'] },
     valueSourceType: { type: String, enum: Object.keys(ValueSourceTypeEnum), required: [true, 'O Tipo da Fonte Valor é obrigatório'] },
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
     dueDay: { type: Number, required: [true, 'O Dia do Vencimento é obrigatório'] },

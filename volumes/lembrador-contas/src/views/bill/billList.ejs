@@ -20,6 +20,7 @@
                                     <tr>
                                         <th>Nome</th>
                                         <th>Empresa</th>
+                                        <th>Tipo</th>
                                         <th>Fonte Dados</th>
                                         <th>Dia Vencimento</th>
                                         <th>Situação</th>
@@ -34,6 +35,9 @@
                                             </td>
                                             <td>
                                                 <%= bill.company %>
+                                            </td>
+                                            <td>
+                                                <%= billTypeEnum[bill.type] %>
                                             </td>
                                             <td>
                                                 <%= valueSourceTypeEnum[bill.valueSourceType] %>

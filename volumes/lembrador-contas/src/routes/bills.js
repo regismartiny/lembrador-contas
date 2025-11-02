@@ -8,14 +8,14 @@ router.get('/list', function (req, res) {
     db.Bill.find({}).lean().exec(
         function (e, bills) {
             const billList = bills.sort((a,b)=>a.name.localeCompare(b.name))
-            res.render('bill/billList', { template, title: 'Contas', billList, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum });
+            res.render('bill/billList', { template, title: 'Contas', billList, billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum });
         });
 });
 
 /* GET New Bill page. */
 router.get('/new', async function (req, res) {
     const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean().exec()
-    res.render('bill/newBill', { template, title: 'Cadastro de Conta', valueSourceTypeEnum: db.ValueSourceTypeEnum, activeUsers });
+    res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, activeUsers });
 });
 
 /* POST to Add Bill */
@@ -66,11 +66,12 @@ router.post('/update', function (req, res) {
     let company = req.body.company;
     let dueDay = req.body.dueDay;
     let icon = req.body.icon;
+    let type = req.body.type;
     let valueSourceType = req.body.valueSourceType;
     let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table;
     let status = req.body.status;
 
-    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
+    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status } }, { new: true }, function (err, bill) {
         if (err) {
             handleError(err);
             return err;

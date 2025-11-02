@@ -42,6 +42,14 @@
                         </div>
                         <br>
                         <div class="form-group">
+                            <label for="type">Tipo da Conta</label>
+                            <select name='type' class="form-control" id="type">
+                                <% var keys = Object.keys(billTypeEnum); keys.forEach(function(bt){ %>
+                                    <option <% if (bt == bill.type) {%>selected="selected"<% } %> value="<%= bt %>"><%= billTypeEnum[bt] %></option>
+                                <%})%>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="valueSourceType">Fonte de Dados</label>
                             <select name='valueSourceType' class="form-control" id="valueSourceType">
                                 <% var keys = Object.keys(valueSourceTypeEnum); keys.forEach(function(vst){ %>
