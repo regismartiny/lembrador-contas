@@ -12,7 +12,6 @@
                     <th>Nome</th>
                     <th>Venc.</th>
                     <th>Valor</th>
-                    <th>Situação</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,22 +26,6 @@
                         <td>
                             <span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span>
                         </td>
-                        <td>
-                            <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.PAID){ %>
-                            <span class="material-symbols-outlined symbol-blue">
-                                done
-                            </span>
-                            <%} else {%>
-                            <span class="material-symbols-outlined symbol-red">
-                                attach_money
-                            </span>
-                        </td>
-                        <%}%>
-                        <% if (activeBillStatusEnum[bill.status] == activeBillStatusEnum.UNPAID){ %>
-                        <td>
-                            <a href="dashboard/paybill/<%= bill._id %>" data-toggle="tooltip" title="Marcar como pago" class="btn material-symbols-outlined">done</a>
-                        </td>
-                        <%}%>
                     </tr>
                 <%})%>
             </tbody>
