@@ -252,4 +252,4 @@ var PushNotificationSubscription = mongoose.model('pushnotificationsubscriptionc
 
 
 
-module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }
+module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, BillTypeEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }
