@@ -1,5 +1,5 @@
 # Secret files
-.credentials/*
+.credentials
 
 # Data files
 data/
