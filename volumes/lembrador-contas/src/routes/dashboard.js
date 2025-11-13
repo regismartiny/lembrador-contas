@@ -7,18 +7,14 @@ var mongoose = require('mongoose')
 
 /* GET Dashboard page. */
 router.get('/', function (req, res) {
-    db.ActiveBill.find().lean().exec(
-        async function (err, activeBills) {
-            if (err) {
-                handleError(err)
-                return err
-            }
+    db.ActiveBill.find().lean().then(
+        async function (activeBills) {
             console.log('activeBills', activeBills)
 
             let usersIds = activeBills.map(bill => bill.users).flat().map(user => user._id.toString())
             usersIds = [...new Set(usersIds)]
 
-            let users = await db.User.find({ _id: { $in: usersIds } }).lean().exec()
+            let users = await db.User.find({ _id: { $in: usersIds } }).lean()
 
             let activeBillData = []
 
@@ -31,16 +27,15 @@ router.get('/', function (req, res) {
             const lastUpdate = activeBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
 
             res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, users, lastUpdate })
+        }).catch((err) => {
+            handleError(err)
+            return err
         })
 })
 
 router.get('/dashboard-new', async function (req, res) {
-    db.ActiveBill.find().lean().exec(
-        function (err, bills) {
-            if (err) {
-                handleError(err)
-                return err
-            }
+    db.ActiveBill.find().lean().then(
+        async function (bills) {
             let currentMonth = new Date().getMonth()
             let activeBillMonths = new Array()
             
@@ -60,19 +55,18 @@ router.get('/dashboard-new', async function (req, res) {
                 activeBillData.push(activeBillMonthData)
             }
             res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate })
+        }).catch((err) => {
+            handleError(err)
+            return err
         })
 })
 
 router.get('/user-bill-list', async function (req, res) {
     let userId = req.query.userId
+    let mongoUserId = !userId ? mongoUserId = new mongoose.Types.ObjectId(userId) : null
     console.log('userId', userId)
-    let mongoUserId = mongoose.Types.ObjectId(userId)
-    db.ActiveBill.find({ users: mongoUserId }).lean().exec(
-        async function (err, activeBills) {
-            if (err) {
-                handleError(err)
-                return err
-            }
+    db.ActiveBill.find({ users: mongoUserId }).lean().then(
+        async function (activeBills) {
             console.log('activeBills', activeBills)
 
             let monthBillsMap = activeBills.reduce((map, bill) => {
@@ -123,37 +117,38 @@ router.get('/user-bill-list', async function (req, res) {
             console.log("userBillsData", userBillsData);
 
             res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum })
+        }).catch((err) => {
+            handleError(err)
+            return err
         })
 })
 
 /* Process current month bills. */
 router.get('/processBills', async function (req, res) {
     await deleteProcessedActiveBills()
-    db.Bill.find().lean().exec(
-        async function (err, bills) {
-            if (err) {
-                handleError(err)
-                return err
-            }
+    db.Bill.find().then(async (bills) => {
 
-            let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
-            let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
-            
-            const periods = getPeriods()
-            const promises = [findActiveTableBills(billsSourceTable, periods),
-                              findActiveEmailBills(billsSourceEmail, periods)]
-            const activeBills = await runParallel(promises)
-            
-            for (const activeBill of activeBills) {
-                activeBill.save(function (err) {
-                    if (err) {
-                        console.error(`Error saving activeBill '${activeBill.name}'`, err)
-                    }
-                })
-            }
+        let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
+        let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
+        
+        const periods = getPeriods()
+        const promises = [findActiveTableBills(billsSourceTable, periods),
+                            findActiveEmailBills(billsSourceEmail, periods)]
+        const activeBills = await runParallel(promises)
+        
+        for (const activeBill of activeBills) {
+            activeBill.save(function (err) {
+                if (err) {
+                    console.error(`Error saving activeBill '${activeBill.name}'`, err)
+                }
+            })
+        }
 
-            res.redirect('/dashboard')
-        })
+        res.redirect('/dashboard')
+    }).catch((err) => {
+        handleError(err)
+        return err
+    })
 })
 
 /* Deleted processed bills. */
@@ -164,15 +159,14 @@ router.get('/deleteProcess', function (req, res) {
 
 /* Mark bill as PAID. */
 router.get('/paybill/:id', function (req, res) {
-    let billId = req.params.id;
+    let billId = req.params.id
     let status = 'PAID'
-    db.ActiveBill.findOneAndUpdate({ _id: billId }, { $set: { status } }, { new: true }, function (err, bill) {
-        if (err) {
-            handleError(err)
-            return err
-        }
+    db.ActiveBill.findOneAndUpdate({ _id: billId }, { $set: { status } }, { new: true }).then(function (bill) {
         res.redirect('/dashboard')
-    })
+    }).catch((err) => {
+        handleError(err)
+        return err
+    });
 })
 
 /********************************************************************************* */
@@ -186,7 +180,7 @@ function getSum(total, num) {
 }
 
 async function deleteProcessedActiveBills() {
-    await db.ActiveBill.deleteMany({}).lean().exec()
+    await db.ActiveBill.deleteMany({}).lean()
 }
 
 function getPeriods() {
@@ -213,7 +207,7 @@ function findActiveTableBills(billsSourceTable, periods) {
 
 async function findTableBills(bill, period) {
     let bills = []
-    let table = await db.Table.findById(bill.valueSourceId).lean().exec()
+    let table = await db.Table.findById(bill.valueSourceId).lean()
             
     let currentPeriodDataIndex = table.data.findIndex(data => filterCurrentPeriodData(data, period))
     
@@ -256,7 +250,7 @@ async function findActiveEmailBills(billsSourceEmail, periods) {
 
 async function findEmailBills(bill, period) {
     let bills = []
-    let email = await db.Email.findById(bill.valueSourceId).lean().exec()
+    let email = await db.Email.findById(bill.valueSourceId).lean()
     const parsedDataList = await parseEmailData(email, period)
 
     for (const parsedData of parsedDataList) {

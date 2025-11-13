@@ -6,11 +6,12 @@ var db = require("../db");
 
 /* GET UserList page. */
 router.get('/list', function (req, res) {
-  db.User.find({}).lean().exec(
-    function (e, users) {
+  db.User.find({}).lean().then(
+    function (users) {
       const userList = users.sort((a,b)=>a.name.localeCompare(b.name))
       res.render('user/userList', { template, title: 'Usuários', userList,  statusEnum: db.StatusEnum });
-    });
+    }
+  );
 });
 
 /* GET New User page. */
@@ -24,65 +25,55 @@ router.post('/add', function (req, res) {
   var email = req.body.email;
 
   var user = new db.User({ name, email });
-  user.save(function (err) {
-    if (err) {
-      handleError(err);
-      return err;
-    }
-    else {
+  user.save().then(() => {
       console.log("User saved");
       res.redirect("/users/list");
-    }
-  });
+    }).catch(err => {
+      handleError(err);
+      return err;
+  })
 });
 
 /* GET Edit User page. */
 router.get('/edit/:id', function (req, res) {
-  let userId = req.params.id;
+  let userId = req.params.id
 
-  db.User.findById(userId, function (err, user) {
-    if (err) {
-      handleError(err);
-      return err;
-    } else {
-      res.render('user/editUser', { template, title: 'Edição de Usuário', statusEnum: db.StatusEnum, user });
-    }
-  });
-});
+  db.User.findById(userId).then(function (user) {
+    res.render('user/editUser', { template, title: 'Edição de Usuário', statusEnum: db.StatusEnum, user })
+  }).catch(err => {
+    handleError(err)
+    return err
+  })
+})
 
 /* POST to Update User */
 router.post('/update', function (req, res) {
-  let userId = req.body.id;
-  let name = req.body.name;
-  let email = req.body.email;
-  let status = req.body.status;
+  let userId = req.body.id
+  let name = req.body.name
+  let email = req.body.email
+  let status = req.body.status
 
-  db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status } }, { new: true }, function (err, user) {
-    if (err) {
-      handleError(err);
-      return err;
-    }
-    else {
-      console.log("User updated");
-      res.redirect("/users/list");
-    }
-  });
-});
+  db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status } }, { new: true }).then(() => {
+    console.log("User updated")
+    res.redirect("/users/list")
+  }).catch(err => {
+    handleError(err)
+    return err
+  })
+})
 
 /* GET Remove User */
 router.get('/remove/:id', function (req, res) {
-  let userId = req.params.id;
+  let userId = req.params.id
 
-  db.User.findOneAndRemove({ _id: userId }, function (err, user) {
-    if (err) {
-      handleError(err);
-      return err;
-    } else {
-      console.log("User removed");
-      res.redirect("/users/list");
-    }
-  });
-});
+  db.User.findOneAndRemove({ _id: userId }).then(() => {
+    console.log("User removed")
+    res.redirect("/users/list")
+  }).catch(err => {
+    handleError(err)
+    return er
+  })
+})
 
 function handleError(error) {
   console.log("Error! " + error.message);

@@ -1,6 +1,6 @@
 var mongoose = require('mongoose')
 
-const DB_ADDRESS = process.env.MONGODB_IP || '192.168.0.200'
+const DB_ADDRESS = process.env.MONGODB_IP || '192.168.2.185'
 const DB_PORT = process.env.MONGODB_PORT || 27017
 const DB_USER = process.env.MONGODB_USER
 const DB_PASS = process.env.MONGODB_PASSWORD
@@ -51,10 +51,8 @@ var userSchema = new mongoose.Schema({
 userSchema.pre('validate', function (next) {
     var self = this
 
-    User.findOne({ email: this.email }, 'email', function (err, results) {
-        if (err) {
-            console.log('Erro: ', err)
-        } else if (results) {
+    User.findOne({ email: this.email }, 'email').then(function (results) {
+        if (results) {
             console.warn('Resultados de validação: ', results)
             self.invalidate("email", "Email deve ser único")
             next(new Error("email must be unique"))
@@ -70,6 +68,8 @@ userSchema.pre('validate', function (next) {
                 this.created_at = currentDate
             next()
         }
+    }).catch(err => {
+        console.log('Erro: ', err)
     })
 })
 var User = mongoose.model('usercollection', userSchema, 'usercollection')

@@ -4,21 +4,17 @@ var template = require('./template');
 var db = require("../db");
 
 /* GET APIList page. */
-router.get('/list', function (req, res) {
-    db.API.find({}).lean().exec(
-        function (e, apis) {
-            const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
-            res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
-        });
+router.get('/list', async function (req, res) {
+    var apis = await db.API.find({}).lean()
+    const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
+    res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
 });
 
 /* GET apis JSON */
-router.get('/listJSON', function (req, res) {
-    db.API.find({}).lean().exec(
-        function (e, apis) {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(apis));
-        });
+router.get('/listJSON', async function (req, res) {
+    var apis = await db.API.find({}).lean()
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(apis));
 });
 
 /* GET New API page. */
@@ -28,38 +24,33 @@ router.get('/new', function (req, res) {
 
 /* POST to Add API */
 router.post('/add', function (req, res) {
-    let name = req.body.name;
-    let url = req.body.url;
-    let method = req.body.method;
-    let body = req.body.body;
-    let value = req.body.value;
+    let name = req.body.name
+    let url = req.body.url
+    let method = req.body.method
+    let body = req.body.body
+    let value = req.body.value
 
-    let api = new db.API({ name, url, method, body, value });
-    api.save(function (err) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        else {
-            console.log("API saved");
-            res.redirect("/apis/list");
-        }
-    });
-});
+    let api = new db.API({ name, url, method, body, value })
+    api.save().then(function () {
+        console.log("API saved");
+        res.redirect("/apis/list");
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET Edit API page. */
 router.get('/edit/:id', function (req, res) {
-    let apiId = req.params.id;
+    let apiId = req.params.id
 
-    db.API.findById(apiId, function (err, api) {
-        if (err) {
-            handleError(err);
-            return err;
-        } else {
-            res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api });
-        }
-    });
-});
+    db.API.findById(apiId).then(function (api) {
+        res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* POST to Update API */
 router.post('/update', function (req, res) {
@@ -71,30 +62,25 @@ router.post('/update', function (req, res) {
     let value = req.body.value;
     let status = req.body.status;
 
-    db.API.findOneAndUpdate({ _id: apiId }, { $set: { name,  url, method, body, value, status} }, { new: true }, function (err, api) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        else {
-            console.log("API updated");
-            res.redirect("/apis/list");
-        }
-    });
-});
+    db.API.findOneAndUpdate({ _id: apiId }, { $set: { name,  url, method, body, value, status} }, { new: true }).then(function (api) {
+        console.log("API updated")
+        res.redirect("/apis/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET Remove API */
 router.get('/remove/:id', function (req, res) {
     let apiId = req.params.id;
 
-    db.API.findOneAndRemove({ _id: apiId }, function (err, api) {
-        if (err) {
-            handleError(err);
-            return err;
-        } else {
-            res.redirect("/apis/list");
-        }
-    });
+    db.API.findOneAndRemove({ _id: apiId }).then(function (api) {
+        res.redirect("/apis/list");
+    }).catch(err => {
+        handleError(err);
+        return err;
+    })
 });
 
 function handleError(error) {

@@ -3,8 +3,8 @@ const router = express.Router()
 const db = require("../db");
 const WebPush = require('web-push');
 
-const apiKeys = WebPush.generateVAPIDKeys()
-console.log('WebPush VAPID keys generated: ', apiKeys)
+const apiKeys = ''//WebPush.generateVAPIDKeys()
+// console.log('WebPush VAPID keys generated: ', apiKeys)
 // const apiKeys = {
 //    publicKey: 'BIjmnu66vnPL_ZBMZAfMTczJfqqkCkzHJ5j6RyH4KTwoMJGJrqBJ1YaBx0NMzQNS5esHeP3f7R8SAxWFTGJrIgs',
 //    privateKey: 'NHuVW1uesQi56xgZYuzfNEEOyPXdHujF-4SyWNztQ1s' 
@@ -24,19 +24,17 @@ router.post('/push/register', async function (req, res) {
    let endpoint = req.body.subscription.endpoint
    let keys = req.body.subscription.keys
 
-   let subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean().exec()
+   let subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean()
    console.log('subscriptionFound', subscriptionFound)
    if (!subscriptionFound.length) {
       console.log('Saving registration')
       let subscription = new db.PushNotificationSubscription({ endpoint, keys });
-      subscription.save(function (err) {
-         if (err) {
-            handleError(err);
-            return res.status(500).send()
-         } else {
-            console.log("PushNotificationSubscription saved");
-            return res.status(201).send()
-         }
+      subscription.save().then(() => {
+         console.log("PushNotificationSubscription saved")
+         return res.status(201).send()
+      }).catch(err => {
+         handleError(err);
+         return res.status(500).send()
       });
    }
    return res.status(201).send()
@@ -46,11 +44,8 @@ router.post('/push/send', function (req, res) {
    console.log("/push/send", req.body)
    let notificationContent = req.body
   
-   db.PushNotificationSubscription.find({}, async function (err, subscriptions) {
-      if (err) {
-          handleError(err);
-          return res.status(500).send()
-      } else if (subscriptions){
+   db.PushNotificationSubscription.find({}).then(async function (subscriptions) {
+      if (subscriptions) {
          console.log('subscriptions found: ', subscriptions)
          for (const subscription of subscriptions) {
             await sendNotification(subscription, notificationContent)
@@ -60,8 +55,12 @@ router.post('/push/send', function (req, res) {
          console.log('No subscriptions found')
          return res.status(200).send()
       }
-  }).sort( { updated_at: 1 } );
-});
+   }).catch(err => {
+      handleError(err);
+      return res.status(500).send()
+   })
+//   }).sort( { updated_at: 1 } );
+})
 
 async function sendNotification(subscription, notificationContent) {
    return new Promise((resolve, reject) => {
