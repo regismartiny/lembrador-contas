@@ -10,20 +10,22 @@ const cpflEmailParser = require("../parser/cpflEmailParser");
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
-    db.Email.find({}).lean().exec(
-        function (e, emails) {
+    db.Email.find({}).lean().then(
+        function (emails) {
             const emailList = emails.sort((a,b)=>a.address.localeCompare(b.address))
             res.render('email/emailList', { template, title: 'Emails', emailList, statusEnum: db.StatusEnum });
-        });
+        }
+    )
 });
 
 /* GET db.Email JSON */
 router.get('/listJSON', function (req, res) {
-    db.Email.find({}).lean().exec(
-        function (e, email) {
+    db.Email.find({}).lean().then(
+        function (email) {
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(email));
-        });
+        }
+    );
 });
 
 /* GET New email page. */
@@ -33,65 +35,61 @@ router.get('/new', function (req, res) {
 
 /* POST to Add Email */
 router.post('/add', function (req, res) {
-    let address = req.body.address;
-    let subject = req.body.subject;
-    let dataParser = req.body.dataParser;
+    let address = req.body.address
+    let subject = req.body.subject
+    let dataParser = req.body.dataParser
 
-    let email = new db.Email({ address, subject, dataParser });
-    email.save(function (err) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        console.log("Email saved");
-        res.redirect("/emails/list");
-    });
-});
+    let email = new db.Email({ address, subject, dataParser })
+    email.save().then(function () {
+        console.log("Email saved")
+        res.redirect("/emails/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET Edit Email page. */
 router.get('/edit/:id', function (req, res) {
     let emailId = req.params.id;
 
-    db.Email.findById(emailId, function (err, email) {
-        if (err) {
-            handleError(err);
-            return err;
-        } 
-        res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email });
-    });
-});
+    db.Email.findById(emailId).then(function (email) {
+        res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email })
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* POST to Update Email */
 router.post('/update', function (req, res) {
 
-    let emailId = req.body.id;
-    let address = req.body.address;
-    let subject = req.body.subject;
-    let dataParser = req.body.dataParser;
-    let status = req.body.status;
+    let emailId = req.body.id
+    let address = req.body.address
+    let subject = req.body.subject
+    let dataParser = req.body.dataParser
+    let status = req.body.status
 
-    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address,  subject, dataParser, status} }, { new: true }, function (err, email) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        console.log("Email updated");
-        res.redirect("/emails/list");
-    });
-});
+    db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address,  subject, dataParser, status} }, { new: true }).then(function (email) {
+        console.log("Email updated")
+        res.redirect("/emails/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET Remove Email */
 router.get('/remove/:id', function (req, res) {
-    let emailId = req.params.id;
+    let emailId = req.params.id
 
-    db.Email.findOneAndRemove({ _id: emailId }, function (err, email) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        res.redirect("/emails/list");
-    });
-});
+    db.Email.findOneAndRemove({ _id: emailId }).then(function (email) {
+        res.redirect("/emails/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET unread db.Email page. */
 router.get('/unread', function (req, res) {

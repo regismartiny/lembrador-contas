@@ -7,21 +7,23 @@ const utils = require("../util/utils");
 
 /* GET TableList page. */
 router.get('/list', function (req, res) {
-    db.Table.find({}).lean().exec(
-        function (e, tables) {
+    db.Table.find({}).lean().then(
+        function (tables) {
             const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
-            res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum });
-        });
-});
+            res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum })
+        }
+    )
+})
 
 /* GET tables JSON */
 router.get('/listJSON', function (req, res) {
-    db.Table.find({}).lean().exec(
-        function (e, tables) {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify(tables));
-        });
-});
+    db.Table.find({}).lean().then(
+        function (tables) {
+            res.setHeader('Content-Type', 'application/json')
+            res.send(JSON.stringify(tables))
+        }
+    )
+})
 
 /* GET New Table page. */
 router.get('/new', function (req, res) {
@@ -30,69 +32,59 @@ router.get('/new', function (req, res) {
 
 /* POST to Add Table */
 router.post('/add', function (req, res) {
-    let name = req.body.name;
-    let data = parseData(req.body);
+    let name = req.body.name
+    let data = parseData(req.body)
 
-    let table = new db.Table({ name, data });
-    table.save(function (err) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        else {
-            console.log("Table saved");
-            res.redirect("/tables/list");
-        }
-    });
-});
+    let table = new db.Table({ name, data })
+    table.save().then(function () {
+        console.log("Table saved")
+        res.redirect("/tables/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET Edit Table page. */
 router.get('/edit/:id', function (req, res) {
-    let tableId = req.params.id;
+    let tableId = req.params.id
 
-    db.Table.findById(tableId, function (err, table) {
-        if (err) {
-            handleError(err);
-            return err;
-        } else {
-            res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table });
-        }
-    });
-});
+    db.Table.findById(tableId).then(function (table) {
+        res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* POST to Update Table */
 router.post('/update', function (req, res) {
 
-    let tableId = req.body.id;
-    let name = req.body.name;
-    let data = parseData(req.body);
-    let status = req.body.status;
+    let tableId = req.body.id
+    let name = req.body.name
+    let data = parseData(req.body)
+    let status = req.body.status
 
-    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status }}, { new: true }, function (err, table) {
-        if (err) {
-            handleError(err);
-            return err;
-        }
-        else {
-            console.log("Table updated");
-            res.redirect("/tables/list");
-        }
-    });
-});
+    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status }}, { new: true }).then(function (table) {
+        console.log("Table updated")
+        res.redirect("/tables/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 /* GET Remove Table */
 router.get('/remove/:id', function (req, res) {
-    let tableId = req.params.id;
+    let tableId = req.params.id
 
-    db.Table.findOneAndRemove({ _id: tableId }, function (err, table) {
-        if (err) {
-            handleError(err);
-            return err;
-        } else {
-            res.redirect("/tables/list");
-        }
-    });
-});
+    db.Table.findOneAndRemove({ _id: tableId }).then(function (table) {
+        res.redirect("/tables/list")
+    }).catch(err => {
+        handleError(err)
+        return err
+    })
+})
 
 function handleError(error) {
     console.log("Error! " + error.message);
