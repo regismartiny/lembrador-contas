@@ -137,10 +137,8 @@ router.get('/processBills', async function (req, res) {
         const activeBills = await runParallel(promises)
         
         for (const activeBill of activeBills) {
-            activeBill.save(function (err) {
-                if (err) {
-                    console.error(`Error saving activeBill '${activeBill.name}'`, err)
-                }
+            activeBill.save().catch((err) => {
+                console.error(`Error saving activeBill '${activeBill.name}'`, err)
             })
         }
 
