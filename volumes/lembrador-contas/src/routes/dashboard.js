@@ -63,8 +63,9 @@ router.get('/dashboard-new', async function (req, res) {
 
 router.get('/user-bill-list', async function (req, res) {
     let userId = req.query.userId
-    let mongoUserId = !userId ? mongoUserId = new mongoose.Types.ObjectId(userId) : null
     console.log('userId', userId)
+    let mongoUserId = userId ? new mongoose.Types.ObjectId(userId) : null
+    console.log('mongoUserId', mongoUserId)
     db.ActiveBill.find({ users: mongoUserId }).lean().then(
         async function (activeBills) {
             console.log('activeBills', activeBills)
