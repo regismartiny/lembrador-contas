@@ -75,7 +75,7 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
     let apiId = req.params.id;
 
-    db.API.findOneAndRemove({ _id: apiId }).then(function (api) {
+    db.API.findOneAndDelete({ _id: apiId }).then(function (api) {
         res.redirect("/apis/list");
     }).catch(err => {
         handleError(err);

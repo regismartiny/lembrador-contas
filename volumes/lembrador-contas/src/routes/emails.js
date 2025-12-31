@@ -83,7 +83,7 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
     let emailId = req.params.id
 
-    db.Email.findOneAndRemove({ _id: emailId }).then(function (email) {
+    db.Email.findOneAndDelete({ _id: emailId }).then(function (email) {
         res.redirect("/emails/list")
     }).catch(err => {
         handleError(err)

@@ -66,7 +66,7 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
   let userId = req.params.id
 
-  db.User.findOneAndRemove({ _id: userId }).then(() => {
+  db.User.findOneAndDelete({ _id: userId }).then(() => {
     console.log("User removed")
     res.redirect("/users/list")
   }).catch(err => {

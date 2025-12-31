@@ -77,9 +77,9 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
     let billId = req.params.id
 
-    db.Bill.findOneAndRemove({ _id: billId }).then(function (bill) {
+    db.Bill.findOneAndDelete({ _id: billId }).then(function (bill) {
         res.redirect("/bills/list");
-    }).catach(err => {
+    }).catch(err => {
         handleError(err)
         return err
     })

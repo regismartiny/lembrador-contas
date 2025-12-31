@@ -78,7 +78,7 @@ router.post('/update', function (req, res) {
 router.get('/remove/:id', function (req, res) {
     let tableId = req.params.id
 
-    db.Table.findOneAndRemove({ _id: tableId }).then(function (table) {
+    db.Table.findOneAndDelete({ _id: tableId }).then(function (table) {
         res.redirect("/tables/list")
     }).catch(err => {
         handleError(err)
