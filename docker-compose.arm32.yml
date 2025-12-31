@@ -20,8 +20,8 @@ services:
 
   lembrador-contas:
     container_name: lembrador-contas
-    image: node:18
-    command: bash -c 'yarn install && npm run startm'
+    image: oven/bun:1-slim
+    command: bash -c 'bun install && bun run start'
     working_dir: /root/lembrador-contas
     restart: unless-stopped
     environment:

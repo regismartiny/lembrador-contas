@@ -1,7 +1,7 @@
 const jsdom = require("jsdom");
 const base64Util = require("../util/base64Util.js");
-const emailUtils = require('../util/emailUtils.js');
 const moment = require('moment');
+import emailUtils from '../util/emailUtils.js';
 
 async function fetch(address, subject, period) {
     console.log("address", address)
@@ -71,4 +71,4 @@ function querySelectorIncludesText(dom, selector, text) {
         .find(el => el.textContent.includes(text));
 }
 
-module.exports = { fetch, parseHTML }
+export default { fetch, parseHTML }

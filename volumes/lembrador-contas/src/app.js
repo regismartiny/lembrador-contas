@@ -16,6 +16,12 @@ const apis = require('./routes/apis');
 const notifications = require('./routes/notifications');
 const htmlparser = require('./routes/htmlparser');
 
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const app = express();
 
 // view engine setup
@@ -71,4 +77,4 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+export default app;
