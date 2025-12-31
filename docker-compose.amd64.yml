@@ -21,7 +21,7 @@ services:
 
   lembrador-contas:
     container_name: lembrador-contas_app
-    image: oven/bun:1-slim
+    image: oven/bun:latest
     command: bash -c 'bun install && bun run start'
     working_dir: /root/lembrador-contas
     restart: unless-stopped
