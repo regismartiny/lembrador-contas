@@ -1,7 +1,9 @@
-var express = require('express');
-var router = express.Router();
-var template = require('./template');
-var db = require("../db");
+import express from 'express';
+import template from './template.js';
+import db from '../db.js';
+
+const router = express.Router();
+
 
 /* GET BillList page. */
 router.get('/list', async function (req, res) {
@@ -90,4 +92,4 @@ function handleError(error) {
 }
 
 
-module.exports = router;
+export default router;

@@ -1,9 +1,9 @@
-const jsdom = require("jsdom");
-const base64Util = require("../util/base64Util.js");
-const moment = require('moment');
+import base64Util from '../util/base64Util.js';
+import moment from 'moment';
 import emailUtils from '../util/emailUtils.js';
+import e from 'express';
 
-async function fetch(address, subject, period) {
+export async function fetch(address, subject, period) {
     console.log("address", address)
     console.log("subject", subject)
     console.log("period", period)
@@ -32,7 +32,7 @@ async function fetch(address, subject, period) {
     return [response]
 }
 
-function parseEmailData(msg) {
+export function parseEmailData(msg) {
     try {
         console.log("parseEmailData()")
         let data = msg.payload.body.data
@@ -47,7 +47,7 @@ function parseEmailData(msg) {
     }
 }
 
-function parseHTML(text) {
+export function parseHTML(text) {
     console.log("parseHTML()")
     const dom = new jsdom.JSDOM(text)
     const elemValor = querySelectorIncludesText(dom, 'span', 'R$')
@@ -71,4 +71,4 @@ function querySelectorIncludesText(dom, selector, text) {
         .find(el => el.textContent.includes(text));
 }
 
-export default { fetch, parseHTML }
+export default { fetch, parseHTML, parseEmailData }

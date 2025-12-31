@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+
 const router = express.Router();
-//var template = require('./template');
+
 
 /* GET home page. */
 router.get('/', function (req, res) {
@@ -13,4 +14,4 @@ router.get('/login', function (req, res) {
     res.redirect("/dashboard");
 });
 
-module.exports = router;
+export default router;

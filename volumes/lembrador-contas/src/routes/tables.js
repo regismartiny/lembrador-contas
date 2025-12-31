@@ -1,9 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const template = require('./template');
-const db = require("../db");
-const utils = require("../util/utils");
+import express from 'express';
+import template from './template.js';
+import db from '../db.js';
+import utils from '../util/utils.js';
 
+const router = express.Router();
 
 /* GET TableList page. */
 router.get('/list', function (req, res) {
@@ -110,4 +110,4 @@ function parsePeriod(periodStr) {
     return {}
 }
 
-module.exports = router;
+export default router;

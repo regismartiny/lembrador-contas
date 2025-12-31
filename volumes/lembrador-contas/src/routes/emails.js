@@ -1,12 +1,12 @@
-const express = require('express');
+import express from 'express';
+import template from './template.js';
+import db from '../db.js';
+import gmail from '../util/gmail.js';
+import emailUtils from '../util/emailUtils.js';
+import vm from 'vm';
+import cpflEmailParser from '../parser/cpflEmailParser.js';
+
 const router = express.Router();
-const template = require('./template');
-const db = require("../db");
-const gmail = require('../util/gmail.js');
-const emailUtils = require('../util/emailUtils.js');
-const vm = require('vm');
-const utils = require("../util/utils");
-const cpflEmailParser = require("../parser/cpflEmailParser");
 
 /* GET db.Email page. */
 router.get('/list', function (req, res) {
@@ -140,7 +140,7 @@ router.get('/test/:id', async function (req, res) {
         if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
             getEmailPDFAttachmentData(values);
         } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
-            const info = await cpflEmailParser.getInfoFromHTMLEmail(message);
+            const info = await cpflEmailParser.parseEmailData(message);
             values.push(info);
         }
         console.table(values);
@@ -165,4 +165,4 @@ function handleError(error) {
     res.render('error', { message: '', error: error});
 }
 
-module.exports = router;
+export default router;

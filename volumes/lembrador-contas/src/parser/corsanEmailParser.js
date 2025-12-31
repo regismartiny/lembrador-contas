@@ -1,7 +1,5 @@
-const jsdom = require("jsdom");
-const base64Util = require("../util/base64Util.js");
-const moment = require('moment');
-import emailUtils from '../util/emailUtils.js';
+import moment from "moment";
+import emailUtils from "../util/emailUtils.js";
 
 async function fetch(address, subject, period) {
     console.log("address", address)
@@ -68,4 +66,4 @@ function parse(msg) {
     }
 }
 
-module.exports = { fetch }
+export default { fetch }

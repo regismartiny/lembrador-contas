@@ -1,4 +1,5 @@
-var mongoose = require('mongoose')
+import e from 'express'
+import mongoose from 'mongoose'
 
 const DB_ADDRESS = process.env.MONGODB_IP || '192.168.2.11'
 const DB_PORT = process.env.MONGODB_PORT || 27017
@@ -252,4 +253,4 @@ var PushNotificationSubscription = mongoose.model('pushnotificationsubscriptionc
 
 
 
-module.exports = { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, BillTypeEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }
+export default { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, BillTypeEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }

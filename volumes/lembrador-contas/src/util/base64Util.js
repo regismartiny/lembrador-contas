@@ -1,6 +1,6 @@
-var atob = require('atob');
+import atob from 'atob';
 
-module.exports = {
+export default {
     base64ToBin: function (base64str) {
         var text = base64ToText(base64str);
         var len = text.length;         // get binary length
