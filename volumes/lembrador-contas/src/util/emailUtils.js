@@ -1,8 +1,5 @@
-const path = require('path');
-const PDFParser = import('pdf2json');
-const gmail = require( path.resolve( __dirname, "./gmail.js" ) );
-const base64Util = require( path.resolve( __dirname, "./base64Util.js" ) );
-const moment = require('moment');
+import gmail from './gmail.js';
+import base64Util from './base64Util.js';
 
 async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     console.log("getMessagesByDateInterval()")
@@ -110,4 +107,4 @@ async function getPDFFromAttachment(attData) {
     return pdfData;
 }
 
-module.exports = { getMessagesByDateInterval, getMessages, getLastMessage, getAttachmentFromMessage, getPDFFromAttachment };
+export default { getMessagesByDateInterval, getMessages, getLastMessage, getAttachmentFromMessage, getPDFFromAttachment };

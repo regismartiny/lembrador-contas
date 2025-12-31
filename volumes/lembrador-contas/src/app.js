@@ -1,21 +1,25 @@
-const express = require('express');
-const rateLimit = require('express-rate-limit')
-const path = require('path');
-const favicon = require('serve-favicon');
-const logger = require('morgan');
-const cookieParser = require('cookie-parser');
-const bodyParser = require('body-parser');
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import path from 'path';
+import favicon from 'serve-favicon';
+import logger from 'morgan';
+import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
+import index from './routes/index.js';
+import dashboard from './routes/dashboard.js';
+import users from './routes/users.js';
+import bills from './routes/bills.js';
+import emails from './routes/emails.js';
+import tables from './routes/tables.js';
+import apis from './routes/apis.js';
+import notifications from './routes/notifications.js';
+import htmlparser from './routes/htmlparser.js';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
-const index = require('./routes/index');
-const dashboard = require('./routes/dashboard');
-const users = require('./routes/users');
-const bills = require('./routes/bills');
-const emails = require('./routes/emails');
-const tables = require('./routes/tables');
-const apis = require('./routes/apis');
-const notifications = require('./routes/notifications');
-const htmlparser = require('./routes/htmlparser');
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const app = express();
 
 // view engine setup
@@ -71,4 +75,4 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+export default app;

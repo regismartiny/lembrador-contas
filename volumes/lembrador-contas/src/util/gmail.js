@@ -1,5 +1,5 @@
-var {google} = require('googleapis');
-const googleAuth = require('./googleAuth')
+import { google } from 'googleapis';
+import googleAuth from './googleAuth.js';
 
 function listMessages(auth, query) {
     return new Promise(function (resolve, reject) {
@@ -78,7 +78,7 @@ function getAttachmentsSync(auth, query, message) {
     });
 }
 
-module.exports = {
+export default {
     listUnreadMessages: async function () {
         try {
             var query = {

@@ -1,9 +1,9 @@
-const {OAuth2Client} = require('google-auth-library');
-const fs = require('fs')
-const http = require('http');
-const url = require('url');
-const open = require('open');
-const destroyer = require('server-destroy');
+import { OAuth2Client } from 'google-auth-library';
+import fs from 'fs';
+import http from 'http';
+import url from 'url';
+import destroyer from 'server-destroy';
+import e from 'express';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const CREDENTIALS_DIR = '.credentials/';
@@ -126,4 +126,4 @@ function storeTokens(tokens) {
     });
 }
 
-module.exports = { authenticate: () => authenticate().catch(console.error) }
+export default { authenticate: () => authenticate().catch(console.error) }

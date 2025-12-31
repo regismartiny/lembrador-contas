@@ -12,20 +12,23 @@ services:
 #      - ./volumes/portainer/data:/data
 
   mongodb:
-    image: mongo:3.2
+    container_name: lembrador-contas_mongodb
+    image: mongo:latest
     ports:
       - 27017:27017
     volumes:
       - ./volumes/mongodb/data:/data/db
 
   lembrador-contas:
-    container_name: lembrador-contas
-    image: node:18
-    command: bash -c 'yarn install && npm run startm'
+    container_name: lembrador-contas_app
+    image: oven/bun:1-slim
+    command: bash -c 'bun install && bun run start'
     working_dir: /root/lembrador-contas
     restart: unless-stopped
+    depends_on:
+      - mongodb
     environment:
-      - MONGODB_IP=mongodb
+      - MONGODB_IP=lembrador-contas_mongodb
     ports:
       - 9090:9090
       - 9091:9091

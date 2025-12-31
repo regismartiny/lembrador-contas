@@ -1,7 +1,10 @@
-const express = require('express')
-const router = express.Router()
-const db = require("../db");
-const WebPush = require('web-push');
+import express from 'express';
+import db from '../db.js';
+import WebPush from 'web-push';
+import e from 'express';
+
+const router = express.Router();
+
 
 const apiKeys = ''//WebPush.generateVAPIDKeys()
 // console.log('WebPush VAPID keys generated: ', apiKeys)
@@ -98,4 +101,4 @@ function handleError(error) {
    console.log("Error! " + error.message);
 }
 
-module.exports = router;
+export default router;
