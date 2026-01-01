@@ -1,7 +1,7 @@
 import base64Util from '../util/base64Util.js';
 import moment from 'moment';
 import emailUtils from '../util/emailUtils.js';
-import e from 'express';
+import jsdom from 'jsdom';
 
 export async function fetch(address, subject, period) {
     console.log("address", address)
