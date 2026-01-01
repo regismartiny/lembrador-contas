@@ -206,26 +206,33 @@ function findActiveTableBills(billsSourceTable, periods) {
 }
 
 async function findTableBills(bill, period) {
+    console.log("findTableBills for bill", bill.name, "and period", period)
+
     let bills = []
     let table = await db.Table.findById(bill.valueSourceId).lean()
             
     let currentPeriodDataIndex = table.data.findIndex(data => filterCurrentPeriodData(data, period))
     
-    if (currentPeriodDataIndex >= 0) {
-        let currentPeriodData = table.data[currentPeriodDataIndex]
-        let name = bill.name
-        let totalPeriods = table.data.length
-        let currentPeriod = currentPeriodDataIndex + 1
-        if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
-            name = `${bill.name} (${currentPeriod}/${totalPeriods})`
-        }
-
-        let users = bill.users
-        let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
-        let value = currentPeriodData.value
-        let icon = bill.icon
-        bills.push(new db.ActiveBill({users, name, dueDate, value, icon}))
+    if (currentPeriodDataIndex < 0) {
+        console.log(`No data found for bill '${bill.name}' for period ${period.month + 1}/${period.year}`)
+        return bills;
     }
+
+    let currentPeriodData = table.data[currentPeriodDataIndex]
+    console.log("currentPeriodData", currentPeriodData)
+
+    let name = bill.name
+    let totalPeriods = table.data.length
+    let currentPeriod = currentPeriodDataIndex + 1
+    if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
+        name = `${bill.name} (${currentPeriod}/${totalPeriods})`
+    }
+
+    let users = bill.users
+    let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
+    let value = currentPeriodData.value
+    let icon = bill.icon
+    bills.push(new db.ActiveBill({users, name, dueDate, value, icon}))
 
     return bills;
 }
