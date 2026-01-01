@@ -2,7 +2,7 @@ import express from 'express';
 import template from './template.js';
 import db from '../db.js';
 import moment from 'moment';
-import mongoose from 'mongoose';
+import mongoose, { get } from 'mongoose';
 
 const router = express.Router();
 
@@ -64,8 +64,13 @@ router.get('/dashboard-new', async function (req, res) {
 
 router.get('/user-bill-list', async function (req, res) {
     let userId = req.query.userId
-    console.log('userId', userId)
-    let mongoUserId = userId ? new mongoose.Types.ObjectId(userId) : null
+
+    if (!userId || userId == 'null') {
+        res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum })
+        return
+    }
+
+    let mongoUserId = new mongoose.Types.ObjectId(userId)
     console.log('mongoUserId', mongoUserId)
     db.ActiveBill.find({ users: mongoUserId }).lean().then(
         async function (activeBills) {
@@ -225,20 +230,32 @@ async function findTableBills(bill, period) {
     let currentPeriodData = table.data[currentPeriodDataIndex]
     console.log("currentPeriodData", currentPeriodData)
 
-    let name = bill.name
-    let totalPeriods = table.data.length
-    let currentPeriod = currentPeriodDataIndex + 1
-    if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
-        name = `${bill.name} (${currentPeriod}/${totalPeriods})`
+    if (!currentPeriodData || !currentPeriodData.period || !currentPeriodData.period.month || !currentPeriodData.period.year) {
+        console.log(`Invalid data for bill '${bill.name}' for period ${period.month + 1}/${period.year}`)
+        return bills;
     }
 
+    let name = getBillName(bill, currentPeriodDataIndex, table.data.length)
     let users = bill.users
-    let dueDate = new Date(year=currentPeriodData.period.year, monthIndex=currentPeriodData.period.month, date=bill.dueDay)
+    let dueDate = getDateFromPeriod(currentPeriodData.period, bill.dueDay)
     let value = currentPeriodData.value
     let icon = bill.icon
     bills.push(new db.ActiveBill({users, name, dueDate, value, icon}))
 
     return bills;
+}
+
+function getDateFromPeriod(period, dueDay) {
+    return new Date(period.year, period.month, dueDay)
+}
+
+function getBillName(bill, currentPeriodDataIndex, totalPeriods) {
+    let currentPeriod = currentPeriodDataIndex + 1
+    if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
+       return `${bill.name} (${currentPeriod}/${totalPeriods})`
+    } else {
+        return bill.name
+    }
 }
 
 function filterCurrentPeriodData(data, period) {
@@ -266,7 +283,7 @@ async function findEmailBills(bill, period) {
 
     for (const parsedData of parsedDataList) {
         let users = bill.users
-        let fallbackDueDate = new Date(period.year, period.month, bill.dueDay)
+        let fallbackDueDate = getDateFromPeriod(period, bill.dueDay)
         let name = bill.name
         let dueDate = parsedData.dueDate ? parsedData.dueDate : fallbackDueDate
         let value = parsedData?.value
