@@ -210,6 +210,10 @@ async function findTableBills(bill, period) {
 
     let bills = []
     let table = await db.Table.findById(bill.valueSourceId).lean()
+    if (!table) {
+        console.log(`No table found for bill '${bill.name}'`)
+        return bills;
+    }
             
     let currentPeriodDataIndex = table.data.findIndex(data => filterCurrentPeriodData(data, period))
     
