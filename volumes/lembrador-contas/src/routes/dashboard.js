@@ -1,8 +1,8 @@
 import express from 'express';
 import template from './template.js';
 import db from '../db.js';
-import moment from 'moment';
-import mongoose, { get } from 'mongoose';
+import mongoose from 'mongoose';
+import billProcessing from '../util/billProcessing.js';
 
 const router = express.Router();
 
@@ -64,6 +64,7 @@ router.get('/dashboard-new', async function (req, res) {
 
 router.get('/user-bill-list', async function (req, res) {
     let userId = req.query.userId
+    let filter = req.query.filter
 
     if (!userId || userId == 'null') {
         res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum })
@@ -77,7 +78,7 @@ router.get('/user-bill-list', async function (req, res) {
             console.log('activeBills', activeBills)
 
             let monthBillsMap = activeBills.reduce((map, bill) => {
-                let month = getBillMonth(bill.dueDate)
+                let month = billProcessing.getBillMonth(bill.dueDate)
                 if (!map.has(month)) {
                     map.set(month, [])
                 }
@@ -93,7 +94,7 @@ router.get('/user-bill-list', async function (req, res) {
                     bill.value = bill.value / bill.users.length
                 });
 
-                const totalValue = value.map(bill => bill.value).reduce(getSum, 0)
+                const totalValue = value.map(bill => bill.value).reduce(billProcessing.getSum, 0)
                 const billListOrderedByBillName = value.sort((a,b)=>a.name.localeCompare(b.name))
                 const activeBillMonthData = { month: key, billList: billListOrderedByBillName, totalValue }
 
@@ -111,43 +112,33 @@ router.get('/user-bill-list', async function (req, res) {
                 return yearA - yearB || monthA - monthB
             })
 
-            //show only current month and future bills
-            let currentYear = new Date().getFullYear()
-            let currentMonth = new Date().getMonth()
-      
-            userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
-                let month = billList.month.split("/")[0]
-                let year = billList.month.split("/")[1]
-                return (month >= currentMonth && year >= currentYear || year > currentYear)
-            })
+            if (!filter || filter == 'CURRENT_AND_FUTURE') {
 
-            console.log("userBillsData", userBillsData);
+                //show only current month and future bills
+                let currentYear = new Date().getFullYear()
+                let currentMonth = new Date().getMonth()
+        
+                userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
+                    let month = billList.month.split("/")[0]
+                    let year = billList.month.split("/")[1]
+                    return (month >= currentMonth && year >= currentYear || year > currentYear)
+                })
 
-            res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum })
+                renderUserBillListPage(res, userBillsData)
+            } else if (filter == 'ALL') {
+                renderUserBillListPage(res, userBillsData)
+            }
         }).catch((err) => {
             handleError(err)
             return err
         })
 })
 
-/* Process current month bills. */
+/* Process bills. */
 router.get('/processBills', async function (req, res) {
-    await deleteProcessedActiveBills()
     db.Bill.find().then(async (bills) => {
 
-        let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
-        let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
-        
-        const periods = getPeriods()
-        const promises = [findActiveTableBills(billsSourceTable, periods),
-                            findActiveEmailBills(billsSourceEmail, periods)]
-        const activeBills = await runParallel(promises)
-        
-        for (const activeBill of activeBills) {
-            activeBill.save().catch((err) => {
-                console.error(`Error saving activeBill '${activeBill.name}'`, err)
-            })
-        }
+        await billProcessing.processBills(bills)
 
         res.redirect('/dashboard')
     }).catch((err) => {
@@ -156,9 +147,9 @@ router.get('/processBills', async function (req, res) {
     })
 })
 
-/* Deleted processed bills. */
-router.get('/deleteProcess', function (req, res) {
-    deleteProcessedActiveBills()
+/* Delete processed bills. */
+router.get('/deleteProcessed', async function (req, res) {
+    await deleteProcessedActiveBills()
     res.redirect('/dashboard')
 })
 
@@ -174,148 +165,17 @@ router.get('/paybill/:id', function (req, res) {
     });
 })
 
-/********************************************************************************* */
-
-function getBillMonth(dueDate) {
-    return Number(dueDate?.getMonth()) + 1 + "/" + dueDate?.getFullYear()
+function handleError(error) {
+    console.log("Error! " + error.message)
 }
 
-function getSum(total, num) {
-    return total + ((isNaN(num) || num == undefined) ? 0 : num);
+function renderUserBillListPage(res, userBillsData) {
+    console.log("userBillsData", userBillsData);
+    res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum })
 }
 
 async function deleteProcessedActiveBills() {
-    await db.ActiveBill.deleteMany({}).lean()
-}
-
-function getPeriods() {
-    let currentDate = new Date()
-    let previousMonthDate = moment(currentDate).subtract(1, 'M').toDate()
-    let nextMonthDate = moment(currentDate).add(1, 'M').toDate()
-    return [ { month: previousMonthDate.getMonth(), year: previousMonthDate.getFullYear() }, 
-            { month: currentDate.getMonth(), year: currentDate.getFullYear()},
-            { month: nextMonthDate.getMonth(), year: nextMonthDate.getFullYear() }]
-}
-
-function findActiveTableBills(billsSourceTable, periods) {
-    console.log("findActiveTableBills started")
-    const promises = []
-    for (const period of periods) {
-        for (const bill of billsSourceTable) {
-            promises.push(findTableBills(bill, period))
-        }
-    }
-    const bills = runParallel(promises)
-    console.log("findActiveTableBills finished")
-    return bills
-}
-
-async function findTableBills(bill, period) {
-    console.log("findTableBills for bill", bill.name, "and period", period)
-
-    let bills = []
-    let table = await db.Table.findById(bill.valueSourceId).lean()
-    if (!table) {
-        console.log(`No table found for bill '${bill.name}'`)
-        return bills;
-    }
-            
-    let currentPeriodDataIndex = table.data.findIndex(data => filterCurrentPeriodData(data, period))
-    
-    if (currentPeriodDataIndex < 0) {
-        console.log(`No data found for bill '${bill.name}' for period ${period.month + 1}/${period.year}`)
-        return bills;
-    }
-
-    let currentPeriodData = table.data[currentPeriodDataIndex]
-    console.log("currentPeriodData", currentPeriodData)
-
-    if (!currentPeriodData || !currentPeriodData.period || !currentPeriodData.period.month || !currentPeriodData.period.year) {
-        console.log(`Invalid data for bill '${bill.name}' for period ${period.month + 1}/${period.year}`)
-        return bills;
-    }
-
-    let name = getBillName(bill, currentPeriodDataIndex, table.data.length)
-    let users = bill.users
-    let dueDate = getDateFromPeriod(currentPeriodData.period, bill.dueDay)
-    let value = currentPeriodData.value
-    let icon = bill.icon
-    bills.push(new db.ActiveBill({users, name, dueDate, value, icon}))
-
-    return bills;
-}
-
-function getDateFromPeriod(period, dueDay) {
-    return new Date(period.year, period.month, dueDay)
-}
-
-function getBillName(bill, currentPeriodDataIndex, totalPeriods) {
-    let currentPeriod = currentPeriodDataIndex + 1
-    if (db.BillTypeEnum[bill.type]==db.BillTypeEnum.PURCHASE) {
-       return `${bill.name} (${currentPeriod}/${totalPeriods})`
-    } else {
-        return bill.name
-    }
-}
-
-function filterCurrentPeriodData(data, period) {
-    return data.period.month == period.month + 1 
-           && data.period.year == period.year
-}
-
-async function findActiveEmailBills(billsSourceEmail, periods) {
-    console.log("findActiveEmailBills started")
-    const promises = []
-    for (const period of periods) {
-        for (const bill of billsSourceEmail) {
-            promises.push(findEmailBills(bill, period))
-        }
-    }
-    const bills = await runParallel(promises)
-    console.log("findActiveEmailBills finished")
-    return bills
-}
-
-async function findEmailBills(bill, period) {
-    let bills = []
-    let email = await db.Email.findById(bill.valueSourceId).lean()
-    const parsedDataList = await parseEmailData(email, period)
-
-    for (const parsedData of parsedDataList) {
-        let users = bill.users
-        let fallbackDueDate = getDateFromPeriod(period, bill.dueDay)
-        let name = bill.name
-        let dueDate = parsedData.dueDate ? parsedData.dueDate : fallbackDueDate
-        let value = parsedData?.value
-        let icon = bill.icon
-        let status = dueDate && value ? 'UNPAID' : 'ERROR'
-        bills.push(new db.ActiveBill({users, name, dueDate, value, icon, status}))
-    }
-    return bills;
-}
-
-async function parseEmailData(email, period) {
-    try {
-        const parser = require(`../parser/${db.DataParserEnum[email.dataParser]}`);
-        let parsedData = await parser.fetch(email.address, email.subject, period)
-        return parsedData
-    } catch(error) {
-        console.error("Error parsing data", error)
-        return []
-    }
-}
-
-async function runParallel(promises) {
-    let results = []
-    for (const promise of promises) {
-        let result = await promise
-        results = results.concat(result)
-    }
-    return results
-}
-
-function handleError(error) {
-    console.log("Error! " + error.message)
+    return db.ActiveBill.deleteMany({}).lean()
 }
 
 export default router
