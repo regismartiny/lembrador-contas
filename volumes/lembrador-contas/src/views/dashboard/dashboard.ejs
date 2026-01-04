@@ -11,11 +11,24 @@
                         <%= title %>
                     </h1>
                     <br>
-                    <select class="form-control" id="user" name="user" onchange="filterBillsByUser(this.value)">
-                        <% users.forEach(function(user){ %>
-                            <option value="<%= user._id %>"><%= user.name %></option>
-                        <% }) %>
-                    </select>
+                    <div>
+                        <span>
+                            Usuário
+                            <select class="form-control" id="user" name="user" onchange="filterBills()">
+                                <% users.forEach(function(user){ %>
+                                <option value="<%= user._id %>"><%= user.name %></option>
+                                <% }) %>
+                            </select>
+                        </span>
+                        <span>
+                            Filtro de período
+                            <select class="form-control" id="periodFilter" name="periodFilter" onchange="filterBills()">
+                                <% var keys = Object.keys(periodFilterEnum); keys.forEach(function(pf){ %>
+                                    <option value="<%= pf %>"><%= periodFilterEnum[pf] %></option>
+                                <%})%>
+                            </select>
+                        </span>
+                    </div>
                     <br>
                     <div id="billList"></div>
                 </div>
@@ -25,15 +38,17 @@
                     $(document).ready(function() {
                         applyMask();
                         $('[data-toggle="tooltip"]').tooltip();
-                        filterBillsByUser($('#user').val());
+                        filterBills();
                     });
 
                     function applyMask() {
                         $('.money').mask('000.000.000.000.000,00', {reverse: true});
                     }
 
-                    function filterBillsByUser(value) {
-                        $('#billList').load('/dashboard/user-bill-list/?userId=' + value)
+                    function filterBills() {
+                        var userId = $('#user').val();
+                        var filter = $('#periodFilter').val();
+                        $('#billList').load('/dashboard/user-bill-list/?userId=' + userId + "&periodFilter=" + filter)
                     }
                 </script>
     </body>

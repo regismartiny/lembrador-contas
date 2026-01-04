@@ -27,7 +27,7 @@ router.get('/', function (req, res) {
 
             const lastUpdate = activeBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
 
-            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, users, lastUpdate })
+            res.render('dashboard/dashboard', { template, title: 'Contas do mês', activeBillData, users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum})
         }).catch((err) => {
             handleError(err)
             return err
@@ -55,7 +55,7 @@ router.get('/dashboard-new', async function (req, res) {
                 const activeBillMonthData = { month: billsMonth, billList, totalValue }
                 activeBillData.push(activeBillMonthData)
             }
-            res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate })
+            res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
         }).catch((err) => {
             handleError(err)
             return err
@@ -64,7 +64,7 @@ router.get('/dashboard-new', async function (req, res) {
 
 router.get('/user-bill-list', async function (req, res) {
     let userId = req.query.userId
-    let filter = req.query.filter
+    let periodFilter = req.query.periodFilter
 
     if (!userId || userId == 'null') {
         res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum })
@@ -112,7 +112,7 @@ router.get('/user-bill-list', async function (req, res) {
                 return yearA - yearB || monthA - monthB
             })
 
-            if (!filter || filter == 'CURRENT_AND_FUTURE') {
+            if (!periodFilter || periodFilter == 'CURRENT_AND_FUTURE') {
 
                 //show only current month and future bills
                 let currentYear = new Date().getFullYear()
@@ -125,7 +125,7 @@ router.get('/user-bill-list', async function (req, res) {
                 })
 
                 renderUserBillListPage(res, userBillsData)
-            } else if (filter == 'ALL') {
+            } else if (periodFilter == 'ALL') {
                 renderUserBillListPage(res, userBillsData)
             }
         }).catch((err) => {
@@ -136,9 +136,10 @@ router.get('/user-bill-list', async function (req, res) {
 
 /* Process bills. */
 router.get('/processBills', async function (req, res) {
+    const periods = req.query.periods
     db.Bill.find().then(async (bills) => {
 
-        await billProcessing.processBills(bills)
+        await billProcessing.processBills(bills, periods)
 
         res.redirect('/dashboard')
     }).catch((err) => {

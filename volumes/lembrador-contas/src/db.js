@@ -28,6 +28,11 @@ mongoose.connect(dbUrl, options).catch((err) => {
     }
 }).then(() => console.log(`Database connected!`))
 
+const PeriodFilterEnum = {
+    CURRENT_AND_FUTURE: 'Mês atual e futuros',
+    ALL: 'Todos'
+}
+
 const StatusEnum = {
     ACTIVE: 'Ativo',
     INACTIVE: 'Inativo'
@@ -253,4 +258,6 @@ var PushNotificationSubscription = mongoose.model('pushnotificationsubscriptionc
 
 
 
-export default { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, StatusEnum, HttpMethodEnum, BillTypeEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum, DataParserEnum, PushNotificationSubscription }
+export default { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, 
+    StatusEnum, HttpMethodEnum, BillTypeEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum,
+     DataParserEnum, PeriodFilterEnum, PushNotificationSubscription }

@@ -1,8 +1,8 @@
 import moment from 'moment';
 import db from '../db.js';
 
-async function processBills(bills) {
-    const periods = getPeriods()
+async function processBills(bills, selectedPeriods) {
+    const periods = !!selectedPeriods ? JSON.parse(selectedPeriods) : getDefaultPeriods()
 
     console.log("Processing bills for periods:", periods)
 
@@ -26,6 +26,8 @@ async function processBills(bills) {
             console.error(`Error saving activeBill '${activeBill.name}'`, err)
         })
     }
+
+    console.log("Finished processing bills for periods:", periods)
 }
 
 function getBillMonth(dueDate) {
@@ -36,7 +38,7 @@ function getSum(total, num) {
     return total + ((isNaN(num) || num == undefined) ? 0 : num);
 }
 
-function getPeriods() {
+function getDefaultPeriods() {
     let currentDate = new Date()
     let previousMonthDate = moment(currentDate).subtract(1, 'M').toDate()
     let nextMonthDate = moment(currentDate).add(1, 'M').toDate()
@@ -165,7 +167,6 @@ async function runParallel(promises) {
 export default {
     getBillMonth,
     getSum,
-    getPeriods,
     findActiveTableBills,
     findActiveEmailBills,
     processBills
