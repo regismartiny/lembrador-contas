@@ -116,7 +116,7 @@ router.get('/user-bill-list', async function (req, res) {
 
                 //show only current month and future bills
                 let currentYear = new Date().getFullYear()
-                let currentMonth = new Date().getMonth()
+                let currentMonth = new Date().getMonth() + 1
         
                 userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
                     let month = billList.month.split("/")[0]
