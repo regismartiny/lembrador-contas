@@ -121,7 +121,7 @@ router.get('/user-bill-list', async function (req, res) {
                 userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
                     let month = billList.month.split("/")[0]
                     let year = billList.month.split("/")[1]
-                    return (month >= currentMonth && year >= currentYear || year > currentYear)
+                    return (month >= currentMonth && (year >= currentYear || year > currentYear))
                 })
 
                 renderUserBillListPage(res, userBillsData)
