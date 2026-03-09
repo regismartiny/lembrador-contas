@@ -92,6 +92,11 @@ const BillTypeEnum = {
     PURCHASE: 'Compra',
 }
 
+const PaymentTypeEnum = {
+    PIX: 'PIX',
+    DINHEIRO: 'Dinheiro'
+}
+
 var billSchema = new mongoose.Schema({
     users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'usercollection' }],
     name: { type: String, required: [true, 'O nome é obrigatório'] },
@@ -101,6 +106,7 @@ var billSchema = new mongoose.Schema({
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
     dueDay: { type: Number, required: [true, 'O Dia do Vencimento é obrigatório'] },
     icon: { type: String },
+    paymentType: { type: String, enum: Object.keys(PaymentTypeEnum), default: 'PIX', required: [true, 'O tipo de pagamento é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
@@ -129,6 +135,7 @@ var activeBillSchema = new mongoose.Schema({
     value: { type: Number },
     icon: { type: String },
     status: { type: String, enum: Object.keys(ActiveBillStatusEnum), default: 'UNPAID', required: [true, 'A situação é obrigatória'] },
+    paymentType: { type: String, enum: Object.keys(PaymentTypeEnum), default: 'PIX', required: [true, 'O tipo de pagamento é obrigatório'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'activebillcollection' })
@@ -260,4 +267,4 @@ var PushNotificationSubscription = mongoose.model('pushnotificationsubscriptionc
 
 export default { Mongoose: mongoose, User, Bill, ActiveBill, Email, Table, API, BillReminder, 
     StatusEnum, HttpMethodEnum, BillTypeEnum, ValueSourceTypeEnum, ReminderStatusEnum, DataTypeEnum, ActiveBillStatusEnum,
-     DataParserEnum, PeriodFilterEnum, PushNotificationSubscription }
+     DataParserEnum, PeriodFilterEnum, PushNotificationSubscription, PaymentTypeEnum }

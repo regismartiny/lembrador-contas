@@ -15,7 +15,7 @@ router.get('/list', async function (req, res) {
 /* GET New Bill page. */
 router.get('/new', async function (req, res) {
     const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
-    res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, activeUsers });
+    res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, paymentTypeEnum: db.PaymentTypeEnum, activeUsers });
 });
 
 /* POST to Add Bill */
@@ -27,8 +27,9 @@ router.post('/add', function (req, res) {
     let icon = req.body.icon;
     let valueSourceType = req.body.valueSourceType;
     let valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
+    let paymentType = req.body.paymentType;
 
-    let bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId });
+    let bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
     bill.save().then(function () {
         console.log("Bill saved")
         res.redirect("/bills/list")
@@ -45,7 +46,7 @@ router.get('/edit/:id', async function (req, res) {
     const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
 
     db.Bill.findById(billId).then(function (bill) {
-        res.render('bill/editBill', { template, title: 'Edição de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, bill, activeUsers });
+        res.render('bill/editBill', { template, title: 'Edição de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, paymentTypeEnum: db.PaymentTypeEnum, bill, activeUsers });
     }).catch(err => {
         handleError(err);
         return err;
@@ -65,8 +66,9 @@ router.post('/update', function (req, res) {
     let valueSourceType = req.body.valueSourceType
     let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table
     let status = req.body.status
+    let paymentType = req.body.paymentType
 
-    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status } }, { new: true }).then(function (bill) {
+    db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status, paymentType } }, { new: true }).then(function (bill) {
         console.log("Bill updated")
         res.redirect("/bills/list")
     }).catch(err => {

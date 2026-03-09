@@ -5,6 +5,14 @@
     <div class="float-right">Total:
         <span class="money font-weight-bold"><%= Number(data.totalValue).toFixed(2) %></span>
     </div>
+    <div class="clearfix"></div>
+    <div class="mb-3">
+        <% data.paymentTypeSummaries?.forEach(function(summary){ %>
+            <span class="badge badge-secondary mr-2">
+                <%= summary.type %>: <span class="money"><%= Number(summary.total).toFixed(2) %></span>
+            </span>
+        <% }) %>
+    </div>
     <div class="table-responsive">
         <table class="table">
             <thead>

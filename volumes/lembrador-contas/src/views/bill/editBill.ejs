@@ -70,6 +70,15 @@
                         </div>
                         <br>
                         <div class="form-group">
+                            <label for="paymentType">Tipo de Pagamento</label>
+                            <select name='paymentType' class="form-control" id="paymentType">
+                                <% var keys = Object.keys(paymentTypeEnum); keys.forEach(function(pt){ %>
+                                    <option <% if (pt == bill.paymentType) {%>selected="selected"<% } %> value="<%= pt %>"><%= paymentTypeEnum[pt] %></option>
+                                <%})%>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="form-group">
                             <label for="status">Situação</label>
                             <select name='status' class="form-control" id="status">
                                 <% var keys = Object.keys(statusEnum); keys.forEach(function(vst){ %>

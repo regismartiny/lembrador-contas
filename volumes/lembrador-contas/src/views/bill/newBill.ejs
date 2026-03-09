@@ -75,6 +75,15 @@
                             </div>
                             <br>
                             <div class="form-group">
+                                <label for="paymentType">Tipo de Pagamento</label>
+                                <select name='paymentType' class="form-control" id="paymentType">
+                                        <% var keys = Object.keys(paymentTypeEnum); keys.forEach(function(pt){ %>
+                                            <option value=<%= pt %>><%= paymentTypeEnum[pt] %></option>
+                                        <%})%>
+                                </select>
+                            </div>
+                            <br>
+                            <div class="form-group">
                                 <input type="submit" class="btn btn-primary center-block" value="Salvar" />
                                 <a href="/bills/list" class="btn btn-secondary center-block">Cancelar</a>
                             </div>

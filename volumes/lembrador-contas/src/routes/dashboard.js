@@ -49,13 +49,30 @@ router.get('/dashboard-new', async function (req, res) {
             for (let activeBills of activeBillMonths) {
                 if (activeBills.length == 0) continue
                 let firstBill = activeBills[0]
-                let billsMonth = getBillMonth(firstBill.dueDate)
+                let billsMonth = billProcessing.getBillMonth(firstBill.dueDate)
                 const totalValue = activeBills.map(bill => bill.value).reduce(getSum, 0)
                 const billList = activeBills.sort((a,b)=>a.name.localeCompare(b.name))
-                const activeBillMonthData = { month: billsMonth, billList, totalValue }
+
+                // Group bills by paymentType
+                let paymentTypeGroups = activeBills.reduce((groups, bill) => {
+                    const type = bill.paymentType || 'PIX' // default if not set
+                    if (!groups[type]) {
+                        groups[type] = []
+                    }
+                    groups[type].push(bill)
+                    return groups
+                }, {})
+
+                let paymentTypeSummaries = Object.keys(paymentTypeGroups).map(type => {
+                    const bills = paymentTypeGroups[type]
+                    const total = bills.map(b => b.value).reduce(billProcessing.getSum, 0)
+                    return { type, total, bills: bills.sort((a,b)=>a.name.localeCompare(b.name)) }
+                })
+
+                const activeBillMonthData = { month: billsMonth, billList, totalValue, paymentTypeSummaries }
                 activeBillData.push(activeBillMonthData)
             }
-            res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
+            res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
         }).catch((err) => {
             handleError(err)
             return err
@@ -67,7 +84,7 @@ router.get('/user-bill-list', async function (req, res) {
     let periodFilter = req.query.periodFilter
 
     if (!userId || userId == 'null') {
-        res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum })
+        res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
         return
     }
 
@@ -94,9 +111,25 @@ router.get('/user-bill-list', async function (req, res) {
                     bill.value = bill.value / bill.users.length
                 });
 
+                // Group bills by paymentType
+                let paymentTypeGroups = value.reduce((groups, bill) => {
+                    const type = bill.paymentType || 'PIX' // default if not set
+                    if (!groups[type]) {
+                        groups[type] = []
+                    }
+                    groups[type].push(bill)
+                    return groups
+                }, {})
+
+                let paymentTypeSummaries = Object.keys(paymentTypeGroups).map(type => {
+                    const bills = paymentTypeGroups[type]
+                    const total = bills.map(b => b.value).reduce(billProcessing.getSum, 0)
+                    return { type, total, bills: bills.sort((a,b)=>a.name.localeCompare(b.name)) }
+                })
+
                 const totalValue = value.map(bill => bill.value).reduce(billProcessing.getSum, 0)
                 const billListOrderedByBillName = value.sort((a,b)=>a.name.localeCompare(b.name))
-                const activeBillMonthData = { month: key, billList: billListOrderedByBillName, totalValue }
+                const activeBillMonthData = { month: key, billList: billListOrderedByBillName, totalValue, paymentTypeSummaries }
 
                 userBillsData.billListPerMonth.push(activeBillMonthData)
             }
@@ -172,7 +205,7 @@ function handleError(error) {
 
 function renderUserBillListPage(res, userBillsData) {
     console.log("userBillsData", userBillsData);
-    res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum })
+    res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
 }
 
 async function deleteProcessedActiveBills() {

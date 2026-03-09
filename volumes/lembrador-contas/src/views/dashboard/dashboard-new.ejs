@@ -30,6 +30,9 @@
                     <div class="summary">
                         <h2>Resumo Mensal</h2>
                         <p>Total Contas: <span class="total"><%= Number(data.totalValue).toFixed(2) %></span></p>
+                        <% data.paymentTypeSummaries.forEach(function(summary){ %>
+                            <p><%= summary.type %>: <span class="total"><%= Number(summary.total).toFixed(2) %></span></p>
+                        <% }) %>
                     </div>
                 </div>
             <%})%>
