@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 
@@ -47,7 +48,7 @@ router.post('/add', async function (req, res, next) {
     try {
         const bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
         await bill.save();
-        console.log("Bill saved")
+        logger.info("Bill saved")
         res.redirect("/bills/list")
     } catch (err) {
         next(err)
@@ -87,7 +88,7 @@ router.post('/update', async function (req, res, next) {
 
     try {
         await db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status, paymentType } }, { new: true })
-        console.log("Bill updated")
+        logger.info("Bill updated")
         res.redirect("/bills/list")
     } catch (err) {
         next(err)

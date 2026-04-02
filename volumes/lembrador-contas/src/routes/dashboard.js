@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import mongoose from 'mongoose';
@@ -10,7 +11,7 @@ const router = express.Router();
 router.get('/', async function (req, res, next) {
     try {
         const activeBills = await db.ActiveBill.find().lean()
-        console.log('activeBills', activeBills)
+        logger.info('activeBills', activeBills)
 
         let usersIds = activeBills.map(bill => bill.users).flat().map(user => user._id.toString())
         usersIds = [...new Set(usersIds)]
@@ -35,19 +36,7 @@ router.get('/dashboard-new', async function (req, res, next) {
 
         const totalValue = currentMonthBills.map(bill => bill.value).reduce(billProcessing.getSum, 0)
         const billList = currentMonthBills.sort((a,b)=>a.name.localeCompare(b.name))
-
-        const paymentTypeGroups = currentMonthBills.reduce((groups, bill) => {
-            const type = bill.paymentType || 'PIX'
-            if (!groups[type]) groups[type] = []
-            groups[type].push(bill)
-            return groups
-        }, {})
-
-        const paymentTypeSummaries = Object.keys(paymentTypeGroups).map(type => {
-            const typeBills = paymentTypeGroups[type]
-            const total = typeBills.map(b => b.value).reduce(billProcessing.getSum, 0)
-            return { type, total, bills: typeBills.sort((a,b)=>a.name.localeCompare(b.name)) }
-        })
+        const paymentTypeSummaries = billProcessing.groupByPaymentType(currentMonthBills)
 
         const activeBillData = currentMonthBills.length > 0
             ? [{ month: billProcessing.getBillMonth(currentMonthBills[0].dueDate), billList, totalValue, paymentTypeSummaries }]
@@ -71,7 +60,7 @@ router.get('/user-bill-list', async function (req, res, next) {
     try {
         const mongoUserId = new mongoose.Types.ObjectId(userId)
         const activeBills = await db.ActiveBill.find({ users: mongoUserId }).lean()
-        console.log('activeBills', activeBills)
+        logger.info('activeBills', activeBills)
 
         const monthBillsMap = activeBills.reduce((map, bill) => {
             let month = billProcessing.getBillMonth(bill.dueDate)
@@ -87,18 +76,7 @@ router.get('/user-bill-list', async function (req, res, next) {
                 bill.value = bill.value / bill.users.length
             });
 
-            const paymentTypeGroups = value.reduce((groups, bill) => {
-                const type = bill.paymentType || 'PIX'
-                if (!groups[type]) groups[type] = []
-                groups[type].push(bill)
-                return groups
-            }, {})
-
-            const paymentTypeSummaries = Object.keys(paymentTypeGroups).map(type => {
-                const typeBills = paymentTypeGroups[type]
-                const total = typeBills.map(b => b.value).reduce(billProcessing.getSum, 0)
-                return { type, total, bills: typeBills.sort((a,b)=>a.name.localeCompare(b.name)) }
-            })
+            const paymentTypeSummaries = billProcessing.groupByPaymentType(value)
 
             const totalValue = value.map(bill => bill.value).reduce(billProcessing.getSum, 0)
             const billListOrderedByBillName = value.sort((a,b)=>a.name.localeCompare(b.name))
@@ -165,7 +143,7 @@ router.get('/paybill/:id', async function (req, res, next) {
 })
 
 function renderUserBillListPage(res, userBillsData) {
-    console.log("userBillsData", userBillsData);
+    logger.info("userBillsData", userBillsData);
     res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
 }
 

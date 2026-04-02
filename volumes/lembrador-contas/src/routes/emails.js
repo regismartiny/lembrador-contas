@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import gmail from '../util/gmail.js';
@@ -44,7 +45,7 @@ router.post('/add', async function (req, res, next) {
     try {
         const email = new db.Email({ address, subject, dataParser })
         await email.save()
-        console.log("Email saved")
+        logger.info("Email saved")
         res.redirect("/emails/list")
     } catch (err) {
         next(err)
@@ -71,7 +72,7 @@ router.post('/update', async function (req, res, next) {
 
     try {
         await db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address, subject, dataParser, status } }, { new: true })
-        console.log("Email updated")
+        logger.info("Email updated")
         res.redirect("/emails/list")
     } catch (err) {
         next(err)
@@ -91,7 +92,7 @@ router.get('/remove/:id', async function (req, res, next) {
 /* GET unread db.Email page. */
 router.get('/unread', function (req, res) {
     gmail.listUnreadMessages(function (messages) {
-        console.log('MENSAGENS BUSCADAS');
+        logger.info('MENSAGENS BUSCADAS');
         res.render('email/unreadEmails', { title: 'Emails não lidos', messageList: messages });
     });
 });
@@ -101,7 +102,7 @@ router.get('/get/:id', function (req, res) {
     var id = req.params.id;
 
     gmail.getMessage(id, ['From', 'Date', 'Subject'], function (message) {
-        console.log('MENSAGEM ENCONTRADA');
+        logger.info('MENSAGEM ENCONTRADA');
 
         var headers = message.payload.headers;
 
@@ -122,7 +123,7 @@ router.get('/test/:id', async function (req, res) {
 
     db.Email.findById(emailId, async function (err, email) {
         if (err) {
-            console.log("Error! " + err.message);
+            logger.info("Error! " + err.message);
             return err;
         }
         const message = await emailUtils.getLastMessage(email.address, email.subject);

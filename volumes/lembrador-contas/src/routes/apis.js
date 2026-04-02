@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 
@@ -43,7 +44,7 @@ router.post('/add', async function (req, res, next) {
     try {
         const api = new db.API({ name, url, method, body, value })
         await api.save()
-        console.log("API saved");
+        logger.info("API saved");
         res.redirect("/apis/list");
     } catch (err) {
         next(err)
@@ -72,7 +73,7 @@ router.post('/update', async function (req, res, next) {
 
     try {
         await db.API.findOneAndUpdate({ _id: apiId }, { $set: { name, url, method, body, value, status } }, { new: true })
-        console.log("API updated")
+        logger.info("API updated")
         res.redirect("/apis/list")
     } catch (err) {
         next(err)

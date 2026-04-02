@@ -39,9 +39,9 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 ## Priority 5 — Code Quality
 
 - [x] **Standardize async style** — mix of callbacks, `.then()`, and `async/await` across routes. Standardize on `async/await` everywhere.
-- [ ] **Extract business logic from routes** — dashboard.js and user-bill-list contain data transformation logic that belongs in a service/util layer.
+- [x] **Extract business logic from routes** — `groupByPaymentType()` extracted to `billProcessing.js` and reused in both dashboard routes.
 - [x] **Centralize error handling** — same `handleError()` + redirect pattern copy-pasted in every route. Add an Express error middleware and use `next(err)`.
-- [ ] **Structured logging** — replace all `console.log` / `console.error` with `pino` or `winston` with log levels.
+- [x] **Structured logging** — replaced all `console.log` / `console.error` / `console.warn` with `pino` logger across all server-side files.
 - [ ] **Split db.js** — 11 Mongoose schemas in one file. Move each to `src/models/<name>.js`.
 - [x] **Remove yarn.lock** — project uses Bun exclusively; `yarn.lock` is stale and confusing.
 
@@ -67,5 +67,5 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 
 ## Priority 8 — Documentation
 
-- [ ] **README.md** — add setup instructions, environment variables reference, how to run locally and with Docker.
+- [x] **README.md** — add setup instructions, environment variables reference, how to run locally and with Docker.
 - [ ] **OpenAPI / Swagger spec** — document all API endpoints for future maintainers.

@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 
@@ -32,7 +33,7 @@ router.post('/add', async function (req, res, next) {
     try {
         const user = new db.User({ name, email });
         await user.save();
-        console.log("User saved");
+        logger.info("User saved");
         res.redirect("/users/list");
     } catch (err) {
         next(err)
@@ -62,7 +63,7 @@ router.post('/update', async function (req, res, next) {
 
     try {
         await db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status } }, { new: true })
-        console.log("User updated")
+        logger.info("User updated")
         res.redirect("/users/list")
     } catch (err) {
         next(err)
@@ -73,7 +74,7 @@ router.post('/update', async function (req, res, next) {
 router.get('/remove/:id', async function (req, res, next) {
     try {
         await db.User.findOneAndDelete({ _id: req.params.id })
-        console.log("User removed")
+        logger.info("User removed")
         res.redirect("/users/list")
     } catch (err) {
         next(err)

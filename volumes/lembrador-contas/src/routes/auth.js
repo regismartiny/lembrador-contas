@@ -1,11 +1,12 @@
 import express from 'express';
+import logger from '../util/logger.js';
 
 const router = express.Router();
 
 const APP_PASSWORD = process.env.APP_PASSWORD;
 
 if (!APP_PASSWORD) {
-    console.warn('WARNING: APP_PASSWORD env var is not set. Authentication is disabled — all routes are publicly accessible.');
+    logger.warn('WARNING: APP_PASSWORD env var is not set. Authentication is disabled — all routes are publicly accessible.');
 }
 
 router.get('/login', function (req, res) {

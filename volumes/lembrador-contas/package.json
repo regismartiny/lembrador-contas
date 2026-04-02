@@ -9,7 +9,7 @@
     "node-startm": "nodemon ./src/bin/www",
     "node-start": "node ./src/bin/www"
   },
-   "engines": {
+  "engines": {
     "bun": ">=1.1.0"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
     "morgan": "^1.10.0",
     "open": "8.4.2",
     "pdf2json": "3.0.4",
+    "pino": "^10.3.1",
     "popper.js": "^1.16.1",
     "serve-favicon": "~2.4.2",
     "server-destroy": "1.0.1",

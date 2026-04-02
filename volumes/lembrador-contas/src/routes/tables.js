@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import utils from '../util/utils.js';
@@ -40,7 +41,7 @@ router.post('/add', async function (req, res, next) {
     try {
         const table = new db.Table({ name, data })
         await table.save()
-        console.log("Table saved")
+        logger.info("Table saved")
         res.redirect("/tables/list")
     } catch (err) {
         next(err)
@@ -66,7 +67,7 @@ router.post('/update', async function (req, res, next) {
 
     try {
         await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status } }, { new: true })
-        console.log("Table updated")
+        logger.info("Table updated")
         res.redirect("/tables/list")
     } catch (err) {
         next(err)

@@ -1,5 +1,5 @@
-import e from 'express'
 import mongoose from 'mongoose'
+import logger from './util/logger.js'
 
 const DB_ADDRESS = process.env.MONGODB_IP || '192.168.2.11'
 const DB_PORT = process.env.MONGODB_PORT || 27017
@@ -17,16 +17,16 @@ let options = {
 
 let dbUrl = `mongodb://${DB_ADDRESS}:${DB_PORT}`
 
-console.log(`Connecting to database: ${dbUrl}`)
+logger.info(`Connecting to database: ${dbUrl}`)
 
 mongoose.connect(dbUrl, options).catch((err) => {
     if (err.message.indexOf("ECONNREFUSED") !== -1) {
-        console.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
+        logger.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
         process.exit(1)
     } else {
         throw err
     }
-}).then(() => console.log(`Database connected!`))
+}).then(() => logger.info(`Database connected!`))
 
 const PeriodFilterEnum = {
     CURRENT_AND_FUTURE: 'Mês atual e futuros',
@@ -59,7 +59,7 @@ userSchema.pre('validate', function (next) {
 
     User.findOne({ email: this.email }, 'email').then(function (results) {
         if (results) {
-            console.warn('Resultados de validação: ', results)
+            logger.warn('Resultados de validação: ', results)
             self.invalidate("email", "Email deve ser único")
             next(new Error("email must be unique"))
         } else {
@@ -75,7 +75,7 @@ userSchema.pre('validate', function (next) {
             next()
         }
     }).catch(err => {
-        console.log('Erro: ', err)
+        logger.info('Erro: ', err)
     })
 })
 var User = mongoose.model('usercollection', userSchema, 'usercollection')
