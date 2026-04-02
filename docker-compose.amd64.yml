@@ -12,11 +12,19 @@ services:
 
   mongodb:
     container_name: lembrador-contas_mongodb
-    image: mongo:latest
+    image: mongo:7
     ports:
       - 27017:27017
     volumes:
       - ./volumes/mongodb/data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   lembrador-contas:
     container_name: lembrador-contas_app
@@ -25,14 +33,28 @@ services:
     working_dir: /root/lembrador-contas
     restart: unless-stopped
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     environment:
       - MONGODB_IP=lembrador-contas_mongodb
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lembrador-contas}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - APP_PASSWORD=${APP_PASSWORD}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_MAILTO=${VAPID_MAILTO}
     ports:
       - 9090:9090
       - 9091:9091
     volumes:
       - ./volumes/lembrador-contas:/root/lembrador-contas
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     logging:
       driver: json-file
       options:

@@ -21,8 +21,12 @@ router.get('/new', function (req, res) {
 
 /* POST to Add User Service */
 router.post('/add', function (req, res) {
-  var name = req.body.name;
-  var email = req.body.email;
+  var name = (req.body.name || '').trim();
+  var email = (req.body.email || '').trim().toLowerCase();
+
+  if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).send('Nome e email válido são obrigatórios.')
+  }
 
   var user = new db.User({ name, email });
   user.save().then(() => {
@@ -49,9 +53,13 @@ router.get('/edit/:id', function (req, res) {
 /* POST to Update User */
 router.post('/update', function (req, res) {
   let userId = req.body.id
-  let name = req.body.name
-  let email = req.body.email
+  let name = (req.body.name || '').trim()
+  let email = (req.body.email || '').trim().toLowerCase()
   let status = req.body.status
+
+  if (!userId || !name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).send('Dados inválidos.')
+  }
 
   db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status } }, { new: true }).then(() => {
     console.log("User updated")

@@ -21,11 +21,11 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 
 ## Priority 3 — Security
 
-- [ ] **No authentication** — all routes are open to anyone. Add `express-session` + a simple PIN/passphrase gate, or integrate with an identity provider.
-- [ ] **No CSRF protection** — all POST mutation routes unprotected. Add `csrf` middleware or use `SameSite=Strict` cookies.
-- [ ] **MongoDB has no credentials** — `docker-compose.amd64.yml` never sets `MONGODB_USER`/`MONGODB_PASSWORD`. Add auth.
-- [ ] **No input validation** — add `zod` or `joi` validation on all POST bodies (name, email, dueDay, value, etc.).
-- [ ] **No HTTPS** — all traffic including OAuth tokens is plain HTTP. Set up TLS or put a reverse proxy (nginx/Caddy) in front.
+- [x] **No authentication** — added `express-session` + `APP_PASSWORD` passphrase gate. Login page at `/login`, logout at `/logout`. Disabled automatically if `APP_PASSWORD` is unset (dev mode).
+- [x] **No CSRF protection** — session cookie set with `sameSite: 'strict'` and `httpOnly: true`, which blocks cross-origin form submissions without a dedicated library.
+- [x] **MongoDB has no credentials** — `docker-compose.amd64.yml` now passes `MONGODB_USER`/`MONGODB_PASSWORD` from the host `.env` file to both the MongoDB container (`MONGO_INITDB_ROOT_*`) and the app container.
+- [x] **No input validation** — added server-side validation to `POST /users/add`, `POST /users/update`, `POST /bills/add`, `POST /bills/update` (required fields, email format, dueDay 1–31, valueSourceType enum).
+- [ ] **No HTTPS** — set up TLS or put a reverse proxy (nginx/Caddy) in front. Out of scope for application code.
 
 ---
 
@@ -51,9 +51,9 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 
 - [x] **Add .env.example** — document all required environment variables so setup is reproducible.
 - [ ] **Docker: install deps at build time** — `docker-compose` currently runs `bun install` on every container start. Move to a `Dockerfile` with a proper build step.
-- [ ] **Pin MongoDB image version** — `mongo:latest` will upgrade unexpectedly. Pin to e.g. `mongo:7`.
-- [ ] **Add Docker health checks** — add `healthcheck` to both services in `docker-compose.amd64.yml`.
-- [ ] **Add a `/health` endpoint** — returns 200 + DB connectivity status, used by load balancers and Docker.
+- [x] **Pin MongoDB image version** — pinned to `mongo:7`.
+- [x] **Add Docker health checks** — added `healthcheck` to both services in `docker-compose.amd64.yml`; app service now waits for MongoDB to be healthy before starting.
+- [x] **Add a `/health` endpoint** — `GET /health` returns `{ status: 'ok' }`, used by Docker health check.
 
 ---
 

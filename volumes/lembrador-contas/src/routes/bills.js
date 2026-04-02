@@ -21,13 +21,20 @@ router.get('/new', async function (req, res) {
 /* POST to Add Bill */
 router.post('/add', function (req, res) {
     let users = req.body.users;
-    let name = req.body.name;
-    let company = req.body.company;
-    let dueDay = req.body.dueDay;
+    let name = (req.body.name || '').trim();
+    let company = (req.body.company || '').trim();
+    let dueDay = parseInt(req.body.dueDay, 10);
     let icon = req.body.icon;
     let valueSourceType = req.body.valueSourceType;
     let valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
     let paymentType = req.body.paymentType;
+
+    if (!name || !company || isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
+        return res.status(400).send('Nome, empresa e dia de vencimento (1-31) são obrigatórios.')
+    }
+    if (!['TABLE', 'EMAIL', 'API'].includes(valueSourceType)) {
+        return res.status(400).send('Tipo de fonte de dados inválido.')
+    }
 
     let bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
     bill.save().then(function () {
@@ -58,15 +65,19 @@ router.post('/update', function (req, res) {
 
     let users = req.body.users
     let billId = req.body.id
-    let name = req.body.name
-    let company = req.body.company
-    let dueDay = req.body.dueDay
+    let name = (req.body.name || '').trim()
+    let company = (req.body.company || '').trim()
+    let dueDay = parseInt(req.body.dueDay, 10)
     let icon = req.body.icon
     let type = req.body.type
     let valueSourceType = req.body.valueSourceType
     let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table
     let status = req.body.status
     let paymentType = req.body.paymentType
+
+    if (!billId || !name || !company || isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
+        return res.status(400).send('Dados inválidos.')
+    }
 
     db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status, paymentType } }, { new: true }).then(function (bill) {
         console.log("Bill updated")
