@@ -28,8 +28,10 @@ services:
 
   lembrador-contas:
     container_name: lembrador-contas_app
-    image: oven/bun:latest
-    command: bash -c 'bun install && bun run start'
+    build:
+      context: ./volumes/lembrador-contas
+      dockerfile: Dockerfile
+    command: bun run start
     working_dir: /root/lembrador-contas
     restart: unless-stopped
     depends_on:
@@ -50,6 +52,7 @@ services:
       - 9091:9091
     volumes:
       - ./volumes/lembrador-contas:/root/lembrador-contas
+      - lembrador_node_modules:/root/lembrador-contas/node_modules
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
       interval: 15s
@@ -62,3 +65,6 @@ services:
         max-file: "3"
     stdin_open: true #docker run -i
     tty: true        #docker run -t
+
+volumes:
+  lembrador_node_modules:

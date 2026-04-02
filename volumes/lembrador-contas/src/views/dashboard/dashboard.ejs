@@ -31,6 +31,13 @@
                     </div>
                     <br>
                     <div id="billList"></div>
+                    <br>
+                    <div>
+                        <button id="sendNotificationBtn" class="btn btn-secondary btn-sm" onclick="sendPushNotification()">
+                            Enviar notificação
+                        </button>
+                        <span id="notificationStatus" class="small ml-2"></span>
+                    </div>
                 </div>
             </div>
             <%- template.scripts %>
@@ -49,6 +56,29 @@
                         var userId = $('#user').val();
                         var filter = $('#periodFilter').val();
                         $('#billList').load('/dashboard/user-bill-list/?userId=' + userId + "&periodFilter=" + filter)
+                    }
+
+                    function sendPushNotification() {
+                        var btn = $('#sendNotificationBtn');
+                        var status = $('#notificationStatus');
+                        btn.prop('disabled', true);
+                        status.text('Enviando...');
+                        $.ajax({
+                            url: '/notifications/push/send',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ title: 'Lembrador de Contas', body: 'Você tem contas pendentes.' }),
+                            success: function() {
+                                status.text('Notificação enviada!');
+                            },
+                            error: function() {
+                                status.text('Erro ao enviar notificação.');
+                            },
+                            complete: function() {
+                                btn.prop('disabled', false);
+                                setTimeout(function() { status.text(''); }, 4000);
+                            }
+                        });
                     }
                 </script>
     </body>

@@ -31,26 +31,26 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 
 ## Priority 4 — Incomplete Features
 
-- [ ] **API data source not implemented** — `apicollection` schema and UI exist but `billProcessing.js` never handles `valueSourceType === 'API'`. Implement `findApiDataBills()` similar to `findEmailBills()`.
-- [ ] **Push notifications need a UI trigger** — currently only invocable via raw POST to `/notifications/push/send`. Add a button to the dashboard.
+- [x] **API data source not implemented** — `apicollection` schema and UI exist but `billProcessing.js` never handles `valueSourceType === 'API'`. Implement `findApiDataBills()` similar to `findEmailBills()`.
+- [x] **Push notifications need a UI trigger** — currently only invocable via raw POST to `/notifications/push/send`. Add a button to the dashboard.
 
 ---
 
 ## Priority 5 — Code Quality
 
-- [ ] **Standardize async style** — mix of callbacks, `.then()`, and `async/await` across routes. Standardize on `async/await` everywhere.
+- [x] **Standardize async style** — mix of callbacks, `.then()`, and `async/await` across routes. Standardize on `async/await` everywhere.
 - [ ] **Extract business logic from routes** — dashboard.js and user-bill-list contain data transformation logic that belongs in a service/util layer.
-- [ ] **Centralize error handling** — same `handleError()` + redirect pattern copy-pasted in every route. Add an Express error middleware and use `next(err)`.
+- [x] **Centralize error handling** — same `handleError()` + redirect pattern copy-pasted in every route. Add an Express error middleware and use `next(err)`.
 - [ ] **Structured logging** — replace all `console.log` / `console.error` with `pino` or `winston` with log levels.
 - [ ] **Split db.js** — 11 Mongoose schemas in one file. Move each to `src/models/<name>.js`.
-- [ ] **Remove yarn.lock** — project uses Bun exclusively; `yarn.lock` is stale and confusing.
+- [x] **Remove yarn.lock** — project uses Bun exclusively; `yarn.lock` is stale and confusing.
 
 ---
 
 ## Priority 6 — DevOps / Operations
 
 - [x] **Add .env.example** — document all required environment variables so setup is reproducible.
-- [ ] **Docker: install deps at build time** — `docker-compose` currently runs `bun install` on every container start. Move to a `Dockerfile` with a proper build step.
+- [x] **Docker: install deps at build time** — `docker-compose` currently runs `bun install` on every container start. Move to a `Dockerfile` with a proper build step.
 - [x] **Pin MongoDB image version** — pinned to `mongo:7`.
 - [x] **Add Docker health checks** — added `healthcheck` to both services in `docker-compose.amd64.yml`; app service now waits for MongoDB to be healthy before starting.
 - [x] **Add a `/health` endpoint** — `GET /health` returns `{ status: 'ok' }`, used by Docker health check.

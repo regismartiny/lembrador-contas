@@ -6,17 +6,25 @@ const router = express.Router();
 
 
 /* GET APIList page. */
-router.get('/list', async function (req, res) {
-    var apis = await db.API.find({}).lean()
-    const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
-    res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
+router.get('/list', async function (req, res, next) {
+    try {
+        const apis = await db.API.find({}).lean()
+        const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
+        res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
+    } catch (err) {
+        next(err)
+    }
 });
 
 /* GET apis JSON */
-router.get('/listJSON', async function (req, res) {
-    var apis = await db.API.find({}).lean()
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(apis));
+router.get('/listJSON', async function (req, res, next) {
+    try {
+        const apis = await db.API.find({}).lean()
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(apis));
+    } catch (err) {
+        next(err)
+    }
 });
 
 /* GET New API page. */
@@ -25,37 +33,35 @@ router.get('/new', function (req, res) {
 });
 
 /* POST to Add API */
-router.post('/add', function (req, res) {
+router.post('/add', async function (req, res, next) {
     let name = req.body.name
     let url = req.body.url
     let method = req.body.method
     let body = req.body.body
     let value = req.body.value
 
-    let api = new db.API({ name, url, method, body, value })
-    api.save().then(function () {
+    try {
+        const api = new db.API({ name, url, method, body, value })
+        await api.save()
         console.log("API saved");
         res.redirect("/apis/list");
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* GET Edit API page. */
-router.get('/edit/:id', function (req, res) {
-    let apiId = req.params.id
-
-    db.API.findById(apiId).then(function (api) {
+router.get('/edit/:id', async function (req, res, next) {
+    try {
+        const api = await db.API.findById(req.params.id)
         res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* POST to Update API */
-router.post('/update', function (req, res) {
+router.post('/update', async function (req, res, next) {
     let apiId = req.body.id;
     let name = req.body.name;
     let url = req.body.url;
@@ -64,29 +70,23 @@ router.post('/update', function (req, res) {
     let value = req.body.value;
     let status = req.body.status;
 
-    db.API.findOneAndUpdate({ _id: apiId }, { $set: { name,  url, method, body, value, status} }, { new: true }).then(function (api) {
+    try {
+        await db.API.findOneAndUpdate({ _id: apiId }, { $set: { name, url, method, body, value, status } }, { new: true })
         console.log("API updated")
         res.redirect("/apis/list")
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* GET Remove API */
-router.get('/remove/:id', function (req, res) {
-    let apiId = req.params.id;
-
-    db.API.findOneAndDelete({ _id: apiId }).then(function (api) {
+router.get('/remove/:id', async function (req, res, next) {
+    try {
+        await db.API.findOneAndDelete({ _id: req.params.id })
         res.redirect("/apis/list");
-    }).catch(err => {
-        handleError(err);
-        return err;
-    })
+    } catch (err) {
+        next(err)
+    }
 });
-
-function handleError(error) {
-    console.log("Error! " + error.message);
-}
 
 export default router;

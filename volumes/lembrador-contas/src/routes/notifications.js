@@ -23,46 +23,44 @@ router.get('/push/public_key', function (req, res) {
    return res.status(200).json({ publicKey: vapidPublicKey })
 });
 
-router.post('/push/register', async function (req, res) {
+router.post('/push/register', async function (req, res, next) {
    console.log("/push/register", req.body)
    let endpoint = req.body.subscription.endpoint
    let keys = req.body.subscription.keys
 
-   let subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean()
-   console.log('subscriptionFound', subscriptionFound)
-   if (!subscriptionFound.length) {
-      console.log('Saving registration')
-      let subscription = new db.PushNotificationSubscription({ endpoint, keys });
-      subscription.save().then(() => {
+   try {
+      const subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean()
+      console.log('subscriptionFound', subscriptionFound)
+      if (!subscriptionFound.length) {
+         console.log('Saving registration')
+         const subscription = new db.PushNotificationSubscription({ endpoint, keys });
+         await subscription.save()
          console.log("PushNotificationSubscription saved")
-         return res.status(201).send()
-      }).catch(err => {
-         handleError(err);
-         return res.status(500).send()
-      });
+      }
+      return res.status(201).send()
+   } catch (err) {
+      next(err)
    }
-   return res.status(201).send()
 })
 
-router.post('/push/send', function (req, res) {
+router.post('/push/send', async function (req, res, next) {
    console.log("/push/send", req.body)
    let notificationContent = req.body
 
-   db.PushNotificationSubscription.find({}).then(async function (subscriptions) {
-      if (subscriptions) {
+   try {
+      const subscriptions = await db.PushNotificationSubscription.find({})
+      if (subscriptions && subscriptions.length) {
          console.log('subscriptions found: ', subscriptions)
          for (const subscription of subscriptions) {
             await sendNotification(subscription, notificationContent)
          }
-         return res.status(201).send()
       } else {
          console.log('No subscriptions found')
-         return res.status(200).send()
       }
-   }).catch(err => {
-      handleError(err);
-      return res.status(500).send()
-   })
+      return res.status(201).send()
+   } catch (err) {
+      next(err)
+   }
 })
 
 async function sendNotification(subscription, notificationContent) {
@@ -95,10 +93,6 @@ async function sendNotification(subscription, notificationContent) {
          resolve(reason)
       })
    })
-}
-
-function handleError(error) {
-   console.log("Error! " + error.message);
 }
 
 export default router;

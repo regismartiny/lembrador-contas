@@ -16,9 +16,11 @@ async function processBills(bills, selectedPeriods) {
 
     let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
     let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
-    
+    let billsSourceApi = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.API)
+
     const promises = [findActiveTableBills(billsSourceTable, periods),
-                        findActiveEmailBills(billsSourceEmail, periods)]
+                        findActiveEmailBills(billsSourceEmail, periods),
+                        findActiveApiBills(billsSourceApi, periods)]
     const activeBills = await runParallel(promises)
     
     for (const activeBill of activeBills) {
@@ -157,6 +159,60 @@ async function parseEmailData(email, period) {
     }
 }
 
+async function findActiveApiBills(billsSourceApi, periods) {
+    console.log("findActiveApiBills started")
+    const promises = []
+    for (const period of periods) {
+        for (const bill of billsSourceApi) {
+            promises.push(findApiBills(bill, period))
+        }
+    }
+    const bills = await runParallel(promises)
+    console.log("findActiveApiBills finished")
+    return bills
+}
+
+async function findApiBills(bill, period) {
+    let bills = []
+    let api = await db.API.findById(bill.valueSourceId).lean()
+    if (!api) {
+        console.log(`No API config found for bill '${bill.name}'`)
+        return bills
+    }
+
+    const dueDate = getDateFromPeriod(period, bill.dueDay)
+
+    try {
+        const fetchOptions = { method: api.method }
+        if (api.body && ['POST', 'PUT'].includes(api.method)) {
+            fetchOptions.body = api.body
+            fetchOptions.headers = { 'Content-Type': 'application/json' }
+        }
+
+        const response = await fetch(api.url, fetchOptions)
+        if (!response.ok) {
+            console.error(`API request failed for bill '${bill.name}': ${response.status} ${response.statusText}`)
+            bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
+            return bills
+        }
+
+        const data = await response.json()
+        const raw = resolveJsonPath(data, api.value)
+        const value = parseFloat(raw)
+        const status = !isNaN(value) ? 'UNPAID' : 'ERROR'
+        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, value: isNaN(value) ? undefined : value, icon: bill.icon, paymentType: bill.paymentType, status }))
+    } catch (error) {
+        console.error(`Error fetching API data for bill '${bill.name}'`, error)
+        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
+    }
+
+    return bills
+}
+
+function resolveJsonPath(obj, path) {
+    return path.split('.').reduce((acc, key) => acc?.[key], obj)
+}
+
 async function runParallel(promises) {
     const results = await Promise.all(promises)
     return results.flat()
@@ -167,5 +223,6 @@ export default {
     getSum,
     findActiveTableBills,
     findActiveEmailBills,
+    findActiveApiBills,
     processBills
 }

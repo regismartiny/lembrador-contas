@@ -6,23 +6,25 @@ import utils from '../util/utils.js';
 const router = express.Router();
 
 /* GET TableList page. */
-router.get('/list', function (req, res) {
-    db.Table.find({}).lean().then(
-        function (tables) {
-            const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
-            res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum })
-        }
-    )
+router.get('/list', async function (req, res, next) {
+    try {
+        const tables = await db.Table.find({}).lean()
+        const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
+        res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* GET tables JSON */
-router.get('/listJSON', function (req, res) {
-    db.Table.find({}).lean().then(
-        function (tables) {
-            res.setHeader('Content-Type', 'application/json')
-            res.send(JSON.stringify(tables))
-        }
-    )
+router.get('/listJSON', async function (req, res, next) {
+    try {
+        const tables = await db.Table.find({}).lean()
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify(tables))
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* GET New Table page. */
@@ -31,71 +33,62 @@ router.get('/new', function (req, res) {
 });
 
 /* POST to Add Table */
-router.post('/add', function (req, res) {
+router.post('/add', async function (req, res, next) {
     let name = req.body.name
     let data = parseData(req.body)
 
-    let table = new db.Table({ name, data })
-    table.save().then(function () {
+    try {
+        const table = new db.Table({ name, data })
+        await table.save()
         console.log("Table saved")
         res.redirect("/tables/list")
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* GET Edit Table page. */
-router.get('/edit/:id', function (req, res) {
-    let tableId = req.params.id
-
-    db.Table.findById(tableId).then(function (table) {
+router.get('/edit/:id', async function (req, res, next) {
+    try {
+        const table = await db.Table.findById(req.params.id)
         res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* POST to Update Table */
-router.post('/update', function (req, res) {
-
+router.post('/update', async function (req, res, next) {
     let tableId = req.body.id
     let name = req.body.name
     let data = parseData(req.body)
     let status = req.body.status
 
-    db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status }}, { new: true }).then(function (table) {
+    try {
+        await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status } }, { new: true })
         console.log("Table updated")
         res.redirect("/tables/list")
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
 
 /* GET Remove Table */
-router.get('/remove/:id', function (req, res) {
-    let tableId = req.params.id
-
-    db.Table.findOneAndDelete({ _id: tableId }).then(function (table) {
+router.get('/remove/:id', async function (req, res, next) {
+    try {
+        await db.Table.findOneAndDelete({ _id: req.params.id })
         res.redirect("/tables/list")
-    }).catch(err => {
-        handleError(err)
-        return err
-    })
+    } catch (err) {
+        next(err)
+    }
 })
-
-function handleError(error) {
-    console.log("Error! " + error.message);
-}
 
 function parseData(body) {
     let newData = [];
     body.value = utils.toArray(body.value);
     body.period = utils.toArray(body.period);
     let length = body.period.length;
-    for(let i=0; i < length; i++) {
+    for (let i = 0; i < length; i++) {
         let value = body.value[i];
         let period = parsePeriod(body.period[i]);
         newData.push({period, value});
@@ -105,7 +98,7 @@ function parseData(body) {
 
 function parsePeriod(periodStr) {
     if (periodStr && typeof periodStr == 'string') {
-        return { month:  Number(periodStr.substring(5,7)), year: Number(periodStr.substring(0,4)) };
+        return { month: Number(periodStr.substring(5,7)), year: Number(periodStr.substring(0,4)) };
     }
     return {}
 }
