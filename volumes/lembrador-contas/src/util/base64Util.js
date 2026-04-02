@@ -9,7 +9,7 @@ export default {
 
         // save unicode of binary data into 8-bit Array
         for (var i = 0; i < len; i++)
-            view[i] = binary.charCodeAt(i);
+            view[i] = text.charCodeAt(i);
 
         return view;
     },

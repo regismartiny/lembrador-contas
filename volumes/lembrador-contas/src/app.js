@@ -66,6 +66,13 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
+  // If headers are already sent (e.g. serve-static emitted an error after streaming
+  // a response), delegate to Express's built-in error handler so it can close the
+  // connection cleanly instead of crashing with "Cannot set headers after they are sent".
+  if (res.headersSent) {
+    return next(err);
+  }
+
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

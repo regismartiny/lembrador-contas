@@ -63,8 +63,12 @@ async function subscribePushManager() {
       console.log('No pushManager subscription found. Creating one.')
       const publicKeyResponse = await send('GET', '/notifications/push/public_key')
       console.log('publicKeyResponse', publicKeyResponse)
-      const appServerPublicKey = JSON.parse(publicKeyResponse).publicKey
-      applicationServerPublicKey = urlB64ToUint8Array(appServerPublicKey)
+      const parsed = JSON.parse(publicKeyResponse)
+      if (!parsed.publicKey) {
+         console.warn('Push notifications not available: server has no VAPID public key configured.')
+         return
+      }
+      applicationServerPublicKey = urlB64ToUint8Array(parsed.publicKey)
       console.log('applicationServerKey', applicationServerPublicKey)
 
       subscription = await swRegistration.pushManager.subscribe({

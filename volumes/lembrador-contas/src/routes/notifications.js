@@ -1,25 +1,26 @@
 import express from 'express';
 import db from '../db.js';
 import WebPush from 'web-push';
-import e from 'express';
 
 const router = express.Router();
 
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+const vapidMailto = process.env.VAPID_MAILTO;
 
-const apiKeys = ''//WebPush.generateVAPIDKeys()
-// console.log('WebPush VAPID keys generated: ', apiKeys)
-// const apiKeys = {
-//    publicKey: 'BIjmnu66vnPL_ZBMZAfMTczJfqqkCkzHJ5j6RyH4KTwoMJGJrqBJ1YaBx0NMzQNS5esHeP3f7R8SAxWFTGJrIgs',
-//    privateKey: 'NHuVW1uesQi56xgZYuzfNEEOyPXdHujF-4SyWNztQ1s' 
-// }
+if (!vapidPublicKey || !vapidPrivateKey || !vapidMailto) {
+   console.warn('WARNING: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, or VAPID_MAILTO env vars are not set. Push notifications will not work.');
+}
 
 db.PushNotificationSubscription.deleteMany().lean().exec()
 
 
 router.get('/push/public_key', function (req, res) {
    console.log("/push/public_key", req.body)
-   console.log('publicKey', apiKeys.publicKey)
-   return res.status(200).json({publicKey: apiKeys.publicKey}).send()
+   if (!vapidPublicKey) {
+      return res.status(503).json({ error: 'Push notifications not configured (VAPID_PUBLIC_KEY missing)' })
+   }
+   return res.status(200).json({ publicKey: vapidPublicKey })
 });
 
 router.post('/push/register', async function (req, res) {
@@ -46,7 +47,7 @@ router.post('/push/register', async function (req, res) {
 router.post('/push/send', function (req, res) {
    console.log("/push/send", req.body)
    let notificationContent = req.body
-  
+
    db.PushNotificationSubscription.find({}).then(async function (subscriptions) {
       if (subscriptions) {
          console.log('subscriptions found: ', subscriptions)
@@ -62,7 +63,6 @@ router.post('/push/send', function (req, res) {
       handleError(err);
       return res.status(500).send()
    })
-//   }).sort( { updated_at: 1 } );
 })
 
 async function sendNotification(subscription, notificationContent) {
@@ -82,9 +82,9 @@ async function sendNotification(subscription, notificationContent) {
 
       const options = {
          vapidDetails: {
-            subject: 'mailto:regismartiny@gmail.com',
-            publicKey: apiKeys.publicKey,
-            privateKey: apiKeys.privateKey
+            subject: `mailto:${vapidMailto}`,
+            publicKey: vapidPublicKey,
+            privateKey: vapidPrivateKey
          }
       }
 

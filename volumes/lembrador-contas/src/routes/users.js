@@ -71,7 +71,7 @@ router.get('/remove/:id', function (req, res) {
     res.redirect("/users/list")
   }).catch(err => {
     handleError(err)
-    return er
+    return err
   })
 })
 

@@ -158,12 +158,8 @@ async function parseEmailData(email, period) {
 }
 
 async function runParallel(promises) {
-    let results = []
-    for (const promise of promises) {
-        let result = await promise
-        results = results.concat(result)
-    }
-    return results
+    const results = await Promise.all(promises)
+    return results.flat()
 }
 
 export default {

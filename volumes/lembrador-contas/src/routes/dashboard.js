@@ -145,20 +145,19 @@ router.get('/user-bill-list', async function (req, res) {
                 return yearA - yearB || monthA - monthB
             })
 
-            if (!periodFilter || periodFilter == 'CURRENT_AND_FUTURE') {
-
-                //show only current month and future bills
+            if (periodFilter == 'ALL') {
+                renderUserBillListPage(res, userBillsData)
+            } else {
+                // Default: CURRENT_AND_FUTURE — show only current month and future bills
                 let currentYear = new Date().getFullYear()
                 let currentMonth = new Date().getMonth() + 1
-        
+
                 userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
                     let month = billList.month.split("/")[0]
                     let year = billList.month.split("/")[1]
                     return (month >= currentMonth && (year >= currentYear || year > currentYear))
                 })
 
-                renderUserBillListPage(res, userBillsData)
-            } else if (periodFilter == 'ALL') {
                 renderUserBillListPage(res, userBillsData)
             }
         }).catch((err) => {

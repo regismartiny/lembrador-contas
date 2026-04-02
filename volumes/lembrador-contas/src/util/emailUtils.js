@@ -1,6 +1,7 @@
 import gmail from './gmail.js';
 import base64Util from './base64Util.js';
 import moment from "moment";
+import PDFParser from 'pdf2json';
 
 async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     console.log("getMessagesByDateInterval()")
