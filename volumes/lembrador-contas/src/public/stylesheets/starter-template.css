@@ -69,8 +69,15 @@ a:hover {
 }
 
 th, td { text-align: center; }
-input  { text-align: center; }
+input.money { text-align: right; }
 select { text-align-last: center; }
+
+/* ===== Typography ===== */
+.title-1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
 
 /* ===== Symbol Colors ===== */
 .symbol-blue { color: #5aabff; }
@@ -167,6 +174,34 @@ label {
   background-color: var(--bg-elevated);
   color: var(--text-primary);
   border-color: var(--border);
+}
+
+/* ===== Dashboard Filters ===== */
+.dashboard-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+/* ===== Navbar Active Link ===== */
+.navbar-nav .nav-link.active {
+  color: #fff !important;
+  font-weight: 600;
+  border-bottom: 2px solid #7aadff;
 }
 
 /* ===== Dashboard Layout ===== */

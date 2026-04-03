@@ -41,8 +41,8 @@
                                                 edit
                                                 </span>
                                             </a>
-                                            <a href='/users/remove/<%= user._id %>'>
-                                                <span class="material-symbols-outlined">
+                                            <a href='/users/remove/<%= user._id %>' onclick="return confirm('Excluir o usuário \'<%= user.name %>\'?')">
+                                                <span class="material-symbols-outlined symbol-red">
                                                 delete
                                                 </span>
                                             </a>

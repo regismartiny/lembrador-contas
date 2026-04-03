@@ -1,4 +1,7 @@
 
+<% if (!userBillsData?.billListPerMonth?.length) { %>
+    <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
+<% } %>
 <% userBillsData?.billListPerMonth?.forEach(function(data){ %>
     <br>
     <h2><%= data.month %></h2>

@@ -143,6 +143,15 @@ $(document).ready(function () {
        $('#notifications-toast-container').css("display", "block");
        $('#notifications-toast').toast('show')
     }
+
+    // Highlight active nav link based on current path
+    var path = window.location.pathname.split('/')[1];
+    $('.navbar-nav .nav-link').each(function() {
+        var href = $(this).attr('href');
+        if (href && href !== '/' && href.split('/')[1] === path && path !== '') {
+            $(this).addClass('active');
+        }
+    });
  })
 
 // Function to toggle between dark and light themes
