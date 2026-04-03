@@ -13,6 +13,8 @@ if (CF_TEAM_DOMAIN && CF_AUD) {
 export async function cloudflareAuth(req, res, next) {
     if (!JWKS) return next();
     if (req.path === '/login') return next();
+    // Don't override explicit login via login screen
+    if (req.session.authenticated && req.session.loginMethod === 'explicit') return next();
     if (req.session.authenticated) return next();
 
     const token = req.headers['cf-access-jwt-assertion'] || req.cookies['CF_Authorization'];
@@ -25,6 +27,7 @@ export async function cloudflareAuth(req, res, next) {
         });
         req.session.authenticated = true;
         req.session.email = payload.email;
+        req.session.loginMethod = 'cloudflare'; // Mark as Cloudflare auth
         await new Promise((resolve, reject) =>
             req.session.save(err => (err ? reject(err) : resolve()))
         );

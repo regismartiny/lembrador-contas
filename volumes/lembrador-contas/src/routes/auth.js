@@ -32,6 +32,7 @@ router.post('/login', async function (req, res) {
 
     req.session.authenticated = true
     req.session.email = email
+    req.session.loginMethod = 'explicit' // Mark as explicit login, not Cloudflare
     const redirectTo = req.session.returnTo || '/'
     delete req.session.returnTo
     req.session.save(function (err) {
@@ -43,6 +44,7 @@ router.post('/login', async function (req, res) {
 router.get('/logout', function (req, res) {
     req.session.authenticated = false;
     delete req.session.email;
+    delete req.session.loginMethod;
     req.session.save(() => res.redirect('/login'));
 })
 
