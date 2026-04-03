@@ -4,6 +4,7 @@ import template from './template.js';
 import db from '../db.js';
 import mongoose from 'mongoose';
 import billProcessing from '../util/billProcessing.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -116,7 +117,7 @@ router.get('/user-bill-list', async function (req, res, next) {
 })
 
 /* Process bills. */
-router.get('/processBills', async function (req, res, next) {
+router.get('/processBills', requireAdmin, async function (req, res, next) {
     try {
         const bills = await db.Bill.find()
         await billProcessing.processBills(bills, req.query.periods)
@@ -127,7 +128,7 @@ router.get('/processBills', async function (req, res, next) {
 })
 
 /* Delete processed bills. */
-router.get('/deleteProcessed', async function (req, res, next) {
+router.get('/deleteProcessed', requireAdmin, async function (req, res, next) {
     try {
         await db.ActiveBill.deleteMany({}).lean()
         res.redirect('/dashboard')
@@ -137,7 +138,7 @@ router.get('/deleteProcessed', async function (req, res, next) {
 })
 
 /* Mark bill as PAID. */
-router.get('/paybill/:id', async function (req, res, next) {
+router.get('/paybill/:id', requireAdmin, async function (req, res, next) {
     try {
         await db.ActiveBill.findOneAndUpdate({ _id: req.params.id }, { $set: { status: 'PAID' } }, { new: true })
         res.redirect('/dashboard')
