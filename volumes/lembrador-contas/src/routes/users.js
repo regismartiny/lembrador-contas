@@ -65,7 +65,11 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     }
 
     try {
-        await db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status, admin } }, { new: true })
+        await db.User.findOneAndUpdate(
+            { _id: userId }, 
+            { $set: { name, email, status, admin, updated_at: new Date() } }, 
+            { new: true, runValidators: true }
+        )
         logger.info("User updated")
         res.redirect("/users/list")
     } catch (err) {
