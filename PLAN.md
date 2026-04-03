@@ -61,7 +61,7 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 
 - [x] **Unit tests for parsers** — `cpflEmailParser.js` and `corsanEmailParser.js` are fragile regex/DOM scrapers. Add snapshot tests with real email fixtures.
 - [x] **Unit tests for billProcessing.js** — test period logic, date calculation, value splitting, and `processBills()` orchestration.
-- [ ] **Integration tests for key routes** — at minimum: `POST /bills/add`, `GET /dashboard/processBills`, `GET /dashboard/paybill/:id`.
+- [x] **Integration tests for key routes** — at minimum: `POST /bills/add`, `GET /dashboard/processBills`, `GET /dashboard/paybill/:id`.
 
 ---
 
