@@ -1,5 +1,14 @@
 import { mock } from 'bun:test';
 
+// Ensure APP_PASSWORD is unset for tests so requireAuth calls next() immediately
+process.env.APP_PASSWORD = undefined;
+
+// Mock auth middleware to always allow access
+mock.module('../middleware/auth.js', () => ({
+    requireAuth: (req, res, next) => next(),
+    cloudflareAuth: (req, res, next) => next(),
+}));
+
 // Returns a Promise that also has a .lean() method (mirrors Mongoose query API).
 // This lets both `await Model.find()` and `await Model.find().lean()` work.
 function makeQuery(result) {
