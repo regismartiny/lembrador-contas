@@ -179,6 +179,10 @@
   </div>
 
   <script>
+    document.querySelector('form').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.submit(); }
+    });
+
     function togglePassword() {
       var input = document.getElementById('password');
       var icon  = document.getElementById('toggleIcon');

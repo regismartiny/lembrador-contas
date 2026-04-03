@@ -4,6 +4,8 @@ export function requireAuth(req, res, next) {
     if (!APP_PASSWORD || (req.session && req.session.authenticated)) {
         return next()
     }
-    req.session.returnTo = req.originalUrl
+    if (req.method === 'GET' && !req.path.startsWith('/.well-known')) {
+        req.session.returnTo = req.originalUrl
+    }
     res.redirect('/login')
 }
