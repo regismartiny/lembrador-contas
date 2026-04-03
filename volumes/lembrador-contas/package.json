@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun run --watch /src/bin/www",
     "start": "bun run /src/bin/www",
+    "test": "bun test",
     "node-startm": "nodemon ./src/bin/www",
     "node-start": "node ./src/bin/www"
   },
