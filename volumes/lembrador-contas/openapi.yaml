@@ -1,0 +1,834 @@
+openapi: 3.0.3
+info:
+  title: Lembrador de Contas
+  description: >
+    Personal bill-tracking web application. Keeps track of recurring bills,
+    fetches values from email, table, or external API sources, and sends Web Push
+    notifications for upcoming payments.
+
+    **Authentication:** All routes (except `/health`, `/login`, `/logout`) require
+    an active session. Set the `APP_PASSWORD` environment variable to enable the
+    passphrase gate; leave it unset to disable auth entirely (dev mode).
+  version: "0.2"
+
+servers:
+  - url: http://localhost:9090
+    description: Local development server
+
+tags:
+  - name: health
+    description: Service health
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Dashboard and bill processing
+  - name: users
+    description: User management
+  - name: bills
+    description: Bill configuration
+  - name: tables
+    description: Manual value tables
+  - name: emails
+    description: Email data sources
+  - name: apis
+    description: API data sources
+  - name: notifications
+    description: Web Push notifications
+
+# ---------------------------------------------------------------------------
+# Shared schemas
+# ---------------------------------------------------------------------------
+components:
+  schemas:
+    ObjectId:
+      type: string
+      pattern: '^[a-f\d]{24}$'
+      example: "507f1f77bcf86cd799439011"
+
+    StatusEnum:
+      type: string
+      enum: [ACTIVE, INACTIVE]
+
+    PaymentTypeEnum:
+      type: string
+      enum: [PIX, DINHEIRO]
+
+    ValueSourceTypeEnum:
+      type: string
+      enum: [TABLE, EMAIL, API]
+
+    BillTypeEnum:
+      type: string
+      enum: [RECURRENT_SERVICE, PURCHASE]
+
+    HttpMethodEnum:
+      type: string
+      enum: [GET, POST, PUT, DELETE]
+
+    ActiveBillStatusEnum:
+      type: string
+      enum: [UNPAID, PAID, ERROR]
+
+    User:
+      type: object
+      properties:
+        _id:        { $ref: '#/components/schemas/ObjectId' }
+        name:       { type: string, example: "João Silva" }
+        email:      { type: string, format: email, example: "joao@example.com" }
+        status:     { $ref: '#/components/schemas/StatusEnum' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Bill:
+      type: object
+      properties:
+        _id:             { $ref: '#/components/schemas/ObjectId' }
+        name:            { type: string, example: "Internet" }
+        company:         { type: string, example: "ISP Corp" }
+        type:            { $ref: '#/components/schemas/BillTypeEnum' }
+        valueSourceType: { $ref: '#/components/schemas/ValueSourceTypeEnum' }
+        valueSourceId:   { type: string, description: "MongoDB ObjectId of the Table, Email, or API source" }
+        dueDay:          { type: integer, minimum: 1, maximum: 31, example: 10 }
+        icon:            { type: string, nullable: true }
+        paymentType:     { $ref: '#/components/schemas/PaymentTypeEnum' }
+        status:          { $ref: '#/components/schemas/StatusEnum' }
+        users:           { type: array, items: { $ref: '#/components/schemas/ObjectId' } }
+        created_at:      { type: string, format: date-time }
+        updated_at:      { type: string, format: date-time }
+
+    ActiveBill:
+      type: object
+      properties:
+        _id:         { $ref: '#/components/schemas/ObjectId' }
+        name:        { type: string }
+        dueDate:     { type: string, format: date-time }
+        value:       { type: number, nullable: true }
+        icon:        { type: string, nullable: true }
+        status:      { $ref: '#/components/schemas/ActiveBillStatusEnum' }
+        paymentType: { $ref: '#/components/schemas/PaymentTypeEnum' }
+        users:       { type: array, items: { $ref: '#/components/schemas/ObjectId' } }
+        created_at:  { type: string, format: date-time }
+        updated_at:  { type: string, format: date-time }
+
+    Table:
+      type: object
+      properties:
+        _id:    { $ref: '#/components/schemas/ObjectId' }
+        name:   { type: string, example: "Tarifa Energia 2024" }
+        status: { $ref: '#/components/schemas/StatusEnum' }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: object
+                properties:
+                  month: { type: integer, minimum: 1, maximum: 12 }
+                  year:  { type: integer, example: 2024 }
+              value: { type: number, example: 120.50 }
+
+    Email:
+      type: object
+      properties:
+        _id:        { $ref: '#/components/schemas/ObjectId' }
+        address:    { type: string, format: email, example: "noreply@cpfl.com.br" }
+        subject:    { type: string, example: "Sua fatura CPFL" }
+        dataParser: { type: string, enum: [CPFL_EMAIL, CORSAN_EMAIL] }
+        status:     { $ref: '#/components/schemas/StatusEnum' }
+
+    API:
+      type: object
+      properties:
+        _id:    { $ref: '#/components/schemas/ObjectId' }
+        name:   { type: string, example: "Cotação Dólar" }
+        url:    { type: string, format: uri }
+        method: { $ref: '#/components/schemas/HttpMethodEnum' }
+        body:   { type: string, nullable: true, description: "JSON body for POST/PUT requests" }
+        value:  { type: string, example: "data.value", description: "Dot-notation JSON path to the numeric value in the response" }
+        status: { $ref: '#/components/schemas/StatusEnum' }
+
+    PushSubscription:
+      type: object
+      required: [subscription]
+      properties:
+        subscription:
+          type: object
+          required: [endpoint, keys]
+          properties:
+            endpoint: { type: string, format: uri }
+            keys:
+              type: object
+              required: [p256dh, auth]
+              properties:
+                p256dh: { type: string }
+                auth:   { type: string }
+
+    PushSendBody:
+      type: object
+      properties:
+        title: { type: string, example: "Lembrador de Contas" }
+        body:  { type: string, example: "Você tem contas pendentes." }
+
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+
+  responses:
+    Redirect:
+      description: Redirect to another page (standard browser form-submit flow)
+      headers:
+        Location:
+          schema: { type: string }
+
+    BadRequest:
+      description: Invalid input
+      content:
+        text/plain:
+          schema: { type: string }
+
+    NotFound:
+      description: Resource not found
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+
+  # ── Health ────────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      description: Returns `{ status: "ok" }`. Used by Docker health checks and load balancers. Public — no authentication required.
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /login:
+    get:
+      tags: [auth]
+      summary: Show login page
+      description: Returns the login form. If `APP_PASSWORD` is unset, auth is disabled and this page is unreachable.
+      responses:
+        "200":
+          description: Login page HTML
+    post:
+      tags: [auth]
+      summary: Submit passphrase
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, format: password }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /logout:
+    get:
+      tags: [auth]
+      summary: Destroy session and redirect to login
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────
+
+  /dashboard:
+    get:
+      tags: [dashboard]
+      summary: Main dashboard
+      description: Lists all active bills grouped by user and payment type for the current month.
+      responses:
+        "200":
+          description: Dashboard HTML page
+
+  /dashboard/processBills:
+    get:
+      tags: [dashboard]
+      summary: Trigger bill processing
+      description: >
+        Fetches all configured bills and generates `ActiveBill` records for the
+        previous, current, and next month. Optionally accepts a `periods` query
+        parameter to override the default three-period window.
+      parameters:
+        - name: periods
+          in: query
+          required: false
+          description: JSON array of `{ month, year }` objects (0-based month). Defaults to previous/current/next month.
+          schema:
+            type: string
+            example: '[{"month":0,"year":2024},{"month":1,"year":2024}]'
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /dashboard/paybill/{id}:
+    get:
+      tags: [dashboard]
+      summary: Mark an active bill as paid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /dashboard/deleteProcessed:
+    get:
+      tags: [dashboard]
+      summary: Delete all processed active bills
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── Users ─────────────────────────────────────────────────────────────────
+
+  /users/list:
+    get:
+      tags: [users]
+      summary: User list page
+      responses:
+        "200":
+          description: HTML page listing all users
+
+  /users/new:
+    get:
+      tags: [users]
+      summary: New user form
+      responses:
+        "200":
+          description: HTML form
+
+  /users/add:
+    post:
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name:  { type: string, example: "João Silva" }
+                email: { type: string, format: email }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /users/edit/{id}:
+    get:
+      tags: [users]
+      summary: Edit user form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "200":
+          description: HTML form pre-filled with user data
+
+  /users/update:
+    post:
+      tags: [users]
+      summary: Update a user
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [id, name, email]
+              properties:
+                id:     { $ref: '#/components/schemas/ObjectId' }
+                name:   { type: string }
+                email:  { type: string, format: email }
+                status: { $ref: '#/components/schemas/StatusEnum' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /users/remove/{id}:
+    get:
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── Bills ─────────────────────────────────────────────────────────────────
+
+  /bills/list:
+    get:
+      tags: [bills]
+      summary: Bill list page
+      responses:
+        "200":
+          description: HTML page listing all bills
+
+  /bills/new:
+    get:
+      tags: [bills]
+      summary: New bill form
+      responses:
+        "200":
+          description: HTML form
+
+  /bills/add:
+    post:
+      tags: [bills]
+      summary: Create a bill
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name, company, dueDay, valueSourceType]
+              properties:
+                name:            { type: string, example: "Internet" }
+                company:         { type: string, example: "ISP Corp" }
+                dueDay:          { type: integer, minimum: 1, maximum: 31 }
+                valueSourceType: { $ref: '#/components/schemas/ValueSourceTypeEnum' }
+                table:           { type: string, description: "Table ObjectId (required when valueSourceType=TABLE)" }
+                email:           { type: string, description: "Email ObjectId (required when valueSourceType=EMAIL)" }
+                api:             { type: string, description: "API ObjectId (required when valueSourceType=API)" }
+                paymentType:     { $ref: '#/components/schemas/PaymentTypeEnum' }
+                icon:            { type: string, nullable: true }
+                users:
+                  type: array
+                  items: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /bills/edit/{id}:
+    get:
+      tags: [bills]
+      summary: Edit bill form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "200":
+          description: HTML form pre-filled with bill data
+
+  /bills/update:
+    post:
+      tags: [bills]
+      summary: Update a bill
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [id, name, company, dueDay]
+              properties:
+                id:              { $ref: '#/components/schemas/ObjectId' }
+                name:            { type: string }
+                company:         { type: string }
+                dueDay:          { type: integer, minimum: 1, maximum: 31 }
+                type:            { $ref: '#/components/schemas/BillTypeEnum' }
+                valueSourceType: { $ref: '#/components/schemas/ValueSourceTypeEnum' }
+                table:           { type: string }
+                email:           { type: string }
+                paymentType:     { $ref: '#/components/schemas/PaymentTypeEnum' }
+                status:          { $ref: '#/components/schemas/StatusEnum' }
+                icon:            { type: string, nullable: true }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /bills/remove/{id}:
+    get:
+      tags: [bills]
+      summary: Delete a bill
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── Tables ────────────────────────────────────────────────────────────────
+
+  /tables/list:
+    get:
+      tags: [tables]
+      summary: Table list page
+      responses:
+        "200":
+          description: HTML page listing all tables
+
+  /tables/listJSON:
+    get:
+      tags: [tables]
+      summary: All tables as JSON
+      responses:
+        "200":
+          description: Array of Table documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Table' }
+
+  /tables/new:
+    get:
+      tags: [tables]
+      summary: New table form
+      responses:
+        "200":
+          description: HTML form
+
+  /tables/add:
+    post:
+      tags: [tables]
+      summary: Create a table
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                period:
+                  description: "Array of period strings in YYYY-MM format"
+                  oneOf:
+                    - type: string
+                    - type: array
+                      items: { type: string }
+                value:
+                  description: "Array of numeric values matching each period"
+                  oneOf:
+                    - type: number
+                    - type: array
+                      items: { type: number }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /tables/edit/{id}:
+    get:
+      tags: [tables]
+      summary: Edit table form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "200":
+          description: HTML form pre-filled with table data
+
+  /tables/update:
+    post:
+      tags: [tables]
+      summary: Update a table
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:     { $ref: '#/components/schemas/ObjectId' }
+                name:   { type: string }
+                status: { $ref: '#/components/schemas/StatusEnum' }
+                period: { type: array, items: { type: string } }
+                value:  { type: array, items: { type: number } }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /tables/remove/{id}:
+    get:
+      tags: [tables]
+      summary: Delete a table
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── Emails ────────────────────────────────────────────────────────────────
+
+  /emails/list:
+    get:
+      tags: [emails]
+      summary: Email source list page
+      responses:
+        "200":
+          description: HTML page listing all email sources
+
+  /emails/new:
+    get:
+      tags: [emails]
+      summary: New email source form
+      responses:
+        "200":
+          description: HTML form
+
+  /emails/add:
+    post:
+      tags: [emails]
+      summary: Create an email source
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [address, subject, dataParser]
+              properties:
+                address:    { type: string, format: email }
+                subject:    { type: string }
+                dataParser: { type: string, enum: [CPFL_EMAIL, CORSAN_EMAIL] }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /emails/edit/{id}:
+    get:
+      tags: [emails]
+      summary: Edit email source form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "200":
+          description: HTML form pre-filled with email source data
+
+  /emails/update:
+    post:
+      tags: [emails]
+      summary: Update an email source
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:         { $ref: '#/components/schemas/ObjectId' }
+                address:    { type: string, format: email }
+                subject:    { type: string }
+                dataParser: { type: string, enum: [CPFL_EMAIL, CORSAN_EMAIL] }
+                status:     { $ref: '#/components/schemas/StatusEnum' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /emails/remove/{id}:
+    get:
+      tags: [emails]
+      summary: Delete an email source
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── APIs ──────────────────────────────────────────────────────────────────
+
+  /apis/list:
+    get:
+      tags: [apis]
+      summary: API source list page
+      responses:
+        "200":
+          description: HTML page listing all API sources
+
+  /apis/listJSON:
+    get:
+      tags: [apis]
+      summary: All API sources as JSON
+      responses:
+        "200":
+          description: Array of API documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/API' }
+
+  /apis/new:
+    get:
+      tags: [apis]
+      summary: New API source form
+      responses:
+        "200":
+          description: HTML form
+
+  /apis/add:
+    post:
+      tags: [apis]
+      summary: Create an API source
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name, url, method, value]
+              properties:
+                name:   { type: string, example: "Cotação Dólar" }
+                url:    { type: string, format: uri }
+                method: { $ref: '#/components/schemas/HttpMethodEnum' }
+                body:   { type: string, nullable: true }
+                value:  { type: string, example: "data.amount", description: "Dot-notation JSON path to the numeric value" }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /apis/edit/{id}:
+    get:
+      tags: [apis]
+      summary: Edit API source form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "200":
+          description: HTML form pre-filled with API source data
+
+  /apis/update:
+    post:
+      tags: [apis]
+      summary: Update an API source
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:     { $ref: '#/components/schemas/ObjectId' }
+                name:   { type: string }
+                url:    { type: string, format: uri }
+                method: { $ref: '#/components/schemas/HttpMethodEnum' }
+                body:   { type: string, nullable: true }
+                value:  { type: string }
+                status: { $ref: '#/components/schemas/StatusEnum' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  /apis/remove/{id}:
+    get:
+      tags: [apis]
+      summary: Delete an API source
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        "302":
+          $ref: '#/components/responses/Redirect'
+
+  # ── Notifications ─────────────────────────────────────────────────────────
+
+  /notifications/push/public_key:
+    get:
+      tags: [notifications]
+      summary: Get VAPID public key
+      description: Returns the VAPID public key needed to subscribe to Web Push notifications. Returns 503 if VAPID keys are not configured.
+      responses:
+        "200":
+          description: VAPID public key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicKey: { type: string }
+        "503":
+          description: Push notifications not configured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+
+  /notifications/push/register:
+    post:
+      tags: [notifications]
+      summary: Register a push subscription
+      description: Stores a browser's Web Push subscription. Idempotent — does nothing if the endpoint is already registered.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PushSubscription' }
+      responses:
+        "201":
+          description: Subscription registered (or already existed)
+
+  /notifications/push/send:
+    post:
+      tags: [notifications]
+      summary: Send a push notification to all subscribers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PushSendBody' }
+      responses:
+        "201":
+          description: Notifications dispatched

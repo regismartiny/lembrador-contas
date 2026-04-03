@@ -68,4 +68,4 @@ Progress tracked here. Items are ordered by priority. Check boxes are ticked as 
 ## Priority 8 — Documentation
 
 - [x] **README.md** — add setup instructions, environment variables reference, how to run locally and with Docker.
-- [ ] **OpenAPI / Swagger spec** — document all API endpoints for future maintainers.
+- [x] **OpenAPI / Swagger spec** — document all API endpoints for future maintainers.
