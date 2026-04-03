@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../util/logger.js';
+import template from './template.js';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.get('/login', function (req, res) {
     if (!APP_PASSWORD || req.session.authenticated) {
         return res.redirect('/')
     }
-    res.render('auth/login', { title: 'Login', error: null })
+    res.render('auth/login', { title: 'Login', error: null, template })
 })
 
 router.post('/login', function (req, res) {
@@ -24,7 +25,7 @@ router.post('/login', function (req, res) {
         delete req.session.returnTo
         return res.redirect(redirectTo)
     }
-    res.render('auth/login', { title: 'Login', error: 'Senha incorreta.' })
+    res.render('auth/login', { title: 'Login', error: 'Senha incorreta.', template })
 })
 
 router.get('/logout', function (req, res) {

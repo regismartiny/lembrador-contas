@@ -147,12 +147,14 @@ $(document).ready(function () {
 
 // Function to toggle between dark and light themes
 function toggleTheme() {
-   const body = document.body;
-   if (body.classList.contains('dark-theme')) {
-       body.classList.remove('dark-theme');
-       body.classList.add('light-theme');
+   const root = document.documentElement;
+   if (root.classList.contains('dark-theme')) {
+       root.classList.remove('dark-theme');
+       root.classList.add('light-theme');
+       localStorage.setItem('theme', 'light-theme');
    } else {
-       body.classList.remove('light-theme');
-       body.classList.add('dark-theme');
+       root.classList.remove('light-theme');
+       root.classList.add('dark-theme');
+       localStorage.setItem('theme', 'dark-theme');
    }
 }

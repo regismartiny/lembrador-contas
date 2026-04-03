@@ -1,190 +1,250 @@
+/* ===== Theme Variables ===== */
+:root {
+  --bg-page:        #121212;
+  --bg-surface:     #1e1e1e;
+  --bg-elevated:    #2a2a2a;
+  --bg-input:       #2d2d2d;
+  --text-primary:   #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --border:         #3a3a3a;
+  --link:           #7aadff;
+  --link-hover:     #aacfff;
+  --dropdown-bg:    #252525;
+  --dropdown-hover: #333333;
+  --badge-bg:       #444444;
+  --badge-text:     #e0e0e0;
+  --card-bg:        #1e1e1e;
+  --summary-bg:     #3d3d43;
+  --header-bg:      #1f1f1f;
+  --header-text:    #f5f5f5;
+  --table-stripe:   rgba(255, 255, 255, 0.04);
+  --shadow:         0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+html.light-theme {
+  --bg-page:        #f5f5f5;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #eeeeee;
+  --bg-input:       #ffffff;
+  --text-primary:   #1a1a1a;
+  --text-secondary: #555555;
+  --border:         #dee2e6;
+  --link:           #0066cc;
+  --link-hover:     #004499;
+  --dropdown-bg:    #ffffff;
+  --dropdown-hover: #f0f0f0;
+  --badge-bg:       #6c757d;
+  --badge-text:     #ffffff;
+  --card-bg:        #ffffff;
+  --summary-bg:     #d0d0dc;
+  --header-bg:      #e0e0e0;
+  --header-text:    #1a1a1a;
+  --table-stripe:   rgba(0, 0, 0, 0.04);
+  --shadow:         0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* ===== Base ===== */
+html, body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.25s, color 0.25s;
+}
+
 body {
   padding-top: 5rem;
   font-family: Arial, sans-serif;
-  transition: background-color 0.3s, color 0.3s; /* Smooth transition for theme change */
 }
 
+a {
+  color: var(--link);
+}
+a:hover {
+  color: var(--link-hover);
+}
+
+/* ===== Layout ===== */
 .starter-template {
   padding: 3rem 1.5rem;
   text-align: center;
 }
 
-th, td {
-  text-align: center;
+th, td { text-align: center; }
+input  { text-align: center; }
+select { text-align-last: center; }
+
+/* ===== Symbol Colors ===== */
+.symbol-blue { color: #5aabff; }
+.symbol-red  { color: #e05555; }
+
+/* ===== Bootstrap 4 Table ===== */
+.table {
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.table th,
+.table td {
+  border-color: var(--border);
+}
+.table thead th {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: var(--table-stripe);
+}
+.table tbody tr:hover {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+}
+.table tbody td { color: var(--text-primary); }
+
+/* ===== Bootstrap 4 Form Controls ===== */
+.form-control {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border);
+  transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+}
+.form-control:focus {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: #4f9cf9;
+  box-shadow: 0 0 0 0.2rem rgba(79, 156, 249, 0.25);
+}
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: var(--bg-elevated);
+  color: var(--text-secondary);
 }
 
-input {
-  text-align: center;
+label {
+  color: var(--text-secondary);
 }
 
-select{
-  text-align-last:center;
-  /*padding-right: 29px;
-  direction: rtl;*/
+/* ===== Bootstrap 4 Dropdown ===== */
+.dropdown-menu {
+  background-color: var(--dropdown-bg);
+  border-color: var(--border);
+}
+.dropdown-item {
+  color: var(--text-primary);
+}
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--dropdown-hover);
+  color: var(--text-primary);
+}
+.dropdown-divider {
+  border-color: var(--border);
 }
 
-.symbol-blue {
-  color: blue
+/* ===== Bootstrap 4 Badges ===== */
+.badge-secondary {
+  background-color: var(--badge-bg);
+  color: var(--badge-text);
 }
 
-.symbol-red {
-  color: red
+/* ===== Bootstrap 4 Card ===== */
+.card {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.card-body { color: var(--text-primary); }
+.card-title { color: var(--text-primary); }
+
+/* ===== Bootstrap 4 Alert ===== */
+.alert { border-color: var(--border); }
+
+/* ===== Bootstrap 4 Toast ===== */
+.toast {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.toast-header {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border);
 }
 
-
-/* Dashboard */
+/* ===== Dashboard Layout ===== */
 .container-cards {
   width: 90%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
+
 .header {
-  background-color: #1f1f1f; /* Slightly lighter dark background for header */
-  color: #f5f5f5; /* Lighter text color */
+  background-color: var(--header-bg);
+  color: var(--header-text);
   padding: 20px;
   text-align: center;
   position: relative;
+  transition: background-color 0.25s, color 0.25s;
 }
-.header h1 {
-  margin: 0;
-}
+.header h1 { margin: 0; }
+
 .month-header {
   font-size: 1.2em;
   margin-top: 10px;
   margin-bottom: 20px;
 }
-.theme-toggle-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: #444;
-  color: #f5f5f5;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-size: 1em;
-  transition: background 0.3s;
-}
-.theme-toggle-btn:hover {
-  background: #666;
-}
-.dark-theme .header {
-  background-color: #1f1f1f;
-  color: #f5f5f5;
-}
-.dark-theme {
-  background-color: #121212!important; /* Dark background color by default */
-  color: #e0e0e0!important; /* Light text color for contrast */
-}
-.dark-theme .card {
-  background: #1e1e1e; /* Dark background for cards */
-  color: #e0e0e0; /* Light text color */
-}
-.dark-theme .summary {
-  background-color: rgb(61, 61, 67);
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-.light-theme {
-  background-color: #f5f5f5; /* Light background color */
-  color: #121212; /* Dark text color */
-}
-.light-theme .header {
-  background-color: #e0e0e0; /* Light background for header */
-  color: #121212; /* Dark text color */
-}
-.light-theme .card {
-  background: #ffffff; /* Light background for cards */
-  color: #121212; /* Dark text color */
-}
-.light-theme .summary {
-  background-color: rgb(160, 160, 172);
-  box-shadow: 0 0 10px rgba(240, 239, 239, 0.5);
-}
+
+/* ===== Dashboard Cards ===== */
 .dashboard {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px; /* Space between cards */
-}
-.card {
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  padding: 20px;
-  flex: 1 1 300px; /* Default to 300px width and grow to fit container */
-  max-width: 400px; /* Max width for each card */
-  display: flex;
-  flex-direction: column;
-}
-.card i {
-  font-size: 2em;
-  margin-bottom: 10px;
-}
-.card h2 {
-  margin: 0;
-  margin-bottom: 10px;
-}
-.card p {
-  margin: 5px 0;
-}
-.due-date {
-  font-size: 0.9em;
-  color: #f5b041; /* Light orange color for due dates */
-}
-.summary {
-  background-color: rgb(61, 61, 67);
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  padding: 20px;
-  margin: 20px 0;
-}
-.summary h2 {
-  margin-top: 0;
-}
-.summary p {
-  font-size: 1.2em;
-  font-weight: bold;
-}
-.total {
-  color: #e74c3c; /* Accent color for totals */
+  gap: 20px;
 }
 
-/* Responsive Design */
+.card {
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  flex: 1 1 300px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.card i { font-size: 2em; margin-bottom: 10px; }
+.card h2 { margin: 0; margin-bottom: 10px; }
+.card p  { margin: 5px 0; }
+
+.due-date {
+  font-size: 0.9em;
+  color: #f5b041;
+}
+
+/* ===== Summary ===== */
+.summary {
+  background-color: var(--summary-bg);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin: 20px 0;
+  transition: background-color 0.25s, box-shadow 0.25s;
+}
+.summary h2 { margin-top: 0; }
+.summary p  { font-size: 1.2em; font-weight: bold; }
+
+.total { color: #e74c3c; }
+
+/* ===== Responsive ===== */
 @media (max-width: 1024px) {
-  .card {
-      flex: 1 1 calc(50% - 20px); /* 2 cards per row for tablets */
-  }
+  .card { flex: 1 1 calc(50% - 20px); }
 }
 
 @media (max-width: 768px) {
-  .card {
-      flex: 1 1 calc(100% - 20px); /* 1 card per row for small screens */
-  }
-  .header h1 {
-      font-size: 1.5em;
-  }
-  .month-header {
-      font-size: 1em;
-  }
-  .theme-toggle-btn {
-      font-size: 0.9em;
-      padding: 8px 12px;
-      top: 10px;
-      right: 10px;
-  }
+  .card         { flex: 1 1 calc(100% - 20px); }
+  .header h1    { font-size: 1.5em; }
+  .month-header { font-size: 1em; }
 }
 
 @media (max-width: 480px) {
-  .header h1 {
-      font-size: 1.2em;
-  }
-  .month-header {
-      font-size: 0.9em;
-  }
-  .theme-toggle-btn {
-      font-size: 0.8em;
-      padding: 6px 10px;
-      top: 5px;
-      right: 5px;
-  }
+  .header h1    { font-size: 1.2em; }
+  .month-header { font-size: 0.9em; }
 }
