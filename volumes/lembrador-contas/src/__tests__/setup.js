@@ -6,6 +6,7 @@ process.env.APP_PASSWORD = undefined;
 // Mock auth middleware to always allow access
 mock.module('../middleware/auth.js', () => ({
     requireAuth: (req, res, next) => next(),
+    requireAdmin: (req, res, next) => next(),
     cloudflareAuth: (req, res, next) => next(),
 }));
 
@@ -43,7 +44,16 @@ mock.module('../db.js', () => {
         save() { return Promise.resolve(this); }
         static find()                   { return makeQuery([]); }
         static findById()               { return makeQuery(null); }
-        static findOne()                { return makeQuery(null); }
+        static findOne(query) {
+            // Return test users for auth-integration tests
+            const testUsers = [
+                { _id: '1', email: 'admin@example.com', name: 'Admin User', admin: true },
+                { _id: '2', email: 'user@example.com', name: 'Regular User', admin: false },
+                { _id: '3', email: 'nonadmin@example.com', name: 'Non-admin User', admin: false }
+            ];
+            const user = testUsers.find(u => u.email === query.email);
+            return makeQuery(user);
+        }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
     }
@@ -87,28 +97,33 @@ mock.module('../db.js', () => {
         static create()      { return Promise.resolve({}); }
     }
 
+    // Return the default export object that db.js provides
     return {
         default: {
-            BillTypeEnum:        { RECURRENT_SERVICE: 'Serviço Recorrente', PURCHASE: 'Compra' },
-            ValueSourceTypeEnum: { TABLE: 'Tabela', EMAIL: 'Email', API: 'API' },
-            ActiveBillStatusEnum:{ UNPAID: 'Não pago', PAID: 'Pago', ERROR: 'Erro' },
-            PaymentTypeEnum:     { PIX: 'PIX', DINHEIRO: 'Dinheiro' },
-            StatusEnum:          { ACTIVE: 'Ativo', INACTIVE: 'Inativo' },
-            PeriodFilterEnum:    { CURRENT_AND_FUTURE: 'Mês atual e futuros', ALL: 'Todos' },
-            HttpMethodEnum:      { GET: 'GET', POST: 'POST', PUT: 'PUT', DELETE: 'DELETE' },
-            DataParserEnum:      { CPFL_EMAIL: 'cpflEmailParser', CORSAN_EMAIL: 'corsanEmailParser' },
-            ReminderStatusEnum:  { CREATED: 'Criado', PAYD: 'Pago', CANCELED: 'Cancelado' },
+            Mongoose: null,
+            User: MockUser,
+            Bill: MockBill,
             ActiveBill: MockActiveBill,
-            Bill:       MockBill,
-            User:       MockUser,
-            Table:      MockTable,
-            Email:      MockEmail,
-            API:        MockAPI,
+            Email: MockEmail,
+            Table: MockTable,
+            API: MockAPI,
+            BillReminder: null,
             PushNotificationSubscription: MockPushNotificationSubscription,
+            PeriodFilterEnum: { ALL: 'ALL', CURRENT_AND_FUTURE: 'CURRENT_AND_FUTURE' },
+            StatusEnum: { ACTIVE: 'ACTIVE', INACTIVE: 'INACTIVE' },
+            HttpMethodEnum: { GET: 'GET', POST: 'POST', PUT: 'PUT', DELETE: 'DELETE' },
+            ValueSourceTypeEnum: { TABLE: 'TABLE', EMAIL: 'EMAIL', API: 'API' },
+            BillTypeEnum: { RECURRENT_SERVICE: 'RECURRENT_SERVICE', PURCHASE: 'PURCHASE' },
+            PaymentTypeEnum: { PIX: 'PIX', BOLETO: 'BOLETO' },
+            ActiveBillStatusEnum: { PENDING: 'PENDING', PAID: 'PAID' },
+            DataTypeEnum: null,
+            DataParserEnum: null,
+            ReminderStatusEnum: null,
         }
     };
 });
 
+// Mock logger to prevent console output during tests
 mock.module('../util/logger.js', () => ({
     default: { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} }
 }));
