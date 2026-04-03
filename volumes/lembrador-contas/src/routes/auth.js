@@ -32,7 +32,6 @@ router.post('/login', async function (req, res) {
 
     req.session.authenticated = true
     req.session.email = email
-    delete req.session.skipCfAuth;
     const redirectTo = req.session.returnTo || '/'
     delete req.session.returnTo
     req.session.save(function (err) {
@@ -43,7 +42,6 @@ router.post('/login', async function (req, res) {
 
 router.get('/logout', function (req, res) {
     req.session.authenticated = false;
-    req.session.skipCfAuth = true;
     delete req.session.email;
     req.session.save(() => res.redirect('/login'));
 })
