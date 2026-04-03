@@ -41,7 +41,16 @@ router.post('/login', async function (req, res) {
 })
 
 router.get('/logout', function (req, res) {
-    req.session.destroy(() => res.redirect('/login'))
+    req.session.destroy(() => {
+        const cfTeamDomain = process.env.CF_ACCESS_TEAM_DOMAIN;
+        if (cfTeamDomain) {
+            // Redirect to Cloudflare Access logout, then back to /login
+            const logoutUrl = `https://${cfTeamDomain}/cdn-cgi/access/logout?redirect=${encodeURIComponent(`${req.protocol}://${req.get('host')}/login`)}`;
+            res.redirect(logoutUrl);
+        } else {
+            res.redirect('/login');
+        }
+    });
 })
 
 export default router;
