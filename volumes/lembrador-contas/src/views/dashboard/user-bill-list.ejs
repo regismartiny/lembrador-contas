@@ -2,10 +2,17 @@
 <% if (!userBillsData?.billListPerMonth?.length) { %>
     <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
 <% } %>
+<%
+var monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function formatMonth(m) {
+    var parts = m.split('/');
+    return monthNames[parseInt(parts[0], 10) - 1] + '/' + parts[1];
+}
+%>
 <% userBillsData?.billListPerMonth?.forEach(function(data){ %>
     <div class="month-block">
         <div class="month-header-row">
-            <h2 class="month-title"><%= data.month %></h2>
+            <h2 class="month-title"><%= formatMonth(data.month) %></h2>
             <span class="month-total">Total: <strong class="money"><%= Number(data.totalValue).toFixed(2) %></strong></span>
         </div>
         <div class="payment-badges">
@@ -20,7 +27,7 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Venc.</th>
+                        <th class="d-none d-sm-table-cell">Venc.</th>
                         <th>Valor</th>
                     </tr>
                 </thead>
@@ -28,7 +35,7 @@
                     <% data.billList?.forEach(function(bill){ %>
                         <tr>
                             <td><%= bill.name %></td>
-                            <td><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
+                            <td class="d-none d-sm-table-cell"><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
                             <td><span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span></td>
                         </tr>
                     <%})%>
