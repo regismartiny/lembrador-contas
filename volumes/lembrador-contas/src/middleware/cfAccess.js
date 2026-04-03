@@ -12,6 +12,7 @@ if (CF_TEAM_DOMAIN && CF_AUD) {
 
 export async function cloudflareAuth(req, res, next) {
     if (!JWKS) return next();
+    if (req.path === '/login') return next();
     if (req.session.authenticated) return next();
 
     const token = req.headers['cf-access-jwt-assertion'] || req.cookies['CF_Authorization'];
