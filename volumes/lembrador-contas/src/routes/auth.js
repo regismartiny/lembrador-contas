@@ -23,7 +23,10 @@ router.post('/login', function (req, res) {
         req.session.authenticated = true
         const redirectTo = req.session.returnTo || '/'
         delete req.session.returnTo
-        return res.redirect(redirectTo)
+        return req.session.save(function (err) {
+            if (err) return res.redirect('/')
+            res.redirect(redirectTo)
+        })
     }
     res.render('auth/login', { title: 'Login', error: 'Senha incorreta.', template })
 })
