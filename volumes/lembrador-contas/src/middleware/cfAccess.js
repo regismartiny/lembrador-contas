@@ -14,6 +14,7 @@ export async function cloudflareAuth(req, res, next) {
     if (!JWKS) return next();
     if (req.path === '/login') return next();
     if (req.session.authenticated) return next();
+    if (req.session.skipCfAuth) return next();
 
     const token = req.headers['cf-access-jwt-assertion'] || req.cookies['CF_Authorization'];
     if (!token) return next();

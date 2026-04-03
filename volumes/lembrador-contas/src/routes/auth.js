@@ -32,6 +32,7 @@ router.post('/login', async function (req, res) {
 
     req.session.authenticated = true
     req.session.email = email
+    delete req.session.skipCfAuth;
     const redirectTo = req.session.returnTo || '/'
     delete req.session.returnTo
     req.session.save(function (err) {
@@ -41,16 +42,10 @@ router.post('/login', async function (req, res) {
 })
 
 router.get('/logout', function (req, res) {
-    req.session.destroy(() => {
-        const cfTeamDomain = process.env.CF_ACCESS_TEAM_DOMAIN;
-        if (cfTeamDomain) {
-            // Redirect to Cloudflare Access logout, then back to /login
-            const logoutUrl = `https://${cfTeamDomain}/cdn-cgi/access/logout?redirect=${encodeURIComponent(`${req.protocol}://${req.get('host')}/login`)}`;
-            res.redirect(logoutUrl);
-        } else {
-            res.redirect('/login');
-        }
-    });
+    req.session.authenticated = false;
+    req.session.skipCfAuth = true;
+    delete req.session.email;
+    req.session.save(() => res.redirect('/login'));
 })
 
 export default router;
