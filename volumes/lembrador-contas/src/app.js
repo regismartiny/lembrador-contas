@@ -17,6 +17,7 @@ import notifications from './routes/notifications.js';
 import htmlparser from './routes/htmlparser.js';
 import auth from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
+import { cloudflareAuth } from './middleware/cfAccess.js';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
@@ -67,6 +68,15 @@ app.use(session({
 // Health check — public, used by Docker and load balancers
 app.get('/health', function (req, res) {
     res.status(200).json({ status: 'ok' });
+});
+
+// Cloudflare Access — verify JWT and auto-authenticate if present
+app.use(cloudflareAuth);
+
+// Expose session email to all EJS views
+app.use(function (req, res, next) {
+    res.locals.currentUserEmail = req.session.email || '';
+    next();
 });
 
 // Auth routes (login/logout) are public

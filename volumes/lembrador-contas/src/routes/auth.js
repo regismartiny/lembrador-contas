@@ -1,6 +1,7 @@
 import express from 'express';
 import logger from '../util/logger.js';
 import template from './template.js';
+import db from '../db.js';
 
 const router = express.Router();
 
@@ -17,18 +18,26 @@ router.get('/login', function (req, res) {
     res.render('auth/login', { title: 'Login', error: null, template })
 })
 
-router.post('/login', function (req, res) {
-    const password = req.body.password
-    if (password === APP_PASSWORD) {
-        req.session.authenticated = true
-        const redirectTo = req.session.returnTo || '/'
-        delete req.session.returnTo
-        return req.session.save(function (err) {
-            if (err) return res.redirect('/')
-            res.redirect(redirectTo)
-        })
+router.post('/login', async function (req, res) {
+    const { email, password } = req.body
+
+    const user = await db.User.findOne({ email }).lean()
+    if (!user) {
+        return res.render('auth/login', { title: 'Login', error: 'E-mail não encontrado.', template })
     }
-    res.render('auth/login', { title: 'Login', error: 'Senha incorreta.', template })
+
+    if (password !== APP_PASSWORD) {
+        return res.render('auth/login', { title: 'Login', error: 'Senha incorreta.', template })
+    }
+
+    req.session.authenticated = true
+    req.session.email = email
+    const redirectTo = req.session.returnTo || '/'
+    delete req.session.returnTo
+    req.session.save(function (err) {
+        if (err) return res.redirect('/')
+        res.redirect(redirectTo)
+    })
 })
 
 router.get('/logout', function (req, res) {

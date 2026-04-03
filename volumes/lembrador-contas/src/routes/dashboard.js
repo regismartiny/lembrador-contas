@@ -20,7 +20,11 @@ router.get('/', async function (req, res, next) {
 
         const lastUpdate = activeBills.sort((a,b)=>b.updated_at.getTime()-a.updated_at.getTime())[0]?.updated_at;
 
-        res.render('dashboard/dashboard', { template, title: 'Contas do mês', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
+        const sessionEmail = req.session.email || ''
+        const loggedUser = sessionEmail ? users.find(u => u.email === sessionEmail) : null
+        const defaultUserId = loggedUser ? loggedUser._id.toString() : (users[0]?._id.toString() || '')
+
+        res.render('dashboard/dashboard', { template, title: 'Contas do mês', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum, defaultUserId })
     } catch (err) {
         next(err)
     }

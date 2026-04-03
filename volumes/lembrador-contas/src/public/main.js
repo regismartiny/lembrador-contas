@@ -144,6 +144,11 @@ $(document).ready(function () {
        $('#notifications-toast').toast('show')
     }
 
+    // Show logged-in user email in navbar
+    if (window.__USER_EMAIL__) {
+        $('#navbar-user-email').text(window.__USER_EMAIL__);
+    }
+
     // Highlight active nav link based on current path
     var path = window.location.pathname.split('/')[1];
     $('.navbar-nav .nav-link').each(function() {

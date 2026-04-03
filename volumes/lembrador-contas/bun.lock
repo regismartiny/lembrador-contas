@@ -16,6 +16,7 @@
         "express-session": "^1.17.3",
         "google-auth-library": "9.0.0",
         "googleapis": "122.0.0",
+        "jose": "^5.9.6",
         "jsdom": "22.1.0",
         "moment": "2.29.4",
         "mongoose": "8.19.3",
@@ -248,6 +249,8 @@
     "is-wsl": ["is-wsl@2.2.0", "", { "dependencies": { "is-docker": "^2.0.0" } }, "sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww=="],
 
     "jake": ["jake@10.9.4", "", { "dependencies": { "async": "^3.2.6", "filelist": "^1.0.4", "picocolors": "^1.1.1" }, "bin": { "jake": "bin/cli.js" } }, "sha512-wpHYzhxiVQL+IV05BLE2Xn34zW1S223hvjtqk0+gsPrwd/8JNLXJgZZM/iPFsYc1xyphF+6M6EvdE5E9MBGkDA=="],
+
+    "jose": ["jose@5.10.0", "", {}, "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="],
 
     "jquery": ["jquery@3.7.1", "", {}, "sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg=="],
 

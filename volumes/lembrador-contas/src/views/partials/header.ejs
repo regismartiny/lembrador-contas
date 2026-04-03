@@ -12,4 +12,5 @@
     <link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials">
     <title><%= typeof title !='undefined' ? title : 'Lembrador de Contas' %></title>
     <%- template.head %>
+    <script>window.__USER_EMAIL__ = '<%- currentUserEmail %>';</script>
 </head>
