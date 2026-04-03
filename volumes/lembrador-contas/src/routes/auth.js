@@ -30,14 +30,19 @@ router.post('/login', async function (req, res) {
         return res.render('auth/login', { title: 'Login', error: 'Senha incorreta.', template })
     }
 
-    req.session.authenticated = true
-    req.session.email = email
-    req.session.loginMethod = 'explicit' // Mark as explicit login, not Cloudflare
-    const redirectTo = req.session.returnTo || '/'
-    delete req.session.returnTo
-    req.session.save(function (err) {
+    // Clear any previous Cloudflare authentication
+    req.session.regenerate(function (err) {
         if (err) return res.redirect('/')
-        res.redirect(redirectTo)
+        
+        req.session.authenticated = true
+        req.session.email = email
+        req.session.loginMethod = 'explicit' // Mark as explicit login, not Cloudflare
+        const redirectTo = req.session.returnTo || '/'
+        delete req.session.returnTo
+        req.session.save(function (err) {
+            if (err) return res.redirect('/')
+            res.redirect(redirectTo)
+        })
     })
 })
 
