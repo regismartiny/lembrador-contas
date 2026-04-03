@@ -8,7 +8,7 @@ async function processBills(bills, selectedPeriods) {
     logger.info("Processing bills for periods:", periods)
 
     //delete previously processed bills of current periods
-    db.ActiveBill.deleteMany({dueDate: {
+    await db.ActiveBill.deleteMany({dueDate: {
         $gte: new Date(periods[0].year, periods[0].month + 1, 1),
         $lt: new Date(periods[2].year, periods[2].month + 3, 1)
     }}).catch((err) => {
@@ -23,12 +23,12 @@ async function processBills(bills, selectedPeriods) {
                         findActiveEmailBills(billsSourceEmail, periods),
                         findActiveApiBills(billsSourceApi, periods)]
     const activeBills = await runParallel(promises)
-    
-    for (const activeBill of activeBills) {
+
+    await Promise.all(activeBills.map(activeBill =>
         activeBill.save().catch((err) => {
             logger.error(`Error saving activeBill '${activeBill.name}'`, err)
         })
-    }
+    ))
 
     logger.info("Finished processing bills for periods:", periods)
 }

@@ -18,7 +18,7 @@ router.get('/', async function (req, res, next) {
 
         const users = await db.User.find({ _id: { $in: usersIds } }).lean()
 
-        const lastUpdate = activeBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
+        const lastUpdate = activeBills.sort((a,b)=>b.updated_at.getTime()-a.updated_at.getTime())[0]?.updated_at;
 
         res.render('dashboard/dashboard', { template, title: 'Contas do mês', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
     } catch (err) {
@@ -32,7 +32,7 @@ router.get('/dashboard-new', async function (req, res, next) {
         let currentMonth = new Date().getMonth()
         let currentMonthBills = bills.filter(bill => bill.dueDate?.getMonth() == currentMonth)
 
-        const lastUpdate = currentMonthBills.sort((a,b)=>a.updated_at.getTime()-b.updated_at.getTime())[0]?.updated_at;
+        const lastUpdate = currentMonthBills.sort((a,b)=>b.updated_at.getTime()-a.updated_at.getTime())[0]?.updated_at;
 
         const totalValue = currentMonthBills.map(bill => bill.value).reduce(billProcessing.getSum, 0)
         const billList = currentMonthBills.sort((a,b)=>a.name.localeCompare(b.name))
