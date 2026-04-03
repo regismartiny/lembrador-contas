@@ -14,6 +14,7 @@
                                 <th>Nome</th>
                                 <th>Email</th>
                                 <th>Situação</th>
+                                <th>Administrador</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -23,6 +24,7 @@
                                     <td><%= user.name %></td>
                                     <td style="word-break:break-all"><%= user.email %></td>
                                     <td><%= statusEnum[user.status] %></td>
+                                    <td><%= user.admin ? 'Sim' : 'Não' %></td>
                                     <td class="text-nowrap">
                                         <a href='/users/edit/<%= user._id %>'><span class="material-symbols-outlined">edit</span></a>
                                         <a href='/users/remove/<%= user._id %>' onclick="return confirm('Excluir o usuário \'<%= user.name %>\'?')"><span class="material-symbols-outlined symbol-red">delete</span></a>

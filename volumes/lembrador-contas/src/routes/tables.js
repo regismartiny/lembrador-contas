@@ -3,6 +3,7 @@ import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import utils from '../util/utils.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,12 +30,12 @@ router.get('/listJSON', async function (req, res, next) {
 })
 
 /* GET New Table page. */
-router.get('/new', function (req, res) {
+router.get('/new', requireAdmin, function (req, res) {
     res.render('table/editTable', { template, title: 'Cadastro de Tabela' });
 });
 
 /* POST to Add Table */
-router.post('/add', async function (req, res, next) {
+router.post('/add', requireAdmin, async function (req, res, next) {
     let name = req.body.name
     let data = parseData(req.body)
 
@@ -49,7 +50,7 @@ router.post('/add', async function (req, res, next) {
 })
 
 /* GET Edit Table page. */
-router.get('/edit/:id', async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, async function (req, res, next) {
     try {
         const table = await db.Table.findById(req.params.id)
         res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
@@ -59,7 +60,7 @@ router.get('/edit/:id', async function (req, res, next) {
 })
 
 /* POST to Update Table */
-router.post('/update', async function (req, res, next) {
+router.post('/update', requireAdmin, async function (req, res, next) {
     let tableId = req.body.id
     let name = req.body.name
     let data = parseData(req.body)
@@ -75,7 +76,7 @@ router.post('/update', async function (req, res, next) {
 })
 
 /* GET Remove Table */
-router.get('/remove/:id', async function (req, res, next) {
+router.get('/remove/:id', requireAdmin, async function (req, res, next) {
     try {
         await db.Table.findOneAndDelete({ _id: req.params.id })
         res.redirect("/tables/list")

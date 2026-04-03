@@ -2,6 +2,7 @@ import express from 'express';
 import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,12 +30,12 @@ router.get('/listJSON', async function (req, res, next) {
 });
 
 /* GET New API page. */
-router.get('/new', function (req, res) {
+router.get('/new', requireAdmin, function (req, res) {
     res.render('api/editApi', { template, title: 'Cadastro de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum });
 });
 
 /* POST to Add API */
-router.post('/add', async function (req, res, next) {
+router.post('/add', requireAdmin, async function (req, res, next) {
     let name = req.body.name
     let url = req.body.url
     let method = req.body.method
@@ -52,7 +53,7 @@ router.post('/add', async function (req, res, next) {
 })
 
 /* GET Edit API page. */
-router.get('/edit/:id', async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, async function (req, res, next) {
     try {
         const api = await db.API.findById(req.params.id)
         res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
@@ -62,7 +63,7 @@ router.get('/edit/:id', async function (req, res, next) {
 })
 
 /* POST to Update API */
-router.post('/update', async function (req, res, next) {
+router.post('/update', requireAdmin, async function (req, res, next) {
     let apiId = req.body.id;
     let name = req.body.name;
     let url = req.body.url;
@@ -81,7 +82,7 @@ router.post('/update', async function (req, res, next) {
 })
 
 /* GET Remove API */
-router.get('/remove/:id', async function (req, res, next) {
+router.get('/remove/:id', requireAdmin, async function (req, res, next) {
     try {
         await db.API.findOneAndDelete({ _id: req.params.id })
         res.redirect("/apis/list");

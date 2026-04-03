@@ -6,6 +6,7 @@ var userSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
     email: { type: String, unique: true, required: [true, 'O email é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
+    admin: { type: Boolean, default: false },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'usercollection' })

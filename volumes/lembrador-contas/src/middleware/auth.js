@@ -1,3 +1,5 @@
+import db from '../db.js'
+
 const APP_PASSWORD = process.env.APP_PASSWORD;
 
 export function requireAuth(req, res, next) {
@@ -8,4 +10,19 @@ export function requireAuth(req, res, next) {
         req.session.returnTo = req.originalUrl
     }
     res.redirect('/login')
+}
+
+export async function requireAdmin(req, res, next) {
+    if (!req.session || !req.session.authenticated || !req.session.email) {
+        return res.redirect('/login')
+    }
+    try {
+        const user = await db.User.findOne({ email: req.session.email }).lean()
+        if (!user || !user.admin) {
+            return res.status(403).send('Acesso negado. Apenas administradores podem realizar esta ação.')
+        }
+        next()
+    } catch (err) {
+        next(err)
+    }
 }

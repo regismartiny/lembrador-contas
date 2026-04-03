@@ -2,6 +2,7 @@ import express from 'express';
 import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -17,21 +18,22 @@ router.get('/list', async function (req, res, next) {
 });
 
 /* GET New User page. */
-router.get('/new', function (req, res) {
+router.get('/new', requireAdmin, function (req, res) {
     res.render('user/newUser', { template, title: 'Cadastro de Usuário' });
 });
 
 /* POST to Add User Service */
-router.post('/add', async function (req, res, next) {
+router.post('/add', requireAdmin, async function (req, res, next) {
     var name = (req.body.name || '').trim();
     var email = (req.body.email || '').trim().toLowerCase();
+    var admin = req.body.admin === 'on'; // assuming checkbox
 
     if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).send('Nome e email válido são obrigatórios.')
     }
 
     try {
-        const user = new db.User({ name, email });
+        const user = new db.User({ name, email, admin });
         await user.save();
         logger.info("User saved");
         res.redirect("/users/list");
@@ -41,7 +43,7 @@ router.post('/add', async function (req, res, next) {
 });
 
 /* GET Edit User page. */
-router.get('/edit/:id', async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, async function (req, res, next) {
     try {
         const user = await db.User.findById(req.params.id)
         res.render('user/editUser', { template, title: 'Edição de Usuário', statusEnum: db.StatusEnum, user })
@@ -51,18 +53,19 @@ router.get('/edit/:id', async function (req, res, next) {
 })
 
 /* POST to Update User */
-router.post('/update', async function (req, res, next) {
+router.post('/update', requireAdmin, async function (req, res, next) {
     let userId = req.body.id
     let name = (req.body.name || '').trim()
     let email = (req.body.email || '').trim().toLowerCase()
     let status = req.body.status
+    let admin = req.body.admin === 'on';
 
     if (!userId || !name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).send('Dados inválidos.')
     }
 
     try {
-        await db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status } }, { new: true })
+        await db.User.findOneAndUpdate({ _id: userId }, { $set: { name, email, status, admin } }, { new: true })
         logger.info("User updated")
         res.redirect("/users/list")
     } catch (err) {
@@ -71,7 +74,7 @@ router.post('/update', async function (req, res, next) {
 })
 
 /* GET Remove User */
-router.get('/remove/:id', async function (req, res, next) {
+router.get('/remove/:id', requireAdmin, async function (req, res, next) {
     try {
         await db.User.findOneAndDelete({ _id: req.params.id })
         logger.info("User removed")

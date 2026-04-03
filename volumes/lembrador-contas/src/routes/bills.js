@@ -2,6 +2,7 @@ import express from 'express';
 import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get('/list', async function (req, res, next) {
 });
 
 /* GET New Bill page. */
-router.get('/new', async function (req, res, next) {
+router.get('/new', requireAdmin, async function (req, res, next) {
     try {
         const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
         res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, paymentTypeEnum: db.PaymentTypeEnum, activeUsers });
@@ -28,7 +29,7 @@ router.get('/new', async function (req, res, next) {
 });
 
 /* POST to Add Bill */
-router.post('/add', async function (req, res, next) {
+router.post('/add', requireAdmin, async function (req, res, next) {
     let users = req.body.users;
     let name = (req.body.name || '').trim();
     let company = (req.body.company || '').trim();
@@ -56,7 +57,7 @@ router.post('/add', async function (req, res, next) {
 });
 
 /* GET Edit Bill page. */
-router.get('/edit/:id', async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, async function (req, res, next) {
     try {
         const [bill, activeUsers] = await Promise.all([
             db.Bill.findById(req.params.id),
@@ -69,7 +70,7 @@ router.get('/edit/:id', async function (req, res, next) {
 });
 
 /* POST to Update Bill */
-router.post('/update', async function (req, res, next) {
+router.post('/update', requireAdmin, async function (req, res, next) {
     let users = req.body.users
     let billId = req.body.id
     let name = (req.body.name || '').trim()
@@ -96,7 +97,7 @@ router.post('/update', async function (req, res, next) {
 })
 
 /* GET Remove Bill */
-router.get('/remove/:id', async function (req, res, next) {
+router.get('/remove/:id', requireAdmin, async function (req, res, next) {
     try {
         await db.Bill.findOneAndDelete({ _id: req.params.id })
         res.redirect("/bills/list");

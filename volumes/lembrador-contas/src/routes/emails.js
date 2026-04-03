@@ -6,6 +6,7 @@ import gmail from '../util/gmail.js';
 import emailUtils from '../util/emailUtils.js';
 import vm from 'vm';
 import cpflEmailParser from '../parser/cpflEmailParser.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -32,12 +33,12 @@ router.get('/listJSON', async function (req, res, next) {
 });
 
 /* GET New email page. */
-router.get('/new', function (req, res) {
+router.get('/new', requireAdmin, function (req, res) {
     res.render('email/editEmail', { template, title: 'Cadastro de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum });
 });
 
 /* POST to Add Email */
-router.post('/add', async function (req, res, next) {
+router.post('/add', requireAdmin, async function (req, res, next) {
     let address = req.body.address
     let subject = req.body.subject
     let dataParser = req.body.dataParser
@@ -53,7 +54,7 @@ router.post('/add', async function (req, res, next) {
 })
 
 /* GET Edit Email page. */
-router.get('/edit/:id', async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, async function (req, res, next) {
     try {
         const email = await db.Email.findById(req.params.id)
         res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email })
@@ -63,7 +64,7 @@ router.get('/edit/:id', async function (req, res, next) {
 })
 
 /* POST to Update Email */
-router.post('/update', async function (req, res, next) {
+router.post('/update', requireAdmin, async function (req, res, next) {
     let emailId = req.body.id
     let address = req.body.address
     let subject = req.body.subject
@@ -80,7 +81,7 @@ router.post('/update', async function (req, res, next) {
 })
 
 /* GET Remove Email */
-router.get('/remove/:id', async function (req, res, next) {
+router.get('/remove/:id', requireAdmin, async function (req, res, next) {
     try {
         await db.Email.findOneAndDelete({ _id: req.params.id })
         res.redirect("/emails/list")
