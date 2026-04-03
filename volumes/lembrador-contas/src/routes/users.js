@@ -26,7 +26,7 @@ router.get('/new', requireAdmin, function (req, res) {
 router.post('/add', requireAdmin, async function (req, res, next) {
     var name = (req.body.name || '').trim();
     var email = (req.body.email || '').trim().toLowerCase();
-    var admin = req.body.admin === 'on'; // assuming checkbox
+    var admin = req.body.admin === 'true';
 
     if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).send('Nome e email válido são obrigatórios.')
@@ -58,7 +58,9 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     let name = (req.body.name || '').trim()
     let email = (req.body.email || '').trim().toLowerCase()
     let status = req.body.status
-    let admin = req.body.admin === 'on';
+    let admin = req.body.admin === 'true';
+
+    logger.info(`Updating user - admin value from form: ${req.body.admin}, parsed as: ${admin}`)
 
     if (!userId || !name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).send('Dados inválidos.')
