@@ -272,6 +272,15 @@ label {
   gap: 0.5rem;
 }
 
+/* ===== List page header ===== */
+.list-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.list-page-header .title-1 { margin-bottom: 0; }
+
 /* ===== Form button group ===== */
 .form-group-btn {
   display: flex;

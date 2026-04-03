@@ -3,49 +3,32 @@
     <body>
         <%- template.navbar %>
             <div class="container">
-                <div class="float-right">
-                    <form class="form-inline my-2 my-lg-0">
-                        <a href='/emails/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
-                    </form>
-                </div>
                 <div class="starter-template">
+                    <div class="list-page-header">
+                        <h1 class="title-1"><%= title %></h1>
+                        <a href='/emails/new' class="btn btn-outline-success btn-sm">Novo</a>
+                    </div>
                     <div>
-                        <h1 class="title-1">
-                            <%= title %>
-                        </h1>
-                        <br>
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Remetente</th>
                                     <th>Situação</th>
-                                    <th>Ações</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% emailList.forEach(function(email){ %>
                                     <tr>
-                                        <td>
-                                            <%= email.address %>
-                                        </td>
-                                        <td>
-                                            <%= statusEnum[email.status] %>
-                                        </td>
-                                        <td>
-                                            <a href='/emails/edit/<%= email._id %>'>
-                                                <span class="material-symbols-outlined">
-                                                edit
-                                                </span>
-                                            </a>
-                                            <a href='/email/remove/<%= email._id %>'>
-                                                <span class="material-symbols-outlined">
-                                                delete
-                                                </span>
-                                            </a>
+                                        <td style="word-break:break-all;text-align:left"><%= email.address %></td>
+                                        <td><%= statusEnum[email.status] %></td>
+                                        <td class="text-nowrap">
+                                            <a href='/emails/edit/<%= email._id %>'><span class="material-symbols-outlined">edit</span></a>
+                                            <a href='/email/remove/<%= email._id %>'><span class="material-symbols-outlined">delete</span></a>
                                             <a href='/emails/test/<%= email._id %>'>Testar</a>
                                         </td>
                                     </tr>
-                                    <%})%>
+                                <%})%>
                             </tbody>
                         </table>
                     </div>

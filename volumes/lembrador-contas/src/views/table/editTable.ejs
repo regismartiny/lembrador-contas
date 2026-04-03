@@ -28,19 +28,49 @@
                                     </div>
                                 <% } %>
                                 <br>
-                                <table id="table" class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Período (competência)</th>
-                                            <th>Valor</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                                <div>
-                                    <a href="javascript:addRow()">Adicionar linha</a>
+                                <div class="table-responsive">
+                                    <table id="table" class="table table-edit">
+                                        <colgroup>
+                                            <col>
+                                            <col class="col-value">
+                                            <col class="col-actions">
+                                        </colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th>Período</th>
+                                                <th>Valor</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="period-fill-section">
+                                    <p class="period-fill-label">Preencher período</p>
+                                    <div class="period-fill-row">
+                                        <div class="form-group mb-0 flex-fill">
+                                            <label for="fill-start">De</label>
+                                            <input type="month" class="form-control form-control-sm" id="fill-start">
+                                        </div>
+                                        <div class="form-group mb-0 flex-fill">
+                                            <label for="fill-end">Até</label>
+                                            <input type="month" class="form-control form-control-sm" id="fill-end">
+                                        </div>
+                                    </div>
+                                    <div class="period-fill-row mt-2">
+                                        <div class="form-group mb-0 flex-fill">
+                                            <label for="fill-value">Valor</label>
+                                            <input type="text" class="form-control form-control-sm money" id="fill-value" placeholder="0,00">
+                                        </div>
+                                        <div class="form-group mb-0 period-fill-btn-wrap">
+                                            <label>&nbsp;</label>
+                                            <button type="button" class="btn btn-secondary btn-sm btn-block" onclick="fillPeriod()">Preencher</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-1">
+                                    <a href="javascript:addRow()">+ Adicionar linha</a>
                                 </div>
                                 <br>
                                 <br>
@@ -90,7 +120,7 @@
                     }
 
                     function genValueCol(value) {
-                        return '<td><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div><input type="text" class="form-control money" placeholder="0,00" id="value-' + rowCount + '" name="value" aria-describedby="basic-addon1" required/></div></td>'
+                        return '<td><input type="text" class="form-control form-control-sm money" placeholder="0,00" id="value-' + rowCount + '" name="value" required/></td>'
                     }
 
                     function genRemoveAction() {
@@ -107,11 +137,81 @@
                         }
                     });
 
+                    function fillPeriod() {
+                        var start = document.getElementById('fill-start').value;
+                        var end = document.getElementById('fill-end').value;
+                        var value = document.getElementById('fill-value').value;
+
+                        if (!start || !end) {
+                            alert('Informe o período inicial e final.');
+                            return;
+                        }
+
+                        var startDate = new Date(start + '-02');
+                        var endDate = new Date(end + '-02');
+
+                        if (startDate > endDate) {
+                            alert('O período inicial deve ser anterior ao final.');
+                            return;
+                        }
+
+                        var current = new Date(startDate);
+                        var addedIds = [];
+                        while (current <= endDate) {
+                            var y = current.getFullYear();
+                            var m = n(current.getMonth() + 1);
+                            addedIds.push(rowCount);
+                            addRow(y + '-' + m, null);
+                            current.setMonth(current.getMonth() + 1);
+                        }
+
+                        if (value) {
+                            addedIds.forEach(function(id) {
+                                $('#value-' + id).val(value);
+                            });
+                        }
+                    }
+
                     $('#form').submit(function() {
                         //actions before submitting form
                         return true;
                     });
                 </script>
+                <style>
+                    /* ---- edit table columns ---- */
+                    /* fixed layout: period col gets all space that value+actions don't use */
+                    .table-edit { table-layout: fixed; width: 100%; }
+                    .col-value   { width: 80px; }
+                    .col-actions { width: 44px; }
+                    .table-edit td { vertical-align: middle; overflow: hidden; }
+                    .table-edit input { min-width: 0; width: 100%; }
+                    .table-edit input[name="value"] { font-size: 1.05rem; }
+
+                    /* ---- fill period panel ---- */
+                    .period-fill-section {
+                        margin: 0.75rem 0;
+                        padding: 0.75rem 1rem;
+                        border: 1px solid var(--border);
+                        border-radius: 0.375rem;
+                        background: var(--bg-elevated);
+                    }
+                    .period-fill-label {
+                        font-size: 0.78rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        color: var(--text-secondary);
+                        margin-bottom: 0.5rem;
+                    }
+                    .period-fill-row {
+                        display: flex;
+                        gap: 0.5rem;
+                        align-items: flex-end;
+                    }
+                    .period-fill-row .flex-fill { min-width: 0; flex: 1 1 0; }
+                    .period-fill-row .flex-fill .form-control { width: 100%; min-width: 0; }
+                    .period-fill-btn-wrap { flex-shrink: 0; }
+                    .period-fill-btn-wrap button { white-space: nowrap; }
+                </style>
     </body>
 
     </html>

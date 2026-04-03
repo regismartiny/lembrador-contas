@@ -3,53 +3,32 @@
     <body>
         <%- template.navbar %>
             <div class="container">
-                <div class="float-right">
-                    <form class="form-inline my-2 my-lg-0">
-                        <a href='/apis/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
-                    </form>
-                </div>
                 <div class="starter-template">
-                    <div>
-                        <h1 class="title-1">
-                            <%= title %>
-                        </h1>
-                        <br>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Situação</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% apiList.forEach(function(api){ %>
-                                    <tr>
-                                        <td>
-                                            <%= api.name %>
-                                        </td>
-                                        <td>
-                                            <%= statusEnum[api.status] %>
-                                        </td>
-                                        <td>
-                                            <td>
-                                                <a href='/apis/edit/<%= api._id %>'>
-                                                    <span class="material-symbols-outlined">
-                                                    edit
-                                                    </span>
-                                                </a>
-                                                <a href='/apis/remove/<%= api._id %>'>
-                                                    <span class="material-symbols-outlined">
-                                                    delete
-                                                    </span>
-                                                </a>
-                                            </td>
-                                        </td>
-                                    </tr>
-                                    <%})%>
-                            </tbody>
-                        </table>
+                    <div class="list-page-header">
+                        <h1 class="title-1"><%= title %></h1>
+                        <a href='/apis/new' class="btn btn-outline-success btn-sm">Novo</a>
                     </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Situação</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% apiList.forEach(function(api){ %>
+                                <tr>
+                                    <td><%= api.name %></td>
+                                    <td><%= statusEnum[api.status] %></td>
+                                    <td class="text-nowrap">
+                                        <a href='/apis/edit/<%= api._id %>'><span class="material-symbols-outlined">edit</span></a>
+                                        <a href='/apis/remove/<%= api._id %>'><span class="material-symbols-outlined symbol-red">delete</span></a>
+                                    </td>
+                                </tr>
+                            <%})%>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <%- template.scripts %>
