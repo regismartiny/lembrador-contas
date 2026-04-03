@@ -12,7 +12,7 @@ services:
 
   mongodb:
     container_name: lembrador-contas_mongodb
-    image: mongo:7
+    image: mongo:8
     ports:
       - 27017:27017
     volumes:
