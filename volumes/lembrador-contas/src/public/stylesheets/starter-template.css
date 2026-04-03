@@ -178,20 +178,19 @@ label {
 
 /* ===== Dashboard Filters ===== */
 .dashboard-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
-  min-width: 160px;
 }
 
 .filter-group label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
@@ -268,18 +267,101 @@ label {
 
 .total { color: #e74c3c; }
 
+/* ===== Notification row ===== */
+.notification-row {
+  gap: 0.5rem;
+}
+
+/* ===== Form button group ===== */
+.form-group-btn {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.form-group-btn .btn {
+  flex: 1 1 auto;
+  min-width: 100px;
+}
+
+/* ===== Month block (bill list) ===== */
+.month-block {
+  margin-bottom: 1.5rem;
+}
+
+.month-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.month-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.month-total {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.month-total strong {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.payment-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.payment-badges .badge {
+  font-size: 0.8rem;
+  padding: 0.35em 0.65em;
+  border-radius: 999px;
+}
+
+.bill-table td,
+.bill-table th {
+  padding: 0.6rem 0.5rem;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .card { flex: 1 1 calc(50% - 20px); }
 }
 
 @media (max-width: 768px) {
+  .starter-template {
+    padding: 1.5rem 1rem;
+  }
   .card         { flex: 1 1 calc(100% - 20px); }
   .header h1    { font-size: 1.5em; }
   .month-header { font-size: 1em; }
+  .title-1 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .dashboard-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .month-title {
+    font-size: 1.25rem;
+  }
 }
 
 @media (max-width: 480px) {
   .header h1    { font-size: 1.2em; }
   .month-header { font-size: 0.9em; }
+  .bill-table td,
+  .bill-table th {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.35rem;
+  }
 }

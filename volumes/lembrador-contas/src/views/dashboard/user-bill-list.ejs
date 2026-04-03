@@ -3,43 +3,37 @@
     <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
 <% } %>
 <% userBillsData?.billListPerMonth?.forEach(function(data){ %>
-    <br>
-    <h2><%= data.month %></h2>
-    <div class="float-right">Total:
-        <span class="money font-weight-bold"><%= Number(data.totalValue).toFixed(2) %></span>
-    </div>
-    <div class="clearfix"></div>
-    <div class="mb-3">
-        <% data.paymentTypeSummaries?.forEach(function(summary){ %>
-            <span class="badge badge-secondary mr-2">
-                <%= summary.type %>: <span class="money"><%= Number(summary.total).toFixed(2) %></span>
-            </span>
-        <% }) %>
-    </div>
-    <div class="table-responsive">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Venc.</th>
-                    <th>Valor</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% data.billList?.forEach(function(bill){ %>
+    <div class="month-block">
+        <div class="month-header-row">
+            <h2 class="month-title"><%= data.month %></h2>
+            <span class="month-total">Total: <strong class="money"><%= Number(data.totalValue).toFixed(2) %></strong></span>
+        </div>
+        <div class="payment-badges">
+            <% data.paymentTypeSummaries?.forEach(function(summary){ %>
+                <span class="badge badge-secondary">
+                    <%= summary.type %>: <span class="money"><%= Number(summary.total).toFixed(2) %></span>
+                </span>
+            <% }) %>
+        </div>
+        <div class="table-responsive">
+            <table class="table bill-table">
+                <thead>
                     <tr>
-                        <td>
-                            <%= bill.name %>
-                        </td>
-                        <td>
-                            <span class="date" data-mask="00/00"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span>
-                        </td>
-                        <td>
-                            <span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span>
-                        </td>
+                        <th>Nome</th>
+                        <th>Venc.</th>
+                        <th>Valor</th>
                     </tr>
-                <%})%>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <% data.billList?.forEach(function(bill){ %>
+                        <tr>
+                            <td><%= bill.name %></td>
+                            <td><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
+                            <td><span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span></td>
+                        </tr>
+                    <%})%>
+                </tbody>
+            </table>
+        </div>
     </div>
 <%})%>

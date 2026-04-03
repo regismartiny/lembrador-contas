@@ -3,26 +3,23 @@
     <body>
         <%- template.navbar %>
             <div class="container">
-                <div class="float-right">
-                    <form class="form-inline my-2 my-lg-0">
-                        <a href='/bills/new' class="btn btn-outline-success my-2 my-sm-0">Novo</a>
-                    </form>
-                </div>
                 <div class="starter-template">
                     <div>
-                        <h1 class="title-1">
-                            <%= title %>
-                        </h1>
-                        <br>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h1 class="title-1 mb-0">
+                                <%= title %>
+                            </h1>
+                            <a href='/bills/new' class="btn btn-outline-success btn-sm">Novo</a>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table">
+                            <table class="table bill-table">
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>Empresa</th>
-                                        <th>Tipo</th>
-                                        <th>Fonte Dados</th>
-                                        <th>Dia Vencimento</th>
+                                        <th class="d-none d-md-table-cell">Empresa</th>
+                                        <th class="d-none d-md-table-cell">Tipo</th>
+                                        <th class="d-none d-lg-table-cell">Fonte Dados</th>
+                                        <th class="d-none d-sm-table-cell">Dia Venc.</th>
                                         <th>Situação</th>
                                         <th>Ações</th>
                                     </tr>
@@ -30,34 +27,18 @@
                                 <tbody>
                                     <% billList.forEach(function(bill){ %>
                                         <tr>
-                                            <td>
-                                                <%= bill.name %>
-                                            </td>
-                                            <td>
-                                                <%= bill.company %>
-                                            </td>
-                                            <td>
-                                                <%= billTypeEnum[bill.type] %>
-                                            </td>
-                                            <td>
-                                                <%= valueSourceTypeEnum[bill.valueSourceType] %>
-                                            </td>
-                                            <td>
-                                                <%= bill.dueDay %>
-                                            </td>
-                                            <td>
-                                                <%= statusEnum[bill.status] %>
-                                            </td>
-                                            <td>
+                                            <td><%= bill.name %></td>
+                                            <td class="d-none d-md-table-cell"><%= bill.company %></td>
+                                            <td class="d-none d-md-table-cell"><%= billTypeEnum[bill.type] %></td>
+                                            <td class="d-none d-lg-table-cell"><%= valueSourceTypeEnum[bill.valueSourceType] %></td>
+                                            <td class="d-none d-sm-table-cell"><%= bill.dueDay %></td>
+                                            <td><%= statusEnum[bill.status] %></td>
+                                            <td class="text-nowrap">
                                                 <a href='/bills/edit/<%= bill._id %>'>
-                                                    <span class="material-symbols-outlined">
-                                                    edit
-                                                    </span>
+                                                    <span class="material-symbols-outlined">edit</span>
                                                 </a>
                                                 <a href='/bills/remove/<%= bill._id %>' onclick="return confirm('Excluir a conta \'<%= bill.name %>\'?')">
-                                                    <span class="material-symbols-outlined symbol-red">
-                                                    delete
-                                                    </span>
+                                                    <span class="material-symbols-outlined symbol-red">delete</span>
                                                 </a>
                                             </td>
                                         </tr>
