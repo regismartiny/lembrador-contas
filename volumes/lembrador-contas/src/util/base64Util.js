@@ -1,5 +1,3 @@
-import atob from 'atob';
-
 export default {
     base64ToBin: function (base64str) {
         var text = base64ToText(base64str);

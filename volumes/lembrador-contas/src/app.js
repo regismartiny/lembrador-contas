@@ -5,7 +5,6 @@ import path from 'path';
 import favicon from 'serve-favicon';
 import logger from 'morgan';
 import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
 import session from 'express-session';
 import index from './routes/index.js';
 import dashboard from './routes/dashboard.js';
@@ -56,8 +55,8 @@ app.use(limiter)
 
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // Static assets served before auth so CSS/JS/SW are always reachable

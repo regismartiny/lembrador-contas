@@ -1,4 +1,3 @@
-import moment from "moment";
 import emailUtils from "../util/emailUtils.js";
 
 async function fetch(address, subject, period) {
@@ -32,6 +31,11 @@ async function fetch(address, subject, period) {
     return parsedData
 }
 
+function parseDDMMYYYY(str) {
+    const [day, month, year] = str.split('/').map(Number)
+    return new Date(year, month - 1, day)
+}
+
 function parse(msg) {
     try {
         console.log("parse()")
@@ -57,7 +61,7 @@ function parse(msg) {
         const valor = data.substring(valorInicio, valorInicio+valorLength)
 
         return { 
-            vencimento : moment(vencimento, "DD/MM/YYYY").toDate(), 
+            vencimento : parseDDMMYYYY(vencimento),
             codImovel, 
             valor : Number.parseFloat(valor.replace(",",".")) 
         }

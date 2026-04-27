@@ -1,5 +1,4 @@
 import base64Util from '../util/base64Util.js';
-import moment from 'moment';
 import emailUtils from '../util/emailUtils.js';
 import jsdom from 'jsdom';
 
@@ -60,10 +59,15 @@ export function parseHTML(text) {
     const instalacao = elemInstalacao.innerHTML.substring(4)
     return { 
         instalacao, 
-        vencimento : moment(vencimento, "DD/MM/YYYY").toDate(), 
+        vencimento : parseDDMMYYYY(vencimento),
         mesReferencia, 
         valor : Number.parseFloat(valor.replace(",",".").substring(3, valor.length-1)) 
     }
+}
+
+function parseDDMMYYYY(str) {
+    const [day, month, year] = str.split('/').map(Number)
+    return new Date(year, month - 1, day)
 }
 
 function querySelectorIncludesText(dom, selector, text) {

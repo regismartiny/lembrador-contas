@@ -1,12 +1,11 @@
 import gmail from './gmail.js';
 import base64Util from './base64Util.js';
-import moment from "moment";
 import PDFParser from 'pdf2json';
 
 async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     console.log("getMessagesByDateInterval()")
-    startDate = moment(startDate).format('YYYY/MM/DD')
-    endDate = moment(endDate).format('YYYY/MM/DD')
+    startDate = formatDateYYYYMMDD(startDate)
+    endDate = formatDateYYYYMMDD(endDate)
     let query = `from:${sender} subject:"${subject}" after:${startDate} before:${endDate}`
     let messages = await gmail.findMessages(query)
     
@@ -107,6 +106,13 @@ async function getPDFFromAttachment(attData) {
         });
     });
     return pdfData;
+}
+
+function formatDateYYYYMMDD(date) {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}/${m}/${d}`
 }
 
 export default { getMessagesByDateInterval, getMessages, getLastMessage, getAttachmentFromMessage, getPDFFromAttachment };

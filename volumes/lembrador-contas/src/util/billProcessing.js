@@ -1,4 +1,3 @@
-import moment from 'moment';
 import db from '../db.js';
 import logger from './logger.js';
 
@@ -43,9 +42,9 @@ function getSum(total, num) {
 
 function getDefaultPeriods() {
     let currentDate = new Date()
-    let previousMonthDate = moment(currentDate).subtract(1, 'M').toDate()
-    let nextMonthDate = moment(currentDate).add(1, 'M').toDate()
-    return [ { month: previousMonthDate.getMonth(), year: previousMonthDate.getFullYear() }, 
+    let previousMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    let nextMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    return [ { month: previousMonthDate.getMonth(), year: previousMonthDate.getFullYear() },
             { month: currentDate.getMonth(), year: currentDate.getFullYear()},
             { month: nextMonthDate.getMonth(), year: nextMonthDate.getFullYear() }]
 }
