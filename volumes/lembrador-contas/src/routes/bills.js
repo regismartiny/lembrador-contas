@@ -5,6 +5,7 @@ import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
+import { validateBody } from '../middleware/validate.js';
 
 const router = express.Router();
 
@@ -23,22 +24,20 @@ router.get('/new', requireAdmin, asyncHandler(async function (req, res) {
 }));
 
 /* POST to Add Bill */
-router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
-    let users = req.body.users;
-    let name = (req.body.name || '').trim();
-    let company = (req.body.company || '').trim();
-    let dueDay = parseInt(req.body.dueDay, 10);
-    let icon = req.body.icon;
-    let valueSourceType = req.body.valueSourceType;
-    let valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
-    let paymentType = req.body.paymentType;
-
-    if (!name || !company || isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
-        return res.status(400).send('Nome, empresa e dia de vencimento (1-31) são obrigatórios.')
-    }
-    if (!['TABLE', 'EMAIL', 'API'].includes(valueSourceType)) {
-        return res.status(400).send('Tipo de fonte de dados inválido.')
-    }
+router.post('/add', requireAdmin, validateBody({
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+    company: { required: true, trim: true, message: 'Empresa é obrigatória.' },
+    dueDay: { required: true, isInt: true, min: 1, max: 31, message: 'Dia de vencimento (1-31) é obrigatório.' },
+    valueSourceType: { required: true, enum: ['TABLE', 'EMAIL', 'API'], enumMessage: 'Tipo de fonte de dados inválido.' }
+}), asyncHandler(async function (req, res) {
+    const users = req.body.users;
+    const name = req.body.name;
+    const company = req.body.company;
+    const dueDay = parseInt(req.body.dueDay, 10);
+    const icon = req.body.icon;
+    const valueSourceType = req.body.valueSourceType;
+    const valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
+    const paymentType = req.body.paymentType;
 
     const bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
     await bill.save();
@@ -56,22 +55,23 @@ router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async
 }));
 
 /* POST to Update Bill */
-router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
-    let users = req.body.users
-    let billId = req.body.id
-    let name = (req.body.name || '').trim()
-    let company = (req.body.company || '').trim()
-    let dueDay = parseInt(req.body.dueDay, 10)
-    let icon = req.body.icon
-    let type = req.body.type
-    let valueSourceType = req.body.valueSourceType
-    let valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table
-    let status = req.body.status
-    let paymentType = req.body.paymentType
-
-    if (!billId || !name || !company || isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
-        return res.status(400).send('Dados inválidos.')
-    }
+router.post('/update', requireAdmin, validateBody({
+    id: { required: true, message: 'ID é obrigatório.' },
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+    company: { required: true, trim: true, message: 'Empresa é obrigatória.' },
+    dueDay: { required: true, isInt: true, min: 1, max: 31, message: 'Dia de vencimento (1-31) é obrigatório.' }
+}), asyncHandler(async function (req, res) {
+    const users = req.body.users
+    const billId = req.body.id
+    const name = req.body.name
+    const company = req.body.company
+    const dueDay = parseInt(req.body.dueDay, 10)
+    const icon = req.body.icon
+    const type = req.body.type
+    const valueSourceType = req.body.valueSourceType
+    const valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table
+    const status = req.body.status
+    const paymentType = req.body.paymentType
 
     await db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status, paymentType } }, { new: true })
     logger.info("Bill updated")

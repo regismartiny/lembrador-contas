@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { StatusEnum, HttpMethodEnum } from '../enums.js'
 
-var apiSchema = new mongoose.Schema({
+const apiSchema = new mongoose.Schema({
     name: { type: String, unique: true, required: [true, 'o Nome é obrigatório'] },
     url: { type: String, required: [true, 'A URL é obrigatória'] },
     method: { type: String, enum: Object.keys(HttpMethodEnum), default: 'GET', required: [true, 'O Método é obrigatório'] },
@@ -13,13 +13,13 @@ var apiSchema = new mongoose.Schema({
 }, { collection: 'apicollection' })
 
 apiSchema.pre('save', function (next) {
-    var currentDate = new Date()
+    const currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
         this.created_at = currentDate
     next()
 })
 
-var API = mongoose.model('apicollection', apiSchema, 'apicollection')
+const API = mongoose.model('apicollection', apiSchema, 'apicollection')
 
 export { API }

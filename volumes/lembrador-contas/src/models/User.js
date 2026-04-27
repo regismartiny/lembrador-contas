@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import logger from '../util/logger.js'
 import { StatusEnum } from '../enums.js'
 
-var userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'O nome do Usuário é obrigatório'] },
     email: { type: String, unique: true, required: [true, 'O email é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
@@ -13,7 +13,7 @@ var userSchema = new mongoose.Schema({
 
 // on every save, add the date
 userSchema.pre('validate', function (next) {
-    var self = this
+    const self = this
 
     User.findOne({ email: this.email }, 'email').then(function (results) {
         if (results) {
@@ -22,7 +22,7 @@ userSchema.pre('validate', function (next) {
             next(new Error("email must be unique"))
         } else {
             // get the current date
-            var currentDate = new Date()
+            const currentDate = new Date()
 
             // change the updated_at field to current date
             this.updated_at = currentDate
@@ -37,6 +37,6 @@ userSchema.pre('validate', function (next) {
     })
 })
 
-var User = mongoose.model('usercollection', userSchema, 'usercollection')
+const User = mongoose.model('usercollection', userSchema, 'usercollection')
 
 export { User }

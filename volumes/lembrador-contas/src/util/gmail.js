@@ -45,18 +45,18 @@ function getMessage(auth, query) {
 function getAttachmentsSync(auth, query, message) {
     return new Promise(function (resolve, reject) {
         const gmail = google.gmail({version: 'v1', auth});
-        var parts = message.payload.parts;
-        var attachments = [];
+        const parts = message.payload.parts;
+        const attachments = [];
         if (parts.length === 0) {
             let msg = 'Message has no attachment';
             console.log(msg);
             reject(msg);
         }
-        for (var i = 0; i < parts.length; i++) {
-            var part = parts[i];
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
             if (part.filename && part.filename.length > 0 && part.body.attachmentId) {
-                var attachId = part.body.attachmentId;
-                var request = gmail.users.messages.attachments.get({
+                const attachId = part.body.attachmentId;
+                const request = gmail.users.messages.attachments.get({
                     'id': attachId,
                     'messageId': message.id,
                     'userId': query.userId,
@@ -67,7 +67,7 @@ function getAttachmentsSync(auth, query, message) {
                         console.log(msg);
                         reject(false);
                     }
-                    var att = { filename: part.filename, mimeType: part.mimeType, attachment: res.data };
+                    const att = { filename: part.filename, mimeType: part.mimeType, attachment: res.data };
                     attachments.push(att);
                     if (i == parts.length) { //only last attachment
                         resolve(attachments);
@@ -81,7 +81,7 @@ function getAttachmentsSync(auth, query, message) {
 export default {
     listUnreadMessages: async function () {
         try {
-            var query = {
+            const query = {
                 userId: 'me',
                 q: 'is:unread'
             }
@@ -93,7 +93,7 @@ export default {
     },
     getMessage: async function (id, headers) {
         try {
-            var query = {
+            const query = {
                 userId: 'me',
                 id
             }
@@ -109,7 +109,7 @@ export default {
     },
     findMessages: async function (q) {
         try {
-            var query = {
+            const query = {
                 userId: 'me',
                 q
             }
@@ -121,7 +121,7 @@ export default {
     },
     listMessagesFrom: async function (sender) {
         try {
-            var query = {
+            const query = {
                 userId: 'me',
                 q: 'from:' + sender
             }
@@ -133,7 +133,7 @@ export default {
     },
     getAttachments: async function (message) {
         try {
-            var query = {
+            const query = {
                 userId: 'me'
             }
             let auth = await googleAuth.authenticate();

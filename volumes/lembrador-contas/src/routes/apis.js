@@ -5,6 +5,7 @@ import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
+import { validateBody } from '../middleware/validate.js';
 
 const router = express.Router();
 
@@ -19,8 +20,7 @@ router.get('/list', asyncHandler(async function (req, res) {
 /* GET apis JSON */
 router.get('/listJSON', asyncHandler(async function (req, res) {
     const apis = await db.API.find({}).lean()
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(apis));
+    res.json(apis);
 }));
 
 /* GET New API page. */
@@ -29,19 +29,16 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add API */
-router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
-    let name = (req.body.name || '').trim()
-    let url = (req.body.url || '').trim()
-    let method = req.body.method
-    let body = req.body.body
-    let value = req.body.value
-
-    if (!name || !url) {
-        return res.status(400).send('Nome e URL são obrigatórios.')
-    }
-    if (method && !Object.keys(db.HttpMethodEnum).includes(method)) {
-        return res.status(400).send('Método HTTP inválido.')
-    }
+router.post('/add', requireAdmin, validateBody({
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+    url: { required: true, trim: true, message: 'URL é obrigatória.' },
+    method: { enum: Object.keys(db.HttpMethodEnum), enumMessage: 'Método HTTP inválido.' }
+}), asyncHandler(async function (req, res) {
+    const name = req.body.name
+    const url = req.body.url
+    const method = req.body.method
+    const body = req.body.body
+    const value = req.body.value
 
     const api = new db.API({ name, url, method, body, value })
     await api.save()
@@ -56,18 +53,18 @@ router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async
 }));
 
 /* POST to Update API */
-router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
-    let apiId = req.body.id;
-    let name = (req.body.name || '').trim();
-    let url = (req.body.url || '').trim();
-    let method = req.body.method;
-    let body = req.body.body;
-    let value = req.body.value;
-    let status = req.body.status;
-
-    if (!apiId || !name || !url) {
-        return res.status(400).send('Dados inválidos.')
-    }
+router.post('/update', requireAdmin, validateBody({
+    id: { required: true, message: 'ID é obrigatório.' },
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+    url: { required: true, trim: true, message: 'URL é obrigatória.' }
+}), asyncHandler(async function (req, res) {
+    const apiId = req.body.id;
+    const name = req.body.name;
+    const url = req.body.url;
+    const method = req.body.method;
+    const body = req.body.body;
+    const value = req.body.value;
+    const status = req.body.status;
 
     await db.API.findOneAndUpdate({ _id: apiId }, { $set: { name, url, method, body, value, status } }, { new: true })
     logger.info("API updated")

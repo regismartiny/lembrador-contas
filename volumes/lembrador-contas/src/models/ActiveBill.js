@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { ActiveBillStatusEnum, PaymentTypeEnum } from '../enums.js'
 
-var activeBillSchema = new mongoose.Schema({
+const activeBillSchema = new mongoose.Schema({
     users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'usercollection' }],
     name: { type: String, required: [true, 'O nome é obrigatório'] },
     dueDate: { type: Date },
@@ -14,14 +14,14 @@ var activeBillSchema = new mongoose.Schema({
 }, { collection: 'activebillcollection' })
 
 activeBillSchema.pre('save', function (next) {
-    var currentDate = new Date()
+    const currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
         this.created_at = currentDate
     next()
 })
 
-var ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
+const ActiveBill = mongoose.model('activebillcollection', activeBillSchema, 'activebillcollection')
 ActiveBill.collection.createIndex( { name: 1, dueDate: 1 }, { unique: true } )
 
 export { ActiveBill }

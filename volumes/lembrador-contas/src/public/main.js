@@ -57,7 +57,7 @@ async function subscribePushManager() {
 
    await navigator.serviceWorker.ready
 
-   var subscription = await swRegistration.pushManager.getSubscription()
+   const subscription = await swRegistration.pushManager.getSubscription()
    const isSubscribed = !(subscription === null)
    if (!isSubscribed) {
       console.log('No pushManager subscription found. Creating one.')
@@ -150,9 +150,9 @@ $(document).ready(function () {
     }
 
     // Highlight active nav link based on current path
-    var path = window.location.pathname.split('/')[1];
+    const path = window.location.pathname.split('/')[1];
     $('.navbar-nav .nav-link').each(function() {
-        var href = $(this).attr('href');
+        const href = $(this).attr('href');
         if (href && href !== '/' && href.split('/')[1] === path && path !== '') {
             $(this).addClass('active');
         }

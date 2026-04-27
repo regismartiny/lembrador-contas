@@ -6,6 +6,7 @@ import db from '../db.js';
 import utils from '../util/utils.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
+import { validateBody } from '../middleware/validate.js';
 
 const router = express.Router();
 
@@ -19,8 +20,7 @@ router.get('/list', asyncHandler(async function (req, res) {
 /* GET tables JSON */
 router.get('/listJSON', asyncHandler(async function (req, res) {
     const tables = await db.Table.find({}).lean()
-    res.setHeader('Content-Type', 'application/json')
-    res.send(JSON.stringify(tables))
+    res.json(tables)
 }));
 
 /* GET New Table page. */
@@ -29,13 +29,11 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add Table */
-router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
-    let name = (req.body.name || '').trim()
-    let data = parseData(req.body)
-
-    if (!name) {
-        return res.status(400).send('Nome é obrigatório.')
-    }
+router.post('/add', requireAdmin, validateBody({
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' }
+}), asyncHandler(async function (req, res) {
+    const name = req.body.name
+    const data = parseData(req.body)
 
     const table = new db.Table({ name, data })
     await table.save()
@@ -50,15 +48,14 @@ router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async
 }));
 
 /* POST to Update Table */
-router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
-    let tableId = req.body.id
-    let name = (req.body.name || '').trim()
-    let data = parseData(req.body)
-    let status = req.body.status
-
-    if (!tableId || !name) {
-        return res.status(400).send('Dados inválidos.')
-    }
+router.post('/update', requireAdmin, validateBody({
+    id: { required: true, message: 'ID é obrigatório.' },
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' }
+}), asyncHandler(async function (req, res) {
+    const tableId = req.body.id
+    const name = req.body.name
+    const data = parseData(req.body)
+    const status = req.body.status
 
     await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status } }, { new: true })
     logger.info("Table updated")

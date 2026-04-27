@@ -69,7 +69,7 @@ async function getLastMessage(sender, subject) {
 }
 
 async function getAttachmentFromMessage(message) {
-    var headers = message.payload.headers;
+    const headers = message.payload.headers;
     
     //escape double quotes
     for (let i = 0; i < headers.length; i++) {
@@ -85,14 +85,14 @@ async function getAttachmentFromMessage(message) {
     if (!attachments) return;
 
     console.log('ANEXOS ENCONTRADOS');
-    var att = attachments[0];
+    const att = attachments[0];
     //fs.writeFile('anexo.pdf', JSON.stringify(att), () => console.log('Anexo salvo'));
     att.attachment.data = base64Util.fixBase64(att.attachment.data);
     return att;
 }
 
 async function getPDFFromAttachment(attData) {
-    var binArray = base64Util.base64ToBin(attData);
+    const binArray = base64Util.base64ToBin(attData);
 
     let pdfParser = new PDFParser();
 

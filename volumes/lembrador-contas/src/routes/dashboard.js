@@ -82,10 +82,10 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     }
 
     userBillsData.billListPerMonth.sort((a,b)=> {
-        var yearA = a.month.split("/")[1]
-        var yearB = b.month.split("/")[1]
-        var monthA = a.month.split("/")[0]
-        var monthB = b.month.split("/")[0]
+        const yearA = a.month.split("/")[1]
+        const yearB = b.month.split("/")[1]
+        const monthA = a.month.split("/")[0]
+        const monthB = b.month.split("/")[0]
         return yearA - yearB || monthA - monthB
     })
 

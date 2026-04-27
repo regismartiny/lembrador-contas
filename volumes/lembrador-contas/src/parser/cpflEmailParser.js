@@ -38,7 +38,7 @@ export function parseEmailData(msg) {
         if (!data) return
         
         let base64str = base64Util.fixBase64(data)
-        var text = base64Util.base64ToText(base64str)
+        const text = base64Util.base64ToText(base64str)
         
         return parseHTML(text)
     } catch(e) {

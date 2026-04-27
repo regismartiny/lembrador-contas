@@ -9,6 +9,8 @@ import vm from 'vm';
 import cpflEmailParser from '../parser/cpflEmailParser.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
+import { validateBody } from '../middleware/validate.js';
+import { DataParserEnum } from '../enums.js';
 
 const router = express.Router();
 
@@ -22,8 +24,7 @@ router.get('/list', asyncHandler(async function (req, res) {
 /* GET db.Email JSON */
 router.get('/listJSON', asyncHandler(async function (req, res) {
     const emails = await db.Email.find({}).lean()
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(emails));
+    res.json(emails);
 }));
 
 /* GET New email page. */
@@ -32,17 +33,14 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add Email */
-router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
-    let address = (req.body.address || '').trim()
-    let subject = (req.body.subject || '').trim()
-    let dataParser = req.body.dataParser
-
-    if (!address || !subject) {
-        return res.status(400).send('Remetente e assunto são obrigatórios.')
-    }
-    if (dataParser && !Object.keys(db.DataParserEnum).includes(dataParser)) {
-        return res.status(400).send('Parser inválido.')
-    }
+router.post('/add', requireAdmin, validateBody({
+    address: { required: true, trim: true, message: 'Remetente é obrigatório.' },
+    subject: { required: true, trim: true, message: 'Assunto é obrigatório.' },
+    dataParser: { enum: Object.keys(DataParserEnum), enumMessage: 'Parser inválido.' }
+}), asyncHandler(async function (req, res) {
+    const address = req.body.address
+    const subject = req.body.subject
+    const dataParser = req.body.dataParser
 
     const email = new db.Email({ address, subject, dataParser })
     await email.save()
@@ -57,16 +55,16 @@ router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async
 }));
 
 /* POST to Update Email */
-router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
-    let emailId = req.body.id
-    let address = (req.body.address || '').trim()
-    let subject = (req.body.subject || '').trim()
-    let dataParser = req.body.dataParser
-    let status = req.body.status
-
-    if (!emailId || !address || !subject) {
-        return res.status(400).send('Dados inválidos.')
-    }
+router.post('/update', requireAdmin, validateBody({
+    id: { required: true, message: 'ID é obrigatório.' },
+    address: { required: true, trim: true, message: 'Remetente é obrigatório.' },
+    subject: { required: true, trim: true, message: 'Assunto é obrigatório.' }
+}), asyncHandler(async function (req, res) {
+    const emailId = req.body.id
+    const address = req.body.address
+    const subject = req.body.subject
+    const dataParser = req.body.dataParser
+    const status = req.body.status
 
     await db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address, subject, dataParser, status } }, { new: true })
     logger.info("Email updated")
@@ -89,12 +87,12 @@ router.get('/unread', function (req, res) {
 
 /* GET email page. */
 router.get('/get/:id', function (req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
 
     gmail.getMessage(id, ['From', 'Date', 'Subject'], function (message) {
         logger.info('MENSAGEM ENCONTRADA');
 
-        var headers = message.payload.headers;
+        const headers = message.payload.headers;
 
         for (let i = 0; i < headers.length; i++) {
             if (headers[i].name === 'To') {

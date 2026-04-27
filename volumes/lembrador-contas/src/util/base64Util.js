@@ -1,18 +1,17 @@
 export default {
     base64ToBin: function (base64str) {
-        var text = base64ToText(base64str);
-        var len = text.length;         // get binary length
-        var buffer = new ArrayBuffer(len);         // create ArrayBuffer with binary length
-        var view = new Uint8Array(buffer);         // create 8-bit Array
+        const text = base64ToText(base64str);
+        const len = text.length;
+        const buffer = new ArrayBuffer(len);
+        const view = new Uint8Array(buffer);
 
-        // save unicode of binary data into 8-bit Array
-        for (var i = 0; i < len; i++)
+        for (let i = 0; i < len; i++)
             view[i] = text.charCodeAt(i);
 
         return view;
     },
     fixBase64: function (base64String) {
-        var base64 = (base64String).replace(/_/g, '/'); //Replace this characters 
+        let base64 = (base64String).replace(/_/g, '/'); //Replace this characters
         base64 = base64.replace(/-/g, '+');
         return base64;
     },

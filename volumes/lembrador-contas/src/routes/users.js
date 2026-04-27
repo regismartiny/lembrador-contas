@@ -5,6 +5,7 @@ import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
+import { validateBody } from '../middleware/validate.js';
 
 const router = express.Router();
 
@@ -21,14 +22,13 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add User Service */
-router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
-    var name = (req.body.name || '').trim();
-    var email = (req.body.email || '').trim().toLowerCase();
-    var admin = req.body.admin === 'true';
-
-    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).send('Nome e email válido são obrigatórios.')
-    }
+router.post('/add', requireAdmin, validateBody({
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+    email: { required: true, trim: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, patternMessage: 'Email inválido.' }
+}), asyncHandler(async function (req, res) {
+    const name = req.body.name;
+    const email = req.body.email.toLowerCase();
+    const admin = req.body.admin === 'true';
 
     const user = new db.User({ name, email, admin });
     await user.save();
@@ -43,18 +43,18 @@ router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async
 }));
 
 /* POST to Update User */
-router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
-    let userId = req.body.id
-    let name = (req.body.name || '').trim()
-    let email = (req.body.email || '').trim().toLowerCase()
-    let status = req.body.status
-    let admin = req.body.admin === 'true';
+router.post('/update', requireAdmin, validateBody({
+    id: { required: true, message: 'ID é obrigatório.' },
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+    email: { required: true, trim: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, patternMessage: 'Email inválido.' }
+}), asyncHandler(async function (req, res) {
+    const userId = req.body.id
+    const name = req.body.name
+    const email = req.body.email.toLowerCase()
+    const status = req.body.status
+    const admin = req.body.admin === 'true';
 
     logger.info(`Updating user - admin value from form: ${req.body.admin}, parsed as: ${admin}`)
-
-    if (!userId || !name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).send('Dados inválidos.')
-    }
 
     await db.User.findOneAndUpdate(
         { _id: userId },

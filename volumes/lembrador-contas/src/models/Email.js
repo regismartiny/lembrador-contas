@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { StatusEnum, DataParserEnum } from '../enums.js'
 
-var emailSchema = new mongoose.Schema({
+const emailSchema = new mongoose.Schema({
     address: { type: String, unique: true, required: [true, 'O Endereço é obrigatório'] },
     subject: { type: String, unique: true, required: [true, 'O Assunto é obrigatório'] },
     dataParser: { type: String, enum: Object.keys(DataParserEnum), default: 'CPFL_EMAIL', required: [true, 'O parser de dados é obrigatório'] },
@@ -11,13 +11,13 @@ var emailSchema = new mongoose.Schema({
 }, { collection: 'emailcollection' })
 
 emailSchema.pre('save', function (next) {
-    var currentDate = new Date()
+    const currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
         this.created_at = currentDate
     next()
 })
 
-var Email = mongoose.model('emailcollection', emailSchema, 'emailcollection')
+const Email = mongoose.model('emailcollection', emailSchema, 'emailcollection')
 
 export { Email }

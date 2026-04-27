@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { StatusEnum, ValueSourceTypeEnum, BillTypeEnum, PaymentTypeEnum } from '../enums.js'
 
-var billSchema = new mongoose.Schema({
+const billSchema = new mongoose.Schema({
     users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'usercollection' }],
     name: { type: String, required: [true, 'O nome é obrigatório'] },
     company: { type: String, required: [true, 'O nome da Empresa é obrigatório'] },
@@ -17,13 +17,13 @@ var billSchema = new mongoose.Schema({
 }, { collection: 'billcollection' })
 
 billSchema.pre('save', function (next) {
-    var currentDate = new Date()
+    const currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
         this.created_at = currentDate
     next()
 })
 
-var Bill = mongoose.model('billcollection', billSchema, 'billcollection')
+const Bill = mongoose.model('billcollection', billSchema, 'billcollection')
 
 export { Bill }

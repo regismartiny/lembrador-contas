@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-var pushNotificationSubscriptionSchema = new mongoose.Schema({
+const pushNotificationSubscriptionSchema = new mongoose.Schema({
     endpoint: { type: String, required: [true, 'O endpoint é obrigatório'] },
     expirationTIme: { type: Date },
     keys: { p256dh: {type: String, required: [true, 'O campo pd256dh é obrigatório'] }, auth: {type: String, required: [true, 'O campo auth é obrigatório'] } },
@@ -9,13 +9,13 @@ var pushNotificationSubscriptionSchema = new mongoose.Schema({
 }, { collection: 'tablecollection' })
 
 pushNotificationSubscriptionSchema.pre('save', function (next) {
-    var currentDate = new Date()
+    const currentDate = new Date()
     this.updated_at = currentDate
     if (!this.created_at)
         this.created_at = currentDate
     next()
 })
 
-var PushNotificationSubscription = mongoose.model('pushnotificationsubscriptioncollection', pushNotificationSubscriptionSchema, 'pushnotificationsubscriptioncollection')
+const PushNotificationSubscription = mongoose.model('pushnotificationsubscriptioncollection', pushNotificationSubscriptionSchema, 'pushnotificationsubscriptioncollection')
 
 export { PushNotificationSubscription }
