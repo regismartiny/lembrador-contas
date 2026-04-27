@@ -4,6 +4,7 @@ import template from './template.js';
 import db from '../db.js';
 import utils from '../util/utils.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 
 const router = express.Router();
 
@@ -36,8 +37,12 @@ router.get('/new', requireAdmin, function (req, res) {
 
 /* POST to Add Table */
 router.post('/add', requireAdmin, async function (req, res, next) {
-    let name = req.body.name
+    let name = (req.body.name || '').trim()
     let data = parseData(req.body)
+
+    if (!name) {
+        return res.status(400).send('Nome é obrigatório.')
+    }
 
     try {
         const table = new db.Table({ name, data })
@@ -50,7 +55,7 @@ router.post('/add', requireAdmin, async function (req, res, next) {
 })
 
 /* GET Edit Table page. */
-router.get('/edit/:id', requireAdmin, async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         const table = await db.Table.findById(req.params.id)
         res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
@@ -62,9 +67,13 @@ router.get('/edit/:id', requireAdmin, async function (req, res, next) {
 /* POST to Update Table */
 router.post('/update', requireAdmin, async function (req, res, next) {
     let tableId = req.body.id
-    let name = req.body.name
+    let name = (req.body.name || '').trim()
     let data = parseData(req.body)
     let status = req.body.status
+
+    if (!tableId || !name) {
+        return res.status(400).send('Dados inválidos.')
+    }
 
     try {
         await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status } }, { new: true })
@@ -75,8 +84,8 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     }
 })
 
-/* GET Remove Table */
-router.get('/remove/:id', requireAdmin, async function (req, res, next) {
+/* POST Remove Table */
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         await db.Table.findOneAndDelete({ _id: req.params.id })
         res.redirect("/tables/list")

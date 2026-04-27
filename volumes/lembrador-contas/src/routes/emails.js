@@ -7,6 +7,7 @@ import emailUtils from '../util/emailUtils.js';
 import vm from 'vm';
 import cpflEmailParser from '../parser/cpflEmailParser.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 
 const router = express.Router();
 
@@ -39,9 +40,16 @@ router.get('/new', requireAdmin, function (req, res) {
 
 /* POST to Add Email */
 router.post('/add', requireAdmin, async function (req, res, next) {
-    let address = req.body.address
-    let subject = req.body.subject
+    let address = (req.body.address || '').trim()
+    let subject = (req.body.subject || '').trim()
     let dataParser = req.body.dataParser
+
+    if (!address || !subject) {
+        return res.status(400).send('Remetente e assunto são obrigatórios.')
+    }
+    if (dataParser && !Object.keys(db.DataParserEnum).includes(dataParser)) {
+        return res.status(400).send('Parser inválido.')
+    }
 
     try {
         const email = new db.Email({ address, subject, dataParser })
@@ -54,7 +62,7 @@ router.post('/add', requireAdmin, async function (req, res, next) {
 })
 
 /* GET Edit Email page. */
-router.get('/edit/:id', requireAdmin, async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         const email = await db.Email.findById(req.params.id)
         res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email })
@@ -66,10 +74,14 @@ router.get('/edit/:id', requireAdmin, async function (req, res, next) {
 /* POST to Update Email */
 router.post('/update', requireAdmin, async function (req, res, next) {
     let emailId = req.body.id
-    let address = req.body.address
-    let subject = req.body.subject
+    let address = (req.body.address || '').trim()
+    let subject = (req.body.subject || '').trim()
     let dataParser = req.body.dataParser
     let status = req.body.status
+
+    if (!emailId || !address || !subject) {
+        return res.status(400).send('Dados inválidos.')
+    }
 
     try {
         await db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address, subject, dataParser, status } }, { new: true })
@@ -80,8 +92,8 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     }
 })
 
-/* GET Remove Email */
-router.get('/remove/:id', requireAdmin, async function (req, res, next) {
+/* POST Remove Email */
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         await db.Email.findOneAndDelete({ _id: req.params.id })
         res.redirect("/emails/list")

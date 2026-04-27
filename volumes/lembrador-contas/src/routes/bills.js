@@ -3,6 +3,7 @@ import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 
 const router = express.Router();
 
@@ -57,7 +58,7 @@ router.post('/add', requireAdmin, async function (req, res, next) {
 });
 
 /* GET Edit Bill page. */
-router.get('/edit/:id', requireAdmin, async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         const [bill, activeUsers] = await Promise.all([
             db.Bill.findById(req.params.id),
@@ -96,8 +97,8 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     }
 })
 
-/* GET Remove Bill */
-router.get('/remove/:id', requireAdmin, async function (req, res, next) {
+/* POST Remove Bill */
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         await db.Bill.findOneAndDelete({ _id: req.params.id })
         res.redirect("/bills/list");

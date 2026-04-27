@@ -26,8 +26,12 @@ router.get('/push/public_key', function (req, res) {
 
 router.post('/push/register', async function (req, res, next) {
    logger.info("/push/register", req.body)
-   let endpoint = req.body.subscription.endpoint
-   let keys = req.body.subscription.keys
+   let subscription = req.body.subscription
+   if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ error: 'Invalid subscription object' })
+   }
+   let endpoint = subscription.endpoint
+   let keys = subscription.keys
 
    try {
       const subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean()

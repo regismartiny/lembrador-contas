@@ -9,6 +9,7 @@
                     </h1>
                     <br>
                     <form id="form" action="/emails/<% if (locals.email) {%>update<% }else{ %>add<% } %>" method="post" class="justify-content-center">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <% if (locals.email) {%>
                             <input type="hidden" name="id" value="<%= email._id %>">
                         <% } %>

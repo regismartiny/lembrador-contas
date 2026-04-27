@@ -9,6 +9,7 @@
                     </h1>
                     <br>
                     <form action="/users/add" method="post">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <div class="form-group">
                             <label for="name">Nome</label>
                             <input type="text" class="form-control" id="name" name="name" placeholder="Nome"

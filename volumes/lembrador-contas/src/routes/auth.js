@@ -1,9 +1,20 @@
 import express from 'express';
+import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 
 const router = express.Router();
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+});
 
 const APP_PASSWORD = process.env.APP_PASSWORD;
 
@@ -18,7 +29,7 @@ router.get('/login', function (req, res) {
     res.render('auth/login', { title: 'Login', error: null, template })
 })
 
-router.post('/login', async function (req, res) {
+router.post('/login', loginLimiter, async function (req, res) {
     const { email, password } = req.body
 
     const user = await db.User.findOne({ email }).lean()
@@ -26,7 +37,9 @@ router.post('/login', async function (req, res) {
         return res.render('auth/login', { title: 'Login', error: 'E-mail não encontrado.', template })
     }
 
-    if (password !== APP_PASSWORD) {
+    const passwordBuf = Buffer.from(password || '', 'utf8');
+    const expectedBuf = Buffer.from(APP_PASSWORD, 'utf8');
+    if (passwordBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(passwordBuf, expectedBuf)) {
         return res.render('auth/login', { title: 'Login', error: 'Senha incorreta.', template })
     }
 

@@ -3,6 +3,7 @@ import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 
 const router = express.Router();
 
@@ -36,11 +37,18 @@ router.get('/new', requireAdmin, function (req, res) {
 
 /* POST to Add API */
 router.post('/add', requireAdmin, async function (req, res, next) {
-    let name = req.body.name
-    let url = req.body.url
+    let name = (req.body.name || '').trim()
+    let url = (req.body.url || '').trim()
     let method = req.body.method
     let body = req.body.body
     let value = req.body.value
+
+    if (!name || !url) {
+        return res.status(400).send('Nome e URL são obrigatórios.')
+    }
+    if (method && !Object.keys(db.HttpMethodEnum).includes(method)) {
+        return res.status(400).send('Método HTTP inválido.')
+    }
 
     try {
         const api = new db.API({ name, url, method, body, value })
@@ -53,7 +61,7 @@ router.post('/add', requireAdmin, async function (req, res, next) {
 })
 
 /* GET Edit API page. */
-router.get('/edit/:id', requireAdmin, async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         const api = await db.API.findById(req.params.id)
         res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
@@ -65,12 +73,16 @@ router.get('/edit/:id', requireAdmin, async function (req, res, next) {
 /* POST to Update API */
 router.post('/update', requireAdmin, async function (req, res, next) {
     let apiId = req.body.id;
-    let name = req.body.name;
-    let url = req.body.url;
+    let name = (req.body.name || '').trim();
+    let url = (req.body.url || '').trim();
     let method = req.body.method;
     let body = req.body.body;
     let value = req.body.value;
     let status = req.body.status;
+
+    if (!apiId || !name || !url) {
+        return res.status(400).send('Dados inválidos.')
+    }
 
     try {
         await db.API.findOneAndUpdate({ _id: apiId }, { $set: { name, url, method, body, value, status } }, { new: true })
@@ -81,8 +93,8 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     }
 })
 
-/* GET Remove API */
-router.get('/remove/:id', requireAdmin, async function (req, res, next) {
+/* POST Remove API */
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         await db.API.findOneAndDelete({ _id: req.params.id })
         res.redirect("/apis/list");

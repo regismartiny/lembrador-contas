@@ -9,6 +9,7 @@
                     </h1>
                     <br>
                     <form id="form" action="/tables/<% if (locals.table) {%>update<% }else{ %>add<% } %>" method="post" class="justify-content-center">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <% if (locals.table) {%>
                             <input type="hidden" name="id" value="<%= table._id %>">
                             <% } %>

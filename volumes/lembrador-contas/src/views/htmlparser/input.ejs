@@ -5,6 +5,7 @@
         <div class="starter-template">
             <h1 class="title-1">Testar parseHTML</h1>
             <form method="post" action="/html-parser">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="form-group">
                     <label for="html">Cole o HTML para testar:</label>
                     <textarea class="form-control" name="html" id="html" rows="10"><%= html %></textarea>

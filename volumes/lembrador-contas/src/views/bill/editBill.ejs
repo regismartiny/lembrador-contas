@@ -9,6 +9,7 @@
                     </h1>
                     <br>
                     <form action="/bills/update" method="post">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="id" value="<%= bill._id %>">
                         <div class="form-group">
                             <label for="users">Usuários</label>

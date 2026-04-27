@@ -9,6 +9,7 @@
                     </h1>
                     <br>
                     <form id="form" action="/apis/<% if (locals.api) {%>update<% }else{ %>add<% } %>" method="post" class="justify-content-center">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <% if (locals.api) {%>
                             <input type="hidden" name="id" value="<%= api._id %>">
                         <% } %>

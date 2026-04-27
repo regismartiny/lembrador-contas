@@ -1,5 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import path from 'path';
 import favicon from 'serve-favicon';
 import logger from 'morgan';
@@ -18,13 +19,26 @@ import htmlparser from './routes/htmlparser.js';
 import auth from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { cloudflareAuth } from './middleware/cfAccess.js';
+import { doubleCsrfProtection, generateToken } from './middleware/csrf.js';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me') {
+    console.error('FATAL: SESSION_SECRET env var is not set or uses the default value. Refusing to start.');
+    process.exit(1);
+}
+
 const app = express();
+
+// Security headers (CSP disabled — app uses inline scripts, jQuery eval, and
+// multiple CDN resources that make a strict CSP impractical for a personal app)
+app.use(helmet({
+    contentSecurityPolicy: false,
+}));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -55,7 +69,7 @@ app.use('/bootstrap', express.static(__dirname + './../node_modules/bootstrap/di
 
 // Session — must come after static assets but before any authenticated routes
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'change-me-in-production',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -73,9 +87,13 @@ app.get('/health', function (req, res) {
 // Cloudflare Access — verify JWT and auto-authenticate if present
 app.use(cloudflareAuth);
 
-// Expose session email to all EJS views
+// CSRF protection
+app.use(doubleCsrfProtection);
+
+// Expose session email and CSRF token to all EJS views
 app.use(function (req, res, next) {
     res.locals.currentUserEmail = req.session.email || '';
+    res.locals.csrfToken = generateToken(req, res);
     next();
 });
 

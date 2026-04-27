@@ -24,7 +24,7 @@
                                         <td><%= statusEnum[email.status] %></td>
                                         <td class="text-nowrap">
                                             <a href='/emails/edit/<%= email._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                            <a href='/email/remove/<%= email._id %>'><span class="material-symbols-outlined">delete</span></a>
+                                            <form action="/emails/remove/<%= email._id %>" method="post" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined">delete</span></button></form>
                                             <a href='/emails/test/<%= email._id %>'>Testar</a>
                                         </td>
                                     </tr>

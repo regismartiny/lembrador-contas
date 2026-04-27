@@ -40,7 +40,7 @@
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="dropdown04" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Opções</a>
         <div class="dropdown-menu" aria-labelledby="dropdown01">
-          <a class="dropdown-item" href="/dashboard/processBills">Processar contas do mês</a>
+          <form action="/dashboard/processBills" method="post" style="display:inline"><input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>"><button type="submit" class="dropdown-item">Processar contas do mês</button></form>
           <a class="dropdown-item" href="javascript:toggleTheme()">Alterar tema</a>
         </div>
       </li>

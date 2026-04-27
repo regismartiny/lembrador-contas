@@ -23,7 +23,7 @@
                                     <td><%= statusEnum[table.status] %></td>
                                     <td class="text-nowrap">
                                         <a href='/tables/edit/<%= table._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <a href='/tables/remove/<%= table._id %>'><span class="material-symbols-outlined symbol-red">delete</span></a>
+                                        <form action="/tables/remove/<%= table._id %>" method="post" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined symbol-red">delete</span></button></form>
                                     </td>
                                 </tr>
                             <%})%>

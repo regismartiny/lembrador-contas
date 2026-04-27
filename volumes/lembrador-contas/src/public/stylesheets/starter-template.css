@@ -83,6 +83,17 @@ select { text-align-last: center; }
 .symbol-blue { color: #5aabff; }
 .symbol-red  { color: #e05555; }
 
+/* ===== Button styled as link (for CSRF form wrappers) ===== */
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  display: inline;
+}
+
 /* ===== Bootstrap 4 Table ===== */
 .table {
   color: var(--text-primary);

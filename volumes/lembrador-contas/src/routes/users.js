@@ -3,6 +3,7 @@ import logger from '../util/logger.js';
 import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.post('/add', requireAdmin, async function (req, res, next) {
 });
 
 /* GET Edit User page. */
-router.get('/edit/:id', requireAdmin, async function (req, res, next) {
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         const user = await db.User.findById(req.params.id)
         res.render('user/editUser', { template, title: 'Edição de Usuário', statusEnum: db.StatusEnum, user })
@@ -79,8 +80,8 @@ router.post('/update', requireAdmin, async function (req, res, next) {
     }
 })
 
-/* GET Remove User */
-router.get('/remove/:id', requireAdmin, async function (req, res, next) {
+/* POST Remove User */
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
     try {
         await db.User.findOneAndDelete({ _id: req.params.id })
         logger.info("User removed")

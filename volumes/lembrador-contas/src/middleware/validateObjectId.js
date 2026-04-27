@@ -1,0 +1,11 @@
+import mongoose from 'mongoose';
+
+export function validateObjectId(paramName = 'id') {
+    return (req, res, next) => {
+        const id = req.params[paramName] || req.body[paramName];
+        if (id && !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).send('ID invalido.');
+        }
+        next();
+    };
+}
