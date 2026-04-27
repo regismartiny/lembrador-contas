@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../util/logger.js';
+import asyncHandler from '../util/asyncHandler.js';
 import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -9,26 +10,18 @@ const router = express.Router();
 
 
 /* GET APIList page. */
-router.get('/list', async function (req, res, next) {
-    try {
-        const apis = await db.API.find({}).lean()
-        const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
-        res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/list', asyncHandler(async function (req, res) {
+    const apis = await db.API.find({}).lean()
+    const apiList = apis.sort((a,b)=>a.name.localeCompare(b.name))
+    res.render('api/apiList', { template, title: 'APIs', apiList, statusEnum: db.StatusEnum });
+}));
 
 /* GET apis JSON */
-router.get('/listJSON', async function (req, res, next) {
-    try {
-        const apis = await db.API.find({}).lean()
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(apis));
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/listJSON', asyncHandler(async function (req, res) {
+    const apis = await db.API.find({}).lean()
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(apis));
+}));
 
 /* GET New API page. */
 router.get('/new', requireAdmin, function (req, res) {
@@ -36,7 +29,7 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add API */
-router.post('/add', requireAdmin, async function (req, res, next) {
+router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
     let name = (req.body.name || '').trim()
     let url = (req.body.url || '').trim()
     let method = req.body.method
@@ -50,28 +43,20 @@ router.post('/add', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Método HTTP inválido.')
     }
 
-    try {
-        const api = new db.API({ name, url, method, body, value })
-        await api.save()
-        logger.info("API saved");
-        res.redirect("/apis/list");
-    } catch (err) {
-        next(err)
-    }
-})
+    const api = new db.API({ name, url, method, body, value })
+    await api.save()
+    logger.info("API saved");
+    res.redirect("/apis/list");
+}));
 
 /* GET Edit API page. */
-router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        const api = await db.API.findById(req.params.id)
-        res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
-    } catch (err) {
-        next(err)
-    }
-})
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    const api = await db.API.findById(req.params.id)
+    res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
+}));
 
 /* POST to Update API */
-router.post('/update', requireAdmin, async function (req, res, next) {
+router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
     let apiId = req.body.id;
     let name = (req.body.name || '').trim();
     let url = (req.body.url || '').trim();
@@ -84,23 +69,15 @@ router.post('/update', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Dados inválidos.')
     }
 
-    try {
-        await db.API.findOneAndUpdate({ _id: apiId }, { $set: { name, url, method, body, value, status } }, { new: true })
-        logger.info("API updated")
-        res.redirect("/apis/list")
-    } catch (err) {
-        next(err)
-    }
-})
+    await db.API.findOneAndUpdate({ _id: apiId }, { $set: { name, url, method, body, value, status } }, { new: true })
+    logger.info("API updated")
+    res.redirect("/apis/list")
+}));
 
 /* POST Remove API */
-router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        await db.API.findOneAndDelete({ _id: req.params.id })
-        res.redirect("/apis/list");
-    } catch (err) {
-        next(err)
-    }
-});
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    await db.API.findOneAndDelete({ _id: req.params.id })
+    res.redirect("/apis/list");
+}));
 
 export default router;

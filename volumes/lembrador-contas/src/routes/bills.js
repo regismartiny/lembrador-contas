@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../util/logger.js';
+import asyncHandler from '../util/asyncHandler.js';
 import template from './template.js';
 import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -9,28 +10,20 @@ const router = express.Router();
 
 
 /* GET BillList page. */
-router.get('/list', async function (req, res, next) {
-    try {
-        const bills = await db.Bill.find({}).lean()
-        const billList = bills.sort((a,b)=>a.name.localeCompare(b.name))
-        res.render('bill/billList', { template, title: 'Contas', billList, billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum });
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/list', asyncHandler(async function (req, res) {
+    const bills = await db.Bill.find({}).lean()
+    const billList = bills.sort((a,b)=>a.name.localeCompare(b.name))
+    res.render('bill/billList', { template, title: 'Contas', billList, billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum });
+}));
 
 /* GET New Bill page. */
-router.get('/new', requireAdmin, async function (req, res, next) {
-    try {
-        const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
-        res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, paymentTypeEnum: db.PaymentTypeEnum, activeUsers });
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/new', requireAdmin, asyncHandler(async function (req, res) {
+    const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
+    res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, paymentTypeEnum: db.PaymentTypeEnum, activeUsers });
+}));
 
 /* POST to Add Bill */
-router.post('/add', requireAdmin, async function (req, res, next) {
+router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
     let users = req.body.users;
     let name = (req.body.name || '').trim();
     let company = (req.body.company || '').trim();
@@ -47,31 +40,23 @@ router.post('/add', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Tipo de fonte de dados inválido.')
     }
 
-    try {
-        const bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
-        await bill.save();
-        logger.info("Bill saved")
-        res.redirect("/bills/list")
-    } catch (err) {
-        next(err)
-    }
-});
+    const bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
+    await bill.save();
+    logger.info("Bill saved")
+    res.redirect("/bills/list")
+}));
 
 /* GET Edit Bill page. */
-router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        const [bill, activeUsers] = await Promise.all([
-            db.Bill.findById(req.params.id),
-            db.User.find({ status: 'ACTIVE' }).lean()
-        ])
-        res.render('bill/editBill', { template, title: 'Edição de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, paymentTypeEnum: db.PaymentTypeEnum, bill, activeUsers });
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    const [bill, activeUsers] = await Promise.all([
+        db.Bill.findById(req.params.id),
+        db.User.find({ status: 'ACTIVE' }).lean()
+    ])
+    res.render('bill/editBill', { template, title: 'Edição de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, paymentTypeEnum: db.PaymentTypeEnum, bill, activeUsers });
+}));
 
 /* POST to Update Bill */
-router.post('/update', requireAdmin, async function (req, res, next) {
+router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
     let users = req.body.users
     let billId = req.body.id
     let name = (req.body.name || '').trim()
@@ -88,24 +73,16 @@ router.post('/update', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Dados inválidos.')
     }
 
-    try {
-        await db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status, paymentType } }, { new: true })
-        logger.info("Bill updated")
-        res.redirect("/bills/list")
-    } catch (err) {
-        next(err)
-    }
-})
+    await db.Bill.findOneAndUpdate({ _id: billId }, { $set: { users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, status, paymentType } }, { new: true })
+    logger.info("Bill updated")
+    res.redirect("/bills/list")
+}));
 
 /* POST Remove Bill */
-router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        await db.Bill.findOneAndDelete({ _id: req.params.id })
-        res.redirect("/bills/list");
-    } catch (err) {
-        next(err)
-    }
-})
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    await db.Bill.findOneAndDelete({ _id: req.params.id })
+    res.redirect("/bills/list");
+}));
 
 
 export default router;

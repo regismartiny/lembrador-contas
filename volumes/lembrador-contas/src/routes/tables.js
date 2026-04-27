@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../util/logger.js';
+import asyncHandler from '../util/asyncHandler.js';
 import template from './template.js';
 import db from '../db.js';
 import utils from '../util/utils.js';
@@ -9,26 +10,18 @@ import { validateObjectId } from '../middleware/validateObjectId.js';
 const router = express.Router();
 
 /* GET TableList page. */
-router.get('/list', async function (req, res, next) {
-    try {
-        const tables = await db.Table.find({}).lean()
-        const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
-        res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum })
-    } catch (err) {
-        next(err)
-    }
-})
+router.get('/list', asyncHandler(async function (req, res) {
+    const tables = await db.Table.find({}).lean()
+    const tableList = tables.sort((a,b)=>a.name.localeCompare(b.name))
+    res.render('table/tableList', { template, title: 'Tabelas', tableList, statusEnum: db.StatusEnum })
+}));
 
 /* GET tables JSON */
-router.get('/listJSON', async function (req, res, next) {
-    try {
-        const tables = await db.Table.find({}).lean()
-        res.setHeader('Content-Type', 'application/json')
-        res.send(JSON.stringify(tables))
-    } catch (err) {
-        next(err)
-    }
-})
+router.get('/listJSON', asyncHandler(async function (req, res) {
+    const tables = await db.Table.find({}).lean()
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify(tables))
+}));
 
 /* GET New Table page. */
 router.get('/new', requireAdmin, function (req, res) {
@@ -36,7 +29,7 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add Table */
-router.post('/add', requireAdmin, async function (req, res, next) {
+router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
     let name = (req.body.name || '').trim()
     let data = parseData(req.body)
 
@@ -44,28 +37,20 @@ router.post('/add', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Nome é obrigatório.')
     }
 
-    try {
-        const table = new db.Table({ name, data })
-        await table.save()
-        logger.info("Table saved")
-        res.redirect("/tables/list")
-    } catch (err) {
-        next(err)
-    }
-})
+    const table = new db.Table({ name, data })
+    await table.save()
+    logger.info("Table saved")
+    res.redirect("/tables/list")
+}));
 
 /* GET Edit Table page. */
-router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        const table = await db.Table.findById(req.params.id)
-        res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
-    } catch (err) {
-        next(err)
-    }
-})
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    const table = await db.Table.findById(req.params.id)
+    res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
+}));
 
 /* POST to Update Table */
-router.post('/update', requireAdmin, async function (req, res, next) {
+router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
     let tableId = req.body.id
     let name = (req.body.name || '').trim()
     let data = parseData(req.body)
@@ -75,24 +60,16 @@ router.post('/update', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Dados inválidos.')
     }
 
-    try {
-        await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status } }, { new: true })
-        logger.info("Table updated")
-        res.redirect("/tables/list")
-    } catch (err) {
-        next(err)
-    }
-})
+    await db.Table.findOneAndUpdate({ _id: tableId }, { $set: { data, name, status } }, { new: true })
+    logger.info("Table updated")
+    res.redirect("/tables/list")
+}));
 
 /* POST Remove Table */
-router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        await db.Table.findOneAndDelete({ _id: req.params.id })
-        res.redirect("/tables/list")
-    } catch (err) {
-        next(err)
-    }
-})
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    await db.Table.findOneAndDelete({ _id: req.params.id })
+    res.redirect("/tables/list")
+}));
 
 function parseData(body) {
     let newData = [];

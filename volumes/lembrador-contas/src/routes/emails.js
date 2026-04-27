@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../util/logger.js';
+import asyncHandler from '../util/asyncHandler.js';
 import template from './template.js';
 import db from '../db.js';
 import gmail from '../util/gmail.js';
@@ -12,26 +13,18 @@ import { validateObjectId } from '../middleware/validateObjectId.js';
 const router = express.Router();
 
 /* GET db.Email page. */
-router.get('/list', async function (req, res, next) {
-    try {
-        const emails = await db.Email.find({}).lean()
-        const emailList = emails.sort((a,b)=>a.address.localeCompare(b.address))
-        res.render('email/emailList', { template, title: 'Emails', emailList, statusEnum: db.StatusEnum });
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/list', asyncHandler(async function (req, res) {
+    const emails = await db.Email.find({}).lean()
+    const emailList = emails.sort((a,b)=>a.address.localeCompare(b.address))
+    res.render('email/emailList', { template, title: 'Emails', emailList, statusEnum: db.StatusEnum });
+}));
 
 /* GET db.Email JSON */
-router.get('/listJSON', async function (req, res, next) {
-    try {
-        const emails = await db.Email.find({}).lean()
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(emails));
-    } catch (err) {
-        next(err)
-    }
-});
+router.get('/listJSON', asyncHandler(async function (req, res) {
+    const emails = await db.Email.find({}).lean()
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(emails));
+}));
 
 /* GET New email page. */
 router.get('/new', requireAdmin, function (req, res) {
@@ -39,7 +32,7 @@ router.get('/new', requireAdmin, function (req, res) {
 });
 
 /* POST to Add Email */
-router.post('/add', requireAdmin, async function (req, res, next) {
+router.post('/add', requireAdmin, asyncHandler(async function (req, res) {
     let address = (req.body.address || '').trim()
     let subject = (req.body.subject || '').trim()
     let dataParser = req.body.dataParser
@@ -51,28 +44,20 @@ router.post('/add', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Parser inválido.')
     }
 
-    try {
-        const email = new db.Email({ address, subject, dataParser })
-        await email.save()
-        logger.info("Email saved")
-        res.redirect("/emails/list")
-    } catch (err) {
-        next(err)
-    }
-})
+    const email = new db.Email({ address, subject, dataParser })
+    await email.save()
+    logger.info("Email saved")
+    res.redirect("/emails/list")
+}));
 
 /* GET Edit Email page. */
-router.get('/edit/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        const email = await db.Email.findById(req.params.id)
-        res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email })
-    } catch (err) {
-        next(err)
-    }
-})
+router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    const email = await db.Email.findById(req.params.id)
+    res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email })
+}));
 
 /* POST to Update Email */
-router.post('/update', requireAdmin, async function (req, res, next) {
+router.post('/update', requireAdmin, asyncHandler(async function (req, res) {
     let emailId = req.body.id
     let address = (req.body.address || '').trim()
     let subject = (req.body.subject || '').trim()
@@ -83,24 +68,16 @@ router.post('/update', requireAdmin, async function (req, res, next) {
         return res.status(400).send('Dados inválidos.')
     }
 
-    try {
-        await db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address, subject, dataParser, status } }, { new: true })
-        logger.info("Email updated")
-        res.redirect("/emails/list")
-    } catch (err) {
-        next(err)
-    }
-})
+    await db.Email.findOneAndUpdate({ _id: emailId }, { $set: { address, subject, dataParser, status } }, { new: true })
+    logger.info("Email updated")
+    res.redirect("/emails/list")
+}));
 
 /* POST Remove Email */
-router.post('/remove/:id', requireAdmin, validateObjectId('id'), async function (req, res, next) {
-    try {
-        await db.Email.findOneAndDelete({ _id: req.params.id })
-        res.redirect("/emails/list")
-    } catch (err) {
-        next(err)
-    }
-})
+router.post('/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    await db.Email.findOneAndDelete({ _id: req.params.id })
+    res.redirect("/emails/list")
+}));
 
 /* GET unread db.Email page. */
 router.get('/unread', function (req, res) {
@@ -131,7 +108,7 @@ router.get('/get/:id', function (req, res) {
     });
 });
 
-router.get('/test/:id', async function (req, res) {
+router.get('/test/:id', asyncHandler(async function (req, res) {
     let emailId = req.params.id;
 
     db.Email.findById(emailId, async function (err, email) {
@@ -151,7 +128,7 @@ router.get('/test/:id', async function (req, res) {
         console.table(values);
         res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
     });
-});
+}));
 
 async function getEmailPDFAttachmentData(value) {
     let att = await emailUtils.getAttachmentFromMessage(message);

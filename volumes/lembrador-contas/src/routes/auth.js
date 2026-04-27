@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import logger from '../util/logger.js';
+import asyncHandler from '../util/asyncHandler.js';
 import template from './template.js';
 import db from '../db.js';
 
@@ -29,7 +30,7 @@ router.get('/login', function (req, res) {
     res.render('auth/login', { title: 'Login', error: null, template })
 })
 
-router.post('/login', loginLimiter, async function (req, res) {
+router.post('/login', loginLimiter, asyncHandler(async function (req, res) {
     const { email, password } = req.body
 
     const user = await db.User.findOne({ email }).lean()
@@ -57,7 +58,7 @@ router.post('/login', loginLimiter, async function (req, res) {
             res.redirect(redirectTo)
         })
     })
-})
+}))
 
 router.get('/logout', function (req, res) {
     req.session.authenticated = false;
