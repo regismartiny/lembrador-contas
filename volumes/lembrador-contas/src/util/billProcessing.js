@@ -49,7 +49,7 @@ function getDefaultPeriods() {
             { month: nextMonthDate.getMonth(), year: nextMonthDate.getFullYear() }]
 }
 
-function findActiveTableBills(billsSourceTable, periods) {
+async function findActiveTableBills(billsSourceTable, periods) {
     logger.info("findActiveTableBills started")
     const promises = []
     for (const period of periods) {
@@ -57,7 +57,7 @@ function findActiveTableBills(billsSourceTable, periods) {
             promises.push(findTableBills(bill, period))
         }
     }
-    const bills = runParallel(promises)
+    const bills = await runParallel(promises)
     logger.info("findActiveTableBills finished")
     return bills
 }
@@ -240,5 +240,10 @@ export default {
     findActiveTableBills,
     findActiveEmailBills,
     findActiveApiBills,
-    processBills
+    processBills,
+    getDefaultPeriods,
+    resolveJsonPath,
+    getBillName,
+    getDateFromPeriod,
+    filterCurrentPeriodData,
 }

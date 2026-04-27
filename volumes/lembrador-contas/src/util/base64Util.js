@@ -1,6 +1,6 @@
 export default {
     base64ToBin: function (base64str) {
-        const text = base64ToText(base64str);
+        const text = this.base64ToText(base64str);
         const len = text.length;
         const buffer = new ArrayBuffer(len);
         const view = new Uint8Array(buffer);

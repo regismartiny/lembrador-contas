@@ -139,3 +139,133 @@ describe('findActiveApiBills', () => {
         expect(result).toEqual([]);
     });
 });
+
+// ---------------------------------------------------------------------------
+// getDefaultPeriods
+// ---------------------------------------------------------------------------
+
+describe('getDefaultPeriods', () => {
+    test('returns array of 3 periods', () => {
+        const periods = billProcessing.getDefaultPeriods();
+        expect(periods).toHaveLength(3);
+    });
+
+    test('each period has month and year properties', () => {
+        const periods = billProcessing.getDefaultPeriods();
+        for (const period of periods) {
+            expect(period).toHaveProperty('month');
+            expect(period).toHaveProperty('year');
+        }
+    });
+
+    test('middle period is the current month', () => {
+        const periods = billProcessing.getDefaultPeriods();
+        const now = new Date();
+        expect(periods[1].month).toBe(now.getMonth());
+        expect(periods[1].year).toBe(now.getFullYear());
+    });
+
+    test('first period is previous month', () => {
+        const periods = billProcessing.getDefaultPeriods();
+        const now = new Date();
+        const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        expect(periods[0].month).toBe(prevMonth);
+        expect(periods[0].year).toBe(prevYear);
+    });
+
+    test('last period is next month', () => {
+        const periods = billProcessing.getDefaultPeriods();
+        const now = new Date();
+        const nextMonth = now.getMonth() === 11 ? 0 : now.getMonth() + 1;
+        const nextYear = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+        expect(periods[2].month).toBe(nextMonth);
+        expect(periods[2].year).toBe(nextYear);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveJsonPath
+// ---------------------------------------------------------------------------
+
+describe('resolveJsonPath', () => {
+    test('resolves a single-level path', () => {
+        expect(billProcessing.resolveJsonPath({ price: 42 }, 'price')).toBe(42);
+    });
+
+    test('resolves a nested path', () => {
+        expect(billProcessing.resolveJsonPath({ data: { price: 42 } }, 'data.price')).toBe(42);
+    });
+
+    test('returns undefined for missing path', () => {
+        expect(billProcessing.resolveJsonPath({ data: {} }, 'data.missing')).toBeUndefined();
+    });
+
+    test('returns undefined for empty object', () => {
+        expect(billProcessing.resolveJsonPath({}, 'foo.bar')).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getBillName
+// ---------------------------------------------------------------------------
+
+describe('getBillName', () => {
+    test('returns plain name for RECURRENT_SERVICE', () => {
+        const bill = { name: 'Internet', type: 'RECURRENT_SERVICE' };
+        expect(billProcessing.getBillName(bill, 0, 3)).toBe('Internet');
+    });
+
+    test('returns name with installment for PURCHASE', () => {
+        const bill = { name: 'Celular', type: 'PURCHASE' };
+        expect(billProcessing.getBillName(bill, 1, 10)).toBe('Celular (2/10)');
+    });
+
+    test('returns first installment correctly', () => {
+        const bill = { name: 'Notebook', type: 'PURCHASE' };
+        expect(billProcessing.getBillName(bill, 0, 12)).toBe('Notebook (1/12)');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getDateFromPeriod
+// ---------------------------------------------------------------------------
+
+describe('getDateFromPeriod', () => {
+    test('returns correct Date from period and dueDay', () => {
+        const date = billProcessing.getDateFromPeriod({ month: 0, year: 2024 }, 15);
+        expect(date.getFullYear()).toBe(2024);
+        expect(date.getMonth()).toBe(0);
+        expect(date.getDate()).toBe(15);
+    });
+
+    test('handles December correctly', () => {
+        const date = billProcessing.getDateFromPeriod({ month: 11, year: 2024 }, 31);
+        expect(date.getMonth()).toBe(11);
+        expect(date.getDate()).toBe(31);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// filterCurrentPeriodData
+// ---------------------------------------------------------------------------
+
+describe('filterCurrentPeriodData', () => {
+    test('matches when data.month (1-based) equals period.month (0-based) + 1', () => {
+        const data = { period: { month: 1, year: 2024 } }; // January (1-based storage)
+        const period = { month: 0, year: 2024 }; // January (0-based JS month)
+        expect(billProcessing.filterCurrentPeriodData(data, period)).toBe(true);
+    });
+
+    test('rejects non-matching month', () => {
+        const data = { period: { month: 3, year: 2024 } }; // March (1-based)
+        const period = { month: 0, year: 2024 }; // January (0-based)
+        expect(billProcessing.filterCurrentPeriodData(data, period)).toBe(false);
+    });
+
+    test('rejects non-matching year', () => {
+        const data = { period: { month: 1, year: 2023 } };
+        const period = { month: 0, year: 2024 };
+        expect(billProcessing.filterCurrentPeriodData(data, period)).toBe(false);
+    });
+});

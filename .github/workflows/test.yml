@@ -1,0 +1,14 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - working-directory: volumes/lembrador-contas
+        run: bun install --frozen-lockfile
+      - working-directory: volumes/lembrador-contas
+        run: SESSION_SECRET=test-secret bun test

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "bun run --watch /src/bin/www",
     "start": "bun run /src/bin/www",
-    "test": "bun test",
+    "test": "SESSION_SECRET=test-secret bun test",
+    "test:coverage": "SESSION_SECRET=test-secret bun test --coverage",
+    "test:watch": "SESSION_SECRET=test-secret bun test --watch",
     "node-startm": "nodemon ./src/bin/www",
     "node-start": "node ./src/bin/www"
   },
