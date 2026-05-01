@@ -23,11 +23,15 @@ async function processBills(bills, selectedPeriods) {
                         findActiveApiBills(billsSourceApi, periods)]
     const activeBills = await runParallel(promises)
 
-    await Promise.all(activeBills.map(activeBill =>
-        activeBill.save().catch((err) => {
+    for (const activeBill of activeBills) {
+        await db.ActiveBill.findOneAndUpdate(
+            { name: activeBill.name, dueDate: activeBill.dueDate },
+            { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType },
+            { upsert: true }
+        ).catch((err) => {
             logger.error(`Error saving activeBill '${activeBill.name}'`, err)
         })
-    ))
+    }
 
     logger.info("Finished processing bills for periods:", periods)
 }

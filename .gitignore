@@ -4,6 +4,7 @@
 
 # Data files
 data/
+downloads/
 pdf2json/
 
 # Logs

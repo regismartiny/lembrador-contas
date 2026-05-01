@@ -1,26 +1,41 @@
 import { mock, describe, test, expect, beforeEach, afterEach } from 'bun:test';
 
-// Store the pdf2json ready handler so tests can trigger it
-let _pdfReadyHandler = null;
-let _pdfErrorHandler = null;
+// Mock puppeteer to avoid real browser navigation in tests
+let _responseHandler = null;
+let _mockPdfBuffer = null;
 let _nextPdfData = null;
 
-// Mock pdf2json
-mock.module('pdf2json', () => ({
-    default: function MockPDFParser() {
-        this.on = (event, handler) => {
-            if (event === 'pdfParser_dataReady') _pdfReadyHandler = handler;
-            if (event === 'pdfParser_dataError') _pdfErrorHandler = handler;
-        };
-        this.parseBuffer = () => {
-            if (_nextPdfData) {
-                const data = _nextPdfData;
-                // Resolve synchronously so the Promise in parsePDFBuffer resolves
-                process.nextTick(() => _pdfReadyHandler(data));
-                _nextPdfData = null;
-            }
-        };
-    }
+mock.module('puppeteer', () => ({
+    default: {
+        launch: mock(() => Promise.resolve({
+            close: mock(() => Promise.resolve()),
+            newPage: mock(() => {
+                const mockPage = {
+                    setUserAgent: mock(() => Promise.resolve()),
+                    evaluate: mock(() => Promise.resolve([])),
+                    on: mock((event, handler) => {
+                        if (event === 'response') _responseHandler = handler;
+                    }),
+                    goto: mock(async (url) => {
+                        // Simulate a PDF response by calling the registered response handler
+                        return new Promise(resolve => {
+                            const fakeResponse = {
+                                url: () => url,
+                                status: () => 200,
+                                headers: () => ({ 'content-type': 'application/pdf' }),
+                                buffer: mock(() => Promise.resolve(_mockPdfBuffer || Buffer.from('%PDF-1.4 fake'))),
+                            };
+                            setTimeout(() => {
+                                _responseHandler(fakeResponse);
+                                resolve(fakeResponse);
+                            }, 10);
+                        });
+                    }),
+                };
+                return mockPage;
+            }),
+        })),
+    },
 }));
 
 // Mock emailUtils
@@ -38,7 +53,7 @@ mock.module('../util/base64Util.js', () => ({
     }
 }));
 
-import { fetch as corsanFetch, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF } from '../parser/corsanEmailParser.js';
+import { fetch as corsanFetch, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, setParsePDFBuffer } from '../parser/corsanEmailParser.js';
 
 // ---------------------------------------------------------------------------
 // HTML fixture — simulates CORSAN email with "Clique aqui para ver sua fatura" link
@@ -107,19 +122,20 @@ function makeMessage(html) {
     };
 }
 
-// Set the PDF data that will be returned by the mock parser
+// Set the PDF data that will be returned by the injected parser mock
 function setNextPdfData(pdfData) {
-    _nextPdfData = pdfData;
+    // Inject a custom parser that returns our test data
+    setParsePDFBuffer(() => Promise.resolve(pdfData));
 }
 
-// Helper to create a fake PDF response for global fetch
+// Reset the parser back to default (for cleanup between tests)
+function resetParser() {
+    setParsePDFBuffer(null);
+}
+
+// Helper to create a fake PDF response for global fetch (no longer used, kept for compatibility)
 function mockFetchSuccess() {
-    const fakePDF = Buffer.from('%PDF-1.4 fake content');
-    globalThis.fetch = mock(() => Promise.resolve({
-        ok: true,
-        status: 200,
-        arrayBuffer: () => Promise.resolve(fakePDF)
-    }));
+    // No-op - puppeteer is mocked instead
 }
 
 // ---------------------------------------------------------------------------
@@ -200,11 +216,13 @@ describe('corsanEmailParser.fetch', () => {
     const period = { month: 0, year: 2024 };
 
     beforeEach(() => {
-        mockFetchSuccess();
+        // Reset the parser mock before each test
+        resetParser();
     });
 
     afterEach(() => {
-        globalThis.fetch = _originalFetch;
+        // Clean up - reset parser back to default
+        resetParser();
     });
 
     test('returns parsed data for a valid email with PDF', async () => {

@@ -1,12 +1,19 @@
 import emailUtils from '../util/emailUtils.js';
 import base64Util from '../util/base64Util.js';
 import { JSDOM } from 'jsdom';
-import PDFParser from 'pdf2json';
+import PDFJS from 'pdfjs-dist';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 
 const DOWNLOADS_DIR = path.join(process.cwd(), 'downloads');
+
+// Allow tests to inject a custom PDF parser (for mocking)
+let _parsePDFBufferFn = null;
+
+function setParsePDFBuffer(fn) {
+    _parsePDFBufferFn = fn;
+}
 
 async function fetch(address, subject, period) {
     const startDate = new Date(period.year, period.month, 1);
@@ -28,10 +35,12 @@ async function fetch(address, subject, period) {
         if (!pdfUrl) throw new Error('No PDF link found in CORSAN email HTML');
 
         const pdfBuffer = await downloadPDF(pdfUrl);
-        const pdfData = await parsePDFBuffer(pdfBuffer);
+        const pdfData = await (_parsePDFBufferFn || parsePDFBuffer)(pdfBuffer);
 
         const value = extractTotalFromPDF(pdfData);
         const dueDate = extractDueDateFromPDF(pdfData);
+
+        console.log(`Extracted from CORSAN PDF: dueDate=${dueDate}, value=${value}`);
 
         return [{ dueDate, value }];
     } catch (e) {
@@ -248,22 +257,27 @@ async function downloadPDF(url) {
 }
 
 async function parsePDFBuffer(buffer) {
-    const savedWorker = globalThis.Worker;
-    globalThis.Worker = undefined;
     try {
-        const parser = new PDFParser();
-
-        const pdfPromise = new Promise((resolve, reject) => {
-            parser.on('pdfParser_dataReady', pdfData => resolve(pdfData));
-            parser.on('pdfParser_dataError', errData => reject(errData.parserError));
-        });
-
-        const uint8 = new Uint8Array(buffer);
-        parser.parseBuffer(uint8);
-
-        return await pdfPromise;
-    } finally {
-        globalThis.Worker = savedWorker;
+        const pdf = await PDFJS.getDocument({ data: new Uint8Array(buffer) }).promise;
+        
+        const pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            
+            const texts = textContent.items.map(item => ({
+                x: item.transform[4],
+                y: item.transform[5],
+                R: [{ T: encodeURIComponent(item.str) }]
+            }));
+            
+            pages.push({ Texts: texts });
+        }
+        
+        return { Pages: pages };
+    } catch (e) {
+        console.error('Failed to parse PDF with pdf.js:', e.message);
+        throw new Error('Failed to parse CORSAN PDF');
     }
 }
 
@@ -276,6 +290,7 @@ function decodeText(text) {
 }
 
 function extractTotalFromPDF(pdfData) {
+    // Pass 1: inline total — "TOTAL (R$) 150,75" in one text item
     for (const page of pdfData.Pages) {
         for (const text of page.Texts) {
             const decoded = decodeText(text.R[0].T);
@@ -288,18 +303,20 @@ function extractTotalFromPDF(pdfData) {
         }
     }
 
+    // Pass 2: separate label + value on same line (proximity ±15px)
     for (const page of pdfData.Pages) {
         let totalY = null;
+        const totalItems = [];
         for (const text of page.Texts) {
             const decoded = decodeText(text.R[0].T);
             if (decoded.toUpperCase().includes('TOTAL') && decoded.includes('R$')) {
                 totalY = text.y;
-                break;
+                totalItems.push(text);
             }
         }
         if (totalY !== null) {
             const candidates = page.Texts.filter(t =>
-                Math.abs(t.y - totalY) < 2 && t !== page.Texts.find(pt => decodeText(pt.R[0].T).toUpperCase().includes('TOTAL'))
+                Math.abs(t.y - totalY) < 15 && !totalItems.includes(t)
             );
             for (const candidate of candidates) {
                 const decoded = decodeText(candidate.R[0].T);
@@ -311,6 +328,13 @@ function extractTotalFromPDF(pdfData) {
         }
     }
 
+    console.error('CORSAN PDF debug — all text items:');
+    for (const page of pdfData.Pages) {
+        for (const text of page.Texts) {
+            const decoded = decodeText(text.R[0].T);
+            console.error(`  x=${text.x}, y=${text.y} => "${decoded}"`);
+        }
+    }
     throw new Error('TOTAL (R$) not found in CORSAN PDF');
 }
 
@@ -330,10 +354,11 @@ function extractDueDateFromPDF(pdfData) {
             }
         }
         if (vencY !== null) {
+            const vencItems = page.Texts.filter(t =>
+                decodeText(t.R[0].T).toLowerCase().includes('vencimento')
+            );
             const candidates = page.Texts.filter(t =>
-                Math.abs(t.y - vencY) < 2 && t !== page.Texts.find(pt =>
-                    decodeText(pt.R[0].T).toLowerCase().includes('vencimento')
-                )
+                Math.abs(t.y - vencY) < 15 && !vencItems.includes(t)
             );
             for (const candidate of candidates) {
                 const decoded = decodeText(candidate.R[0].T);
@@ -345,6 +370,13 @@ function extractDueDateFromPDF(pdfData) {
         }
     }
 
+    console.error('CORSAN PDF debug — all text items (due date):');
+    for (const page of pdfData.Pages) {
+        for (const text of page.Texts) {
+            const decoded = decodeText(text.R[0].T);
+            console.error(`  x=${text.x}, y=${text.y} => "${decoded}"`);
+        }
+    }
     console.error('Vencimento not found in CORSAN PDF');
     return null;
 }
@@ -354,5 +386,5 @@ function parseDDMMYYYY(str) {
     return new Date(year, month - 1, day);
 }
 
-export { fetch, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF };
+export { fetch, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, setParsePDFBuffer };
 export default { fetch };
