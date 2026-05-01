@@ -26,7 +26,7 @@ async function processBills(bills, selectedPeriods) {
     for (const activeBill of activeBills) {
         await db.ActiveBill.findOneAndUpdate(
             { name: activeBill.name, dueDate: activeBill.dueDate },
-            { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType },
+            { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType, referencePeriod: activeBill.referencePeriod },
             { upsert: true }
         ).catch((err) => {
             logger.error(`Error saving activeBill '${activeBill.name}'`, err)
@@ -91,13 +91,14 @@ async function findTableBills(bill, period) {
         return bills;
     }
 
+    let referencePeriod = String(currentPeriodData.period.month).padStart(2, '0') + '/' + currentPeriodData.period.year
     let name = getBillName(bill, currentPeriodDataIndex, table.data.length)
     let users = bill.users
     let dueDate = getDateFromPeriod(currentPeriodData.period, bill.dueDay)
     let value = currentPeriodData.value
     let icon = bill.icon
     let paymentType = bill.paymentType
-    bills.push(new db.ActiveBill({users, name, dueDate, value, icon, paymentType}))
+    bills.push(new db.ActiveBill({users, name, dueDate, value, icon, paymentType, referencePeriod}))
 
     return bills;
 }
@@ -147,7 +148,8 @@ async function findEmailBills(bill, period) {
         let icon = bill.icon
         let status = dueDate && value ? 'UNPAID' : 'ERROR'
         let paymentType = bill.paymentType
-        bills.push(new db.ActiveBill({users, name, dueDate, value, icon, status, paymentType}))
+        let referencePeriod = String(period.month + 1).padStart(2, '0') + '/' + period.year
+        bills.push(new db.ActiveBill({users, name, dueDate, value, icon, status, paymentType, referencePeriod}))
     }
     return bills;
 }
@@ -185,6 +187,7 @@ async function findApiBills(bill, period) {
     }
 
     const dueDate = getDateFromPeriod(period, bill.dueDay)
+    const referencePeriod = String(period.month + 1).padStart(2, '0') + '/' + period.year
 
     try {
         const fetchOptions = { method: api.method }
@@ -196,7 +199,7 @@ async function findApiBills(bill, period) {
         const response = await fetch(api.url, fetchOptions)
         if (!response.ok) {
             logger.error(`API request failed for bill '${bill.name}': ${response.status} ${response.statusText}`)
-            bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
+            bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
             return bills
         }
 
@@ -204,10 +207,10 @@ async function findApiBills(bill, period) {
         const raw = resolveJsonPath(data, api.value)
         const value = parseFloat(raw)
         const status = !isNaN(value) ? 'UNPAID' : 'ERROR'
-        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, value: isNaN(value) ? undefined : value, icon: bill.icon, paymentType: bill.paymentType, status }))
+        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, value: isNaN(value) ? undefined : value, icon: bill.icon, paymentType: bill.paymentType, status }))
     } catch (error) {
         logger.error(`Error fetching API data for bill '${bill.name}'`, error)
-        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
+        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
     }
 
     return bills

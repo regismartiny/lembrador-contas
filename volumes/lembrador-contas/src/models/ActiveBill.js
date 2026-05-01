@@ -9,6 +9,7 @@ const activeBillSchema = new mongoose.Schema({
     icon: { type: String },
     status: { type: String, enum: Object.keys(ActiveBillStatusEnum), default: 'UNPAID', required: [true, 'A situação é obrigatória'] },
     paymentType: { type: String, enum: Object.keys(PaymentTypeEnum), default: 'PIX', required: [true, 'O tipo de pagamento é obrigatório'] },
+    referencePeriod: { type: String, required: [true, 'O período de referência é obrigatório'] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 }, { collection: 'activebillcollection' })
