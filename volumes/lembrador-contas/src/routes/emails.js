@@ -109,23 +109,21 @@ router.get('/get/:id', function (req, res) {
 router.get('/test/:id', asyncHandler(async function (req, res) {
     let emailId = req.params.id;
 
-    db.Email.findById(emailId, async function (err, email) {
-        if (err) {
-            logger.info("Error! " + err.message);
-            return err;
-        }
-        const message = await emailUtils.getLastMessage(email.address, email.subject);
+    const email = await db.Email.findById(emailId);
+    if (!email) {
+        return res.status(404).send('Email not found');
+    }
+    const message = await emailUtils.getLastMessage(email.address, email.subject);
 
-        let values = [];
-        if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
-            getEmailPDFAttachmentData(values);
-        } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
-            const info = await cpflEmailParser.parseEmailData(message);
-            values.push(info);
-        }
-        console.table(values);
-        res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
-    });
+    let values = [];
+    if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
+        getEmailPDFAttachmentData(values);
+    } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
+        const info = await cpflEmailParser.parseEmailData(message);
+        values.push(info);
+    }
+    console.table(values);
+    res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
 }));
 
 async function getEmailPDFAttachmentData(value) {
