@@ -26,7 +26,7 @@ router.get('/', asyncHandler(async function (req, res) {
     const loggedUser = sessionEmail ? users.find(u => u.email === sessionEmail) : null
     const defaultUserId = loggedUser ? loggedUser._id.toString() : (users[0]?._id.toString() || '')
 
-    res.render('dashboard/dashboard', { template, title: 'Contas do mês', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum, defaultUserId })
+    res.render('dashboard/dashboard', { template, title: 'Demonstrativo mensal', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum, defaultUserId })
 }));
 
 router.get('/dashboard-new', asyncHandler(async function (req, res) {
@@ -44,7 +44,7 @@ router.get('/dashboard-new', asyncHandler(async function (req, res) {
         ? [{ month: billProcessing.getBillMonth(currentMonthBills[0].dueDate), billList, totalValue, paymentTypeSummaries }]
         : []
 
-    res.render('dashboard/dashboard-new', { template, title: 'Contas do mês', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
+    res.render('dashboard/dashboard-new', { template, title: 'Demonstrativo mensal', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
 }));
 
 router.get('/user-bill-list', asyncHandler(async function (req, res) {
@@ -52,7 +52,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     let periodFilter = req.query.periodFilter
 
     if (!userId || userId == 'null') {
-        res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
+        res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
         return
     }
 
@@ -127,7 +127,7 @@ router.post('/paybill/:id', requireAdmin, validateObjectId('id'), asyncHandler(a
 
 function renderUserBillListPage(res, userBillsData) {
     logger.info("userBillsData", userBillsData);
-    res.render('dashboard/user-bill-list', { template, title: 'Contas do mês', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
+    res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
 }
 
 export default router

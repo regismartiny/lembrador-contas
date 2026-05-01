@@ -4,10 +4,12 @@
         <%- template.navbar %>
             <div class="container">
                 <div class="starter-template">
-                    <h1 class="title-1 mb-1"><%= title %></h1>
-                    <p class="small text-muted mb-3">Último processamento:
-                        <strong><%= lastUpdate?.toLocaleString('pt-br') %></strong>
-                    </p>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                        <h1 class="title-1 mb-0"><%= title %></h1>
+                        <p class="small mb-0" style="color:var(--text-secondary)">Atualizado:
+                            <strong><%= lastUpdate?.toLocaleString('pt-br') %></strong>
+                        </p>
+                    </div>
                     <div class="dashboard-filters">
                         <div class="filter-group">
                             <label for="user">Usuário</label>
@@ -26,7 +28,7 @@
                             </select>
                         </div>
                     </div>
-                    <div id="billList" class="mt-4 pt-2"></div>
+                    <div id="billList" class="mt-3"></div>
                 </div>
             </div>
             <%- template.scripts %>
@@ -43,7 +45,7 @@
                     function filterBills() {
                         var userId = $('#user').val();
                         var filter = $('#periodFilter').val();
-                        $('#billList').html('<div class="text-center py-4"><div class="spinner-border" role="status"><span class="sr-only">Carregando...</span></div></div>');
+                        $('#billList').html('<div class="text-center py-5"><div class="spinner-border" role="status" style="color:var(--accent)"><span class="sr-only">Carregando...</span></div></div>');
                         $('#billList').load('/dashboard/user-bill-list/?userId=' + userId + "&periodFilter=" + filter, function() {
                             applyMask();
                         });
