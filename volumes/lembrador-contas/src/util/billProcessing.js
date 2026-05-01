@@ -148,7 +148,7 @@ async function findEmailBills(bill, period) {
         let icon = bill.icon
         let status = dueDate && value ? 'UNPAID' : 'ERROR'
         let paymentType = bill.paymentType
-        let referencePeriod = String(period.month + 1).padStart(2, '0') + '/' + period.year
+        let referencePeriod = parsedData.referencePeriod || (String(period.month + 1).padStart(2, '0') + '/' + period.year)
         bills.push(new db.ActiveBill({users, name, dueDate, value, icon, status, paymentType, referencePeriod}))
     }
     return bills;

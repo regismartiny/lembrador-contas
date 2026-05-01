@@ -53,7 +53,7 @@ mock.module('../util/base64Util.js', () => ({
     }
 }));
 
-import { fetch as corsanFetch, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, setParsePDFBuffer } from '../parser/corsanEmailParser.js';
+import { fetch as corsanFetch, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer } from '../parser/corsanEmailParser.js';
 
 // ---------------------------------------------------------------------------
 // HTML fixture — simulates CORSAN email with "Clique aqui para ver sua fatura" link
@@ -207,6 +207,54 @@ describe('corsanEmailParser.extractDueDateFromPDF', () => {
     });
 });
 
+// ---------------------------------------------------------------------------
+// extractReferencePeriodFromPDF
+// ---------------------------------------------------------------------------
+describe('corsanEmailParser.extractReferencePeriodFromPDF', () => {
+    test('extracts reference period from REFERÊNCIA field with Abr/2026 format', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'CORSAN'],
+            [1, 20, 'REFERÊNCIA'],
+            [5, 20, 'Abr/2026'],
+            [1, 30, 'TOTAL (R$)'],
+            [5, 30, '75,63'],
+        ]);
+        const result = extractReferencePeriodFromPDF(pdfData);
+        expect(result).toBe('04/2026');
+    });
+
+    test('extracts reference period when inline with REFERÊNCIA label', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'REFERÊNCIA: Mar/2025'],
+            [1, 30, 'TOTAL (R$)'],
+            [5, 30, '95,00'],
+        ]);
+        const result = extractReferencePeriodFromPDF(pdfData);
+        expect(result).toBe('03/2025');
+    });
+
+    test('returns null when REFERÊNCIA is not found', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'CORSAN'],
+            [1, 30, 'TOTAL (R$)'],
+            [5, 30, '50,00'],
+        ]);
+        const result = extractReferencePeriodFromPDF(pdfData);
+        expect(result).toBeNull();
+    });
+
+    test('handles December format Dez/2024', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'REFERÊNCIA'],
+            [5, 10, 'Dez/2024'],
+            [1, 30, 'TOTAL (R$)'],
+            [5, 30, '60,00'],
+        ]);
+        const result = extractReferencePeriodFromPDF(pdfData);
+        expect(result).toBe('12/2024');
+    });
+});
+
 const _originalFetch = globalThis.fetch;
 
 // ---------------------------------------------------------------------------
@@ -236,6 +284,28 @@ describe('corsanEmailParser.fetch', () => {
         expect(result[0].value).toBe(95);
         expect(result[0].dueDate).toBeInstanceOf(Date);
         expect(result[0].dueDate.getDate()).toBe(15);
+        expect(result[0].referencePeriod).toBeNull();
+    });
+
+    test('returns parsed data with reference period from PDF', async () => {
+        mockGetMessages.mockImplementationOnce(() =>
+            Promise.resolve([makeMessage(CORSAN_HTML_FIXTURE)])
+        );
+        const pdfWithRef = makePDFData([
+            [1, 10, 'CORSAN'],
+            [1, 20, 'Vencimento'],
+            [5, 20, '17/04/2026'],
+            [1, 25, 'REFERÊNCIA'],
+            [5, 25, 'Abr/2026'],
+            [1, 30, 'TOTAL (R$)'],
+            [5, 30, '75,63'],
+        ]);
+        setNextPdfData(pdfWithRef);
+
+        const result = await corsanFetch('corsan@corsan.com.br', 'Conta de água', period);
+        expect(result).toHaveLength(1);
+        expect(result[0].value).toBe(75.63);
+        expect(result[0].referencePeriod).toBe('04/2026');
     });
 
     test('returns empty array when no messages are found', async () => {

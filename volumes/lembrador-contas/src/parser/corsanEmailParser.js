@@ -39,10 +39,11 @@ async function fetch(address, subject, period) {
 
         const value = extractTotalFromPDF(pdfData);
         const dueDate = extractDueDateFromPDF(pdfData);
+        const referencePeriod = extractReferencePeriodFromPDF(pdfData);
 
-        console.log(`Extracted from CORSAN PDF: dueDate=${dueDate}, value=${value}`);
+        console.log(`Extracted from CORSAN PDF: dueDate=${dueDate}, value=${value}, referencePeriod=${referencePeriod}`);
 
-        return [{ dueDate, value }];
+        return [{ dueDate, value, referencePeriod }];
     } catch (e) {
         console.error('Failed to parse CORSAN email:', e.message);
         return [];
@@ -381,10 +382,58 @@ function extractDueDateFromPDF(pdfData) {
     return null;
 }
 
+function extractReferencePeriodFromPDF(pdfData) {
+    const monthMap = {
+        jan: '01', janv: '01', janeiro: '01',
+        fev: '02', feb: '02', fevereiro: '02',
+        mar: '03', marzo: '03', março: '03',
+        abr: '04', avr: '04', abril: '04',
+        mai: '05', mayo: '05', maio: '05',
+        jun: '06', junio: '06', junho: '06',
+        jul: '07', julio: '07', julho: '07',
+        ago: '08', agos: '08', agosto: '08',
+        set: '09', sept: '09', out: '09', outubro: '10',
+        nov: '11', noviembre: '11', novembro: '11',
+        dez: '12', dec: '12', diciembre: '12', dezembro: '12'
+    };
+
+    for (const page of pdfData.Pages) {
+        let refY = null;
+        for (const text of page.Texts) {
+            const decoded = decodeText(text.R[0].T);
+            if (decoded.toUpperCase().includes('REFERÊNCIA') || decoded.toUpperCase().includes('REFERENCIA')) {
+                // Check if the date is on the same line
+                const monthMatch = decoded.match(/([A-Za-z]{2,})\/(\d{4})/);
+                if (monthMatch) {
+                    const [, monthStr, year] = monthMatch;
+                    const monthNum = monthMap[monthStr.toLowerCase()];
+                    if (monthNum) return `${monthNum}/${year}`;
+                }
+                refY = text.y;
+            }
+        }
+        // Check nearby items on the same line as "REFERÊNCIA"
+        if (refY !== null) {
+            const candidates = page.Texts.filter(t => Math.abs(t.y - refY) < 15);
+            for (const candidate of candidates) {
+                const decoded = decodeText(candidate.R[0].T);
+                const monthMatch = decoded.match(/([A-Za-z]{2,})\/(\d{4})/);
+                if (monthMatch) {
+                    const [, monthStr, year] = monthMatch;
+                    const monthNum = monthMap[monthStr.toLowerCase()];
+                    if (monthNum) return `${monthNum}/${year}`;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
 function parseDDMMYYYY(str) {
     const [day, month, year] = str.split('/').map(Number);
     return new Date(year, month - 1, day);
 }
 
-export { fetch, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, setParsePDFBuffer };
+export { fetch, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer };
 export default { fetch };
