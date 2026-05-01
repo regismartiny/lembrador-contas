@@ -2,6 +2,7 @@ import emailUtils from '../util/emailUtils.js';
 import base64Util from '../util/base64Util.js';
 import { JSDOM } from 'jsdom';
 import PDFParser from 'pdf2json';
+import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 
@@ -71,27 +72,179 @@ function extractPDFLink(html) {
 
 async function downloadPDF(url) {
     console.log('CORSAN PDF URL:', url);
-    const response = await globalThis.fetch(url);
-    if (!response.ok) {
-        throw new Error(`PDF download failed: HTTP ${response.status}`);
+    let browser = null;
+    try {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        
+        const page = await browser.newPage();
+        
+        // Set user agent to avoid blocking
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        
+        // Set up response handler to capture the PDF download
+        const pdfBuffer = await new Promise(async (resolve, reject) => {
+            let resolved = false;
+            let apiResponseData = null;
+            
+            const responseHandler = async (response) => {
+                try {
+                    const contentType = response.headers()['content-type'] || '';
+                    const status = response.status();
+                    const responseUrl = response.url();
+                    
+                    console.log(`Response: ${responseUrl} - Status: ${status} - Content-Type: ${contentType}`);
+                    
+                    // Try to get the buffer for all successful responses
+                    if (status >= 200 && status < 400) {
+                        try {
+                            const buffer = await response.buffer();
+                            
+                            // Check if it's a PDF by magic number
+                            if (buffer.length > 5 && buffer.toString('ascii', 0, 5).startsWith('%PDF')) {
+                                console.log('PDF found! Size:', buffer.length);
+                                if (!resolved) {
+                                    resolved = true;
+                                    resolve(buffer);
+                                }
+                                return;
+                            }
+                            
+                            // Accept if content-type indicates PDF
+                            if (contentType.includes('application/pdf')) {
+                                console.log('PDF detected by content-type! Size:', buffer.length);
+                                if (!resolved) {
+                                    resolved = true;
+                                    resolve(buffer);
+                                }
+                                return;
+                            }
+                            
+                            // Check if this is the API response with PDF data
+                            if (responseUrl.includes('/fatura-eletronica/download') && contentType.includes('application/json')) {
+                                try {
+                                    const text = buffer.toString('utf-8');
+                                    const json = JSON.parse(text);
+                                    console.log('API Response:', JSON.stringify(json).substring(0, 500));
+                                    apiResponseData = json;
+                                    
+                                    // Check for base64 bytes in response.content.bytes (new format)
+                                    if (json.content && json.content.bytes) {
+                                        console.log('Found bytes in response.content');
+                                        try {
+                                            const pdfData = Buffer.from(json.content.bytes, 'base64');
+                                            if (pdfData.toString('ascii', 0, 5).startsWith('%PDF')) {
+                                                console.log('PDF decoded from base64! Size:', pdfData.length);
+                                                if (!resolved) {
+                                                    resolved = true;
+                                                    resolve(pdfData);
+                                                }
+                                                return;
+                                            }
+                                        } catch (e) {
+                                            console.log('Failed to decode base64 bytes:', e.message);
+                                        }
+                                    }
+                                    
+                                    // Check if there's base64 encoded PDF data in dados.arquivo (legacy format)
+                                    if (json.dados && json.dados.arquivo) {
+                                        console.log('Found arquivo in response');
+                                        let pdfData = json.dados.arquivo;
+                                        
+                                        // If it's base64 encoded
+                                        if (typeof pdfData === 'string' && !pdfData.startsWith('%PDF')) {
+                                            try {
+                                                pdfData = Buffer.from(pdfData, 'base64');
+                                            } catch (e) {
+                                                console.log('Failed to decode base64:', e.message);
+                                            }
+                                        }
+                                        
+                                        if (Buffer.isBuffer(pdfData) && pdfData.toString('ascii', 0, 5).startsWith('%PDF')) {
+                                            console.log('PDF decoded from base64! Size:', pdfData.length);
+                                            if (!resolved) {
+                                                resolved = true;
+                                                resolve(pdfData);
+                                            }
+                                            return;
+                                        }
+                                    }
+                                    
+                                    // Check for URL pointing to PDF
+                                    if (json.url || json.downloadUrl || json.pdfUrl) {
+                                        const pdfUrl = json.url || json.downloadUrl || json.pdfUrl;
+                                        console.log('Found PDF URL in API response:', pdfUrl);
+                                    }
+                                } catch (e) {
+                                    console.log('Could not parse API response as JSON:', e.message);
+                                }
+                            }
+                        } catch (e) {
+                            console.log('Error reading response buffer:', e.message);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Error in response handler:', e.message);
+                }
+            };
+            
+            page.on('response', responseHandler);
+            
+            // Navigate to the URL
+            try {
+                const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+                console.log('Page navigation completed. Status:', response?.status());
+            } catch (e) {
+                console.log('Navigation error (may still succeed if PDF was captured):', e.message);
+            }
+            
+            // Wait for potential delayed downloads
+            await new Promise(r => setTimeout(r, 5000));
+            
+            // If no PDF found yet, try to find download links on the page
+            if (!resolved) {
+                try {
+                    const downloadLinks = await page.evaluate(() => {
+                        const links = [];
+                        document.querySelectorAll('a[href*=".pdf"], a[download*=".pdf"], a[href*="download"]').forEach(link => {
+                            links.push(link.href);
+                        });
+                        return links;
+                    });
+                    
+                    if (downloadLinks.length > 0) {
+                        console.log('Found download links on page:', downloadLinks);
+                        const downloadUrl = downloadLinks[0];
+                        console.log('Trying to download from found link:', downloadUrl);
+                        await page.goto(downloadUrl, { waitUntil: 'networkidle0', timeout: 30000 });
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                } catch (e) {
+                    console.log('Error searching for download links:', e.message);
+                }
+            }
+            
+            if (!resolved) {
+                reject(new Error('No PDF received from URL: ' + url));
+            }
+        });
+        
+        if (!pdfBuffer.toString('ascii', 0, 5).startsWith('%PDF')) {
+            throw new Error('Downloaded content is not a valid PDF');
+        }
+        
+        fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+        const filename = `corsan_fatura_${Date.now()}.pdf`;
+        fs.writeFileSync(path.join(DOWNLOADS_DIR, filename), pdfBuffer);
+        
+        return pdfBuffer;
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
     }
-
-    const contentType = response.headers.get('content-type') || '';
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    if (!buffer.toString('ascii', 0, 5).startsWith('%PDF')) {
-        const preview = buffer.toString('utf8', 0, 500);
-        console.error('Downloaded content is not a PDF. Content-Type:', contentType);
-        console.error('Preview:', preview);
-        throw new Error(`Expected PDF but got ${contentType || 'unknown content type'} from ${url}`);
-    }
-
-    fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
-    const filename = `corsan_fatura_${Date.now()}.pdf`;
-    fs.writeFileSync(path.join(DOWNLOADS_DIR, filename), buffer);
-
-    return buffer;
 }
 
 async function parsePDFBuffer(buffer) {
