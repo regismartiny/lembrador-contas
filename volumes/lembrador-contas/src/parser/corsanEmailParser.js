@@ -65,16 +65,27 @@ function extractPDFLink(html) {
     const link = Array.from(anchors).find(a =>
         a.textContent.includes('Clique aqui para ver sua fatura')
     );
-    return link ? link.href : null;
+    if (!link) return null;
+    return link.getAttribute('href') || link.href;
 }
 
 async function downloadPDF(url) {
+    console.log('CORSAN PDF URL:', url);
     const response = await globalThis.fetch(url);
     if (!response.ok) {
         throw new Error(`PDF download failed: HTTP ${response.status}`);
     }
+
+    const contentType = response.headers.get('content-type') || '';
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    if (!buffer.toString('ascii', 0, 5).startsWith('%PDF')) {
+        const preview = buffer.toString('utf8', 0, 500);
+        console.error('Downloaded content is not a PDF. Content-Type:', contentType);
+        console.error('Preview:', preview);
+        throw new Error(`Expected PDF but got ${contentType || 'unknown content type'} from ${url}`);
+    }
 
     fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
     const filename = `corsan_fatura_${Date.now()}.pdf`;
