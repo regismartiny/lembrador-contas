@@ -84,17 +84,23 @@ async function downloadPDF(url) {
 }
 
 async function parsePDFBuffer(buffer) {
-    const parser = new PDFParser();
+    const savedWorker = globalThis.Worker;
+    globalThis.Worker = undefined;
+    try {
+        const parser = new PDFParser();
 
-    const pdfPromise = new Promise((resolve, reject) => {
-        parser.on('pdfParser_dataReady', pdfData => resolve(pdfData));
-        parser.on('pdfParser_dataError', errData => reject(errData.parserError));
-    });
+        const pdfPromise = new Promise((resolve, reject) => {
+            parser.on('pdfParser_dataReady', pdfData => resolve(pdfData));
+            parser.on('pdfParser_dataError', errData => reject(errData.parserError));
+        });
 
-    const uint8 = new Uint8Array(buffer);
-    parser.parseBuffer(uint8);
+        const uint8 = new Uint8Array(buffer);
+        parser.parseBuffer(uint8);
 
-    return pdfPromise;
+        return await pdfPromise;
+    } finally {
+        globalThis.Worker = savedWorker;
+    }
 }
 
 function decodeText(text) {

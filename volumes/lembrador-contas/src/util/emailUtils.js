@@ -94,18 +94,24 @@ async function getAttachmentFromMessage(message) {
 async function getPDFFromAttachment(attData) {
     const binArray = base64Util.base64ToBin(attData);
 
-    let pdfParser = new PDFParser();
+    const savedWorker = globalThis.Worker;
+    globalThis.Worker = undefined;
+    try {
+        let pdfParser = new PDFParser();
 
-    pdfParser.on("pdfParser_dataError", errData => console.error(errData.parserError));
+        pdfParser.on("pdfParser_dataError", errData => console.error(errData.parserError));
 
-    console.log('FAZENDO PARSE DO PDF');
-    pdfParser.parseBuffer(binArray);
-    let pdfData = await new Promise(function (resolve, reject) {
-        pdfParser.on("pdfParser_dataReady", (pdfData) => {
-            resolve(pdfData);
+        console.log('FAZENDO PARSE DO PDF');
+        pdfParser.parseBuffer(binArray);
+        let pdfData = await new Promise(function (resolve, reject) {
+            pdfParser.on("pdfParser_dataReady", (pdfData) => {
+                resolve(pdfData);
+            });
         });
-    });
-    return pdfData;
+        return pdfData;
+    } finally {
+        globalThis.Worker = savedWorker;
+    }
 }
 
 function formatDateYYYYMMDD(date) {
