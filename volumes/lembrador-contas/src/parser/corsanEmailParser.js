@@ -1,7 +1,7 @@
 import emailUtils from '../util/emailUtils.js';
 import base64Util from '../util/base64Util.js';
 import { JSDOM } from 'jsdom';
-import PDFJS from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
@@ -268,7 +268,7 @@ async function downloadPDF(url) {
 
 async function parsePDFBuffer(buffer) {
     try {
-        const pdf = await PDFJS.getDocument({ data: new Uint8Array(buffer) }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
         
         const pages = [];
         for (let i = 1; i <= pdf.numPages; i++) {
