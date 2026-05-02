@@ -57,13 +57,13 @@ describe('GET /dashboard/user-bill-list', () => {
 });
 
 describe('POST /dashboard/processBills', () => {
-    test('redirects to /dashboard after processing', async () => {
+    test('returns JSON success response', async () => {
         const res = await fetch(`${baseUrl}/dashboard/processBills`, {
             method: 'POST',
-            redirect: 'manual',
         });
-        expect(res.status).toBe(302);
-        expect(res.headers.get('location')).toBe('/dashboard');
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json.success).toBe(true);
     });
 });
 
