@@ -112,7 +112,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
 router.post('/processBills', requireAdmin, asyncHandler(async function (req, res) {
     const bills = await db.Bill.find()
     await billProcessing.processBills(bills, req.query.periods)
-    res.redirect('/dashboard')
+    res.json({ success: true })
 }));
 
 /* Delete processed bills. */
