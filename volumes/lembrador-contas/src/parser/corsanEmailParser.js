@@ -342,7 +342,8 @@ function extractTotalFromPDF(pdfData) {
 function extractDueDateFromPDF(pdfData) {
     const dateRegex = /(\d{2}\/\d{2}\/\d{4})/;
     for (const page of pdfData.Pages) {
-        let vencY = null;
+        let vencItem = null;
+
         for (const text of page.Texts) {
             const decoded = decodeText(text.R[0].T);
             if (decoded.toLowerCase().includes('vencimento')) {
@@ -350,23 +351,32 @@ function extractDueDateFromPDF(pdfData) {
                 if (match) {
                     return parseDDMMYYYY(match[1]);
                 }
-                vencY = text.y;
-                break;
+                vencItem = text;
             }
         }
-        if (vencY !== null) {
-            const vencItems = page.Texts.filter(t =>
-                decodeText(t.R[0].T).toLowerCase().includes('vencimento')
-            );
-            const candidates = page.Texts.filter(t =>
-                Math.abs(t.y - vencY) < 15 && !vencItems.includes(t)
-            );
-            for (const candidate of candidates) {
-                const decoded = decodeText(candidate.R[0].T);
-                const match = decoded.match(dateRegex);
-                if (match) {
-                    return parseDDMMYYYY(match[1]);
-                }
+
+        if (!vencItem) continue;
+
+        // Find the date closest to Vencimento's x position on nearby y lines
+        const candidates = page.Texts.filter(t => {
+            if (t === vencItem) return false;
+            const decoded = decodeText(t.R[0].T);
+            // Skip Emissão and other label items
+            if (decoded.toLowerCase().includes('emiss')) return false;
+            // Must be on a nearby y line (header row or value row below it)
+            if (Math.abs(t.y - vencItem.y) > 25) return false;
+            // Must contain a date
+            return decoded.match(dateRegex);
+        });
+
+        // Sort by x-distance to Vencimento header, pick closest
+        candidates.sort((a, b) => Math.abs(a.x - vencItem.x) - Math.abs(b.x - vencItem.x));
+
+        for (const candidate of candidates) {
+            const decoded = decodeText(candidate.R[0].T);
+            const match = decoded.match(dateRegex);
+            if (match) {
+                return parseDDMMYYYY(match[1]);
             }
         }
     }
