@@ -32,6 +32,7 @@
     "morgan": "^1.10.0",
     "open": "8.4.2",
     "pdf2json": "3.0.4",
+    "pdfjs-dist": "^4.0.0",
     "pino": "^10.3.1",
     "popper.js": "^1.16.1",
     "puppeteer": "^22.0.0",
