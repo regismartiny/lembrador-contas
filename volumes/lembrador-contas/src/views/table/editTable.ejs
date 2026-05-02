@@ -32,7 +32,7 @@
                                 <div class="table-responsive">
                                     <table id="table" class="table table-edit">
                                         <colgroup>
-                                            <col>
+                                            <col class="col-period">
                                             <col class="col-value">
                                             <col class="col-actions">
                                         </colgroup>
@@ -117,7 +117,13 @@
                     }
 
                     function genPeriodCol(value) {
-                        return '<td><input type="month" class="form-control" id="period-' + rowCount + '" value="' + (value || '') + '" name="period" aria-describedby="basic-addon1" required></td>';
+                        var parts = (value || '').split('-');
+                        var year = parts[0] || new Date().getFullYear();
+                        var month = parts[1] ? parseInt(parts[1].replace('0','')) : 1;
+                        return '<td><div class="period-compact"><input type="hidden" name="period" value="' + year + '-' + n(month) + '" id="hperiod-' + rowCount + '"><select class="form-control form-control-sm period-month">' +
+                            ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map(function(m, i) {
+                                return '<option value="' + (i+1) + '"' + ((month===i+1)?' selected':'') + '>' + m + '</option>';
+                            }).join('') + '</select><input type="number" class="form-control form-control-sm period-year" value="' + year + '"></div></td>';
                     }
 
                     function genValueCol(value) {
@@ -136,6 +142,15 @@
                                 i++
                             }
                         }
+
+                        $('#table').on('change', '.period-month, .period-year', function() {
+                            var $row = $(this).closest('tr');
+                            var month = $row.find('.period-month').val();
+                            var year = $row.find('.period-year').val();
+                            if (month && year) {
+                                $row.find('[name="period"]').val(year + '-' + n(parseInt(month)));
+                            }
+                        });
                     });
 
                     function fillPeriod() {
@@ -180,13 +195,23 @@
                 </script>
                 <style>
                     /* ---- edit table columns ---- */
-                    /* fixed layout: period col gets all space that value+actions don't use */
                     .table-edit { table-layout: fixed; width: 100%; }
-                    .col-value   { width: 80px; }
+                    .col-period  { width: 180px; }
+                    .col-value   { width: 90px; }
                     .col-actions { width: 44px; }
                     .table-edit td { vertical-align: middle; overflow: hidden; }
-                    .table-edit input { min-width: 0; width: 100%; }
-                    .table-edit input[name="value"] { font-size: 1.05rem; }
+                    .table-edit input, .table-edit select { min-width: 0; width: 100%; }
+                    .period-compact { display: flex; gap: 2px; align-items: center; }
+                    .period-compact select, .period-year { font-size: 1rem !important; }
+                    .period-compact select { width: auto; flex-shrink: 0; }
+                    .period-year { width: 56px; text-align: center; padding-left: 2px; padding-right: 2px; }
+
+                    @media (max-width: 600px) {
+                        .col-period  { width: 140px; }
+                        .col-value   { width: auto; }
+                        .period-compact select { font-size: 1rem !important; padding: 2px 1px; min-width: 56px; }
+                        .period-year { width: 48px; font-size: 1rem !important; }
+                    }
 
                     /* ---- fill period panel ---- */
                     .period-fill-section {
