@@ -52,7 +52,8 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     let periodFilter = req.query.periodFilter
 
     if (!userId || userId == 'null') {
-        res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
+        let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+        res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, currentMonth: prev.getMonth() + 1, currentYear: prev.getFullYear() })
         return
     }
 
@@ -92,14 +93,15 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     if (periodFilter == 'ALL') {
         renderUserBillListPage(res, userBillsData)
     } else {
-        // Default: CURRENT_AND_FUTURE — show only current month and future bills
-        let currentYear = new Date().getFullYear()
-        let currentMonth = new Date().getMonth() + 1
+        // Default: CURRENT_AND_FUTURE — show only previous month and future bills
+        let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+        let activeYear = prev.getFullYear();
+        let activeMonth = prev.getMonth() + 1;
 
         userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
             let month = billList.month.split("/")[0]
             let year = billList.month.split("/")[1]
-            return (month >= currentMonth && (year >= currentYear || year > currentYear))
+            return (month >= activeMonth && (year >= activeYear || year > activeYear))
         })
 
         renderUserBillListPage(res, userBillsData)
@@ -126,8 +128,9 @@ router.post('/paybill/:id', requireAdmin, validateObjectId('id'), asyncHandler(a
 }));
 
 function renderUserBillListPage(res, userBillsData) {
+    let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
     logger.info("userBillsData", userBillsData);
-    res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum })
+    res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, currentMonth: prev.getMonth() + 1, currentYear: prev.getFullYear() })
 }
 
 export default router

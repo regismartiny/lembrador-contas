@@ -1,16 +1,24 @@
 
-<% if (!userBillsData?.billListPerMonth?.length) { %>
-    <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
-<% } %>
-<%
+ <% if (!userBillsData?.billListPerMonth?.length) { %>
+     <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
+ <% } %>
+ <%
 var monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function formatMonth(m) {
     var parts = m.split('/');
     return monthNames[parseInt(parts[0], 10) - 1] + '/' + parts[1];
 }
-%>
-<% userBillsData?.billListPerMonth?.forEach(function(data){ %>
-    <div class="month-block">
+var currentM = currentMonth || (new Date().getMonth() + 1);
+var currentY = currentYear || new Date().getFullYear();
+ %>
+ <% userBillsData?.billListPerMonth?.forEach(function(data){ %>
+     <% var mParts = data.month.split('/'); %>
+     <% var billM = parseInt(mParts[0], 10); %>
+     <% var billY = parseInt(mParts[1], 10); %>
+     <% var isCurrent = (billM === currentM && billY === currentY); %>
+     <% var isPast = ((billY < currentY) || (billY === currentY && billM < currentM)); %>
+     <% var monthClass = isPast ? 'month-block month-closed' : (isCurrent ? 'month-block month-current' : 'month-block month-future'); %>
+     <div class="<%= monthClass %>">
         <div class="month-header-row">
             <h2 class="month-title"><%= formatMonth(data.month) %></h2>
             <span class="month-total">Total: <strong class="money"><%= Number(data.totalValue).toFixed(2) %></strong></span>

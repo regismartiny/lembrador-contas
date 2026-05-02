@@ -566,6 +566,38 @@ html.light-theme .navbar-toggler-icon {
   padding: 0.65rem 0.75rem;
 }
 
+/* ===== Month status styles ===== */
+.month-closed {
+  opacity: 0.45;
+  border-color: var(--border);
+}
+.month-closed .month-title {
+  color: var(--text-secondary);
+}
+.month-closed .month-total,
+.month-closed .payment-badges .badge {
+  color: var(--text-secondary);
+}
+
+.month-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-bg), var(--shadow-sm);
+}
+.month-current .month-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.month-future {
+  border-left: 3px solid var(--accent);
+}
+
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
   width: 8px;
