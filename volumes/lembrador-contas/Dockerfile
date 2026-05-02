@@ -19,6 +19,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-6 \
     libxext6 \
     libxss1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxi6 \
+    libxtst6 \
+    libasound2 \
+    libgtk-3-0 \
+    libxss1 \
+    libgconf-2-4 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root/lembrador-contas
