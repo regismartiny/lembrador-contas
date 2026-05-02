@@ -1,13 +1,93 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-</head>
+<%- include ('../partials/header.ejs') %>
+
 <body>
-    <h1 class="text-center title-1">Email Valor</h1>
-    <ul>
-        <li>Nome: <%= nome %></li>
-        <li>Valor: <%= valor %></li>
-    </ul>
+    <%- template.navbar %>
+    <div class="container">
+        <div class="starter-template">
+            <div class="list-page-header">
+                <h1 class="title-1"><i class="fas fa-vial me-2"></i>Teste de Email</h1>
+                <a href="/emails/list" class="btn btn-secondary btn-sm">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">arrow_back</span> Voltar
+                </a>
+            </div>
+
+            <div class="month-block mb-4">
+                <h2 class="month-title"><%= nome %></h2>
+            </div>
+
+            <% 
+                var parsedValues = [];
+                try { parsedValues = JSON.parse(valor); } catch(e) { parsedValues = [{error: 'Falha ao processar dados'}]; }
+                
+                if (parsedValues.length === 0) {
+            %>
+                <div class="month-block text-center py-4">
+                    <i class="fas fa-inbox" style="font-size:3rem;color:var(--text-secondary);"></i>
+                    <p class="mt-3 mb-0" style="color:var(--text-secondary);">Nenhum dado extraído do email</p>
+                </div>
+            <% } else { %>
+                <% parsedValues.forEach(function(item, idx) { %>
+                    <% if (item.error) { %>
+                        <div class="month-block border-danger" style="border-color:var(--danger)!important;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2" style="color:var(--danger);"></i>
+                                <span style="color:var(--text-secondary);"><%= item.error %></span>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="month-block">
+                            <% if (idx > 0) { %>
+                                <span class="badge badge-secondary mb-2 d-inline-block">Item <%= idx + 1 %></span>
+                            <% } %>
+
+                            <% 
+                                var keys = Object.keys(item);
+                                if (keys.length === 0 && !item.error) {
+                            %>
+                                <p style="color:var(--text-secondary);">Dados vazios retornados pelo parser</p>
+                            <% } else { %>
+                                <div class="table-responsive">
+                                    <table class="table" style="margin-bottom:0;">
+                                        <thead>
+                                            <tr>
+                                                <th>Campo</th>
+                                                <th>Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% keys.forEach(function(key) { %>
+                                                <% 
+                                                    var val = item[key];
+                                                    var displayTd;
+                                                    if (val === null || val === undefined) {
+                                                        displayTd = '<span style="color:var(--text-secondary);">—</span>';
+                                                    } else if (typeof val === 'object') {
+                                                        var escaped = JSON.stringify(val, null, 2).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                                                        displayTd = '<code style="color:var(--text-secondary);">' + escaped + '</code>';
+                                                    } else {
+                                                        displayTd = String(val);
+                                                    }
+                                                %>
+                                                <tr>
+                                                    <td style="white-space:nowrap;font-weight:500;"><%= key %></td>
+                                                    <td><%- displayTd %></td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% } %>
+                <% }); %>
+            <% } %>
+
+            <div class="month-block" style="border-style:dashed;">
+                <h2 style="margin-top:0;font-size:0.9rem;color:var(--text-secondary);">RAW JSON</h2>
+                <pre style="margin:0;white-space:pre-wrap;word-break:break-word;color:var(--text-secondary);font-size:0.85rem;background-color:var(--bg-elevated);padding:1rem;border-radius:var(--radius-sm);"><%= valor %></pre>
+            </div>
+        </div>
+    </div>
+    <%- template.scripts %>
 </body>
 </html>

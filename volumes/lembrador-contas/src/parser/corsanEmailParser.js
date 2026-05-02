@@ -26,7 +26,7 @@ async function fetch(address, subject, period) {
     }
 
     const message = messages[0];
-    return parseEmailData(message);
+    return [await parseEmailData(message)];
     
 }
 
@@ -47,10 +47,10 @@ async function parseEmailData(message) {
 
         console.log(`Extracted from CORSAN PDF: dueDate=${dueDate}, value=${value}, referencePeriod=${referencePeriod}`);
 
-        return [{ dueDate, value, referencePeriod }];
+        return { dueDate, value, referencePeriod };
     } catch (e) {
         console.error('Failed to parse CORSAN email:', e.message);
-        return [];
+        return null;
     }
 }
 

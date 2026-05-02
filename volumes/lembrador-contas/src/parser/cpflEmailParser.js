@@ -43,6 +43,7 @@ export function parseEmailData(msg) {
         return parseHTML(text)
     } catch(e) {
         console.error("Failed to get info from HTML email", e)
+        return null
     }
 }
 
