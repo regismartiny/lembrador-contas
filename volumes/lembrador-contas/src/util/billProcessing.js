@@ -7,10 +7,8 @@ async function processBills(bills, selectedPeriods) {
     logger.info("Processing bills for periods:", periods)
 
     //delete previously processed bills of current periods
-    await db.ActiveBill.deleteMany({dueDate: {
-        $gte: new Date(periods[0].year, periods[0].month + 1, 1),
-        $lt: new Date(periods[2].year, periods[2].month + 3, 1)
-    }}).catch((err) => {
+    const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
+    await db.ActiveBill.deleteMany({referencePeriod: {$in: referencePeriods}}).catch((err) => {
         logger.error("Error deleting previous active bills", err)
     })
 
