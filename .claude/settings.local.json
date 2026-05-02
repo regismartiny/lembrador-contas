@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(bun test *)"
+      "Bash(bun test *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm test *)",
+      "Bash(set SESSION_SECRET=test-secret)",
+      "Bash(npx jest *)",
+      "Bash(SESSION_SECRET=test-secret npx bun test)",
+      "Bash(git commit *)",
+      "Bash(SESSION_SECRET=test-secret bun test src/__tests__/corsanEmailParser.test.js)",
+      "Bash(bun -e ' *)",
+      "Bash(SESSION_SECRET=test-secret bun test)",
+      "Bash(curl -sL -o /tmp/corsan_example.pdf \"https://maas-log-prod.cn-wlcb.ufileos.com/anthropic/117c3e40-ea97-4fe5-8a65-0bf9afb808b8/c94be2a4130ff11ea98991bdcb0fb598.pdf?UCloudPublicKey=TOKEN_e15ba47a-d098-4fbd-9afc-a0dcf0e4e621&Expires=1777603630&Signature=Z16B+4UGTb+p1UY9XL6qhn1OqVY=\")",
+      "Bash(node -e ' *)"
     ]
   }
 }
