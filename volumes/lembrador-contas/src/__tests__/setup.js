@@ -109,9 +109,9 @@ mock.module('../db.js', () => {
 
     class MockTable {
         constructor(data) { Object.assign(this, data); }
-        save() { return Promise.resolve(this); }
+        save() { mockData.tables.push(this); return Promise.resolve(this); }
         static find()                   { return makeQuery(mockData.tables); }
-        static findById()               { return makeQuery(null); }
+        static findById(id)             { const t = mockData.tables.find(x => x._id === id || x.name === id); return makeQuery(t || null); }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
     }

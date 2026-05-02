@@ -2,7 +2,8 @@ import db from '../db.js';
 import logger from './logger.js';
 
 async function processBills(bills, selectedPeriods) {
-    const periods = !!selectedPeriods ? JSON.parse(selectedPeriods) : getDefaultPeriods()
+    let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
+    const periods = !!selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
 
     logger.info("Processing bills for periods:", periods)
 
@@ -12,13 +13,10 @@ async function processBills(bills, selectedPeriods) {
         logger.error("Error deleting previous active bills", err)
     })
 
-    let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
     let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
     let billsSourceApi = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.API)
 
-    const now = new Date()
-    const currentPeriod = { month: now.getMonth(), year: now.getFullYear() }
-    const nonFuturePeriods = periods.filter(p => !isFuturePeriod(p, currentPeriod))
+    const nonFuturePeriods = periods.filter(p => !isFuturePeriod(p))
 
     const promises = [findActiveTableBills(billsSourceTable, periods),
                         findActiveEmailBills(billsSourceEmail, nonFuturePeriods),
@@ -42,19 +40,45 @@ function getSum(total, num) {
     return total + ((isNaN(num) || num == undefined) ? 0 : num);
 }
 
-function getDefaultPeriods() {
+async function getDefaultPeriods(billsSourceTable) {
     let currentDate = new Date()
     let previousMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    let nextMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    return [ { month: previousMonthDate.getMonth(), year: previousMonthDate.getFullYear() },
-            { month: currentDate.getMonth(), year: currentDate.getFullYear()},
-            { month: nextMonthDate.getMonth(), year: nextMonthDate.getFullYear() }]
+    let periods = [
+        { month: previousMonthDate.getMonth(), year: previousMonthDate.getFullYear() },
+        { month: currentDate.getMonth(), year: currentDate.getFullYear()}
+    ]
+
+    if (billsSourceTable && billsSourceTable.length > 0) {
+        for (const bill of billsSourceTable) {
+            let table = await db.Table.findById(bill.valueSourceId).lean().catch(() => null)
+            if (!table || !table.data) continue
+            for (const data of table.data) {
+                if (data.period && data.period.month && data.period.year) {
+                    const month0 = data.period.month - 1
+                    periods.push({ month: month0, year: data.period.year })
+                }
+            }
+        }
+    }
+
+    return deduplicatePeriods(periods)
 }
 
-function isFuturePeriod(period, current) {
-    if (period.year > current.year) return true
-    if (period.year < current.year) return false
-    return period.month > current.month
+function isFuturePeriod(period) {
+    const now = new Date()
+    if (period.year > now.getFullYear()) return true
+    if (period.year < now.getFullYear()) return false
+    return period.month > now.getMonth()
+}
+
+function deduplicatePeriods(periods) {
+    const seen = new Set()
+    return periods.filter(p => {
+        const key = `${p.month}/${p.year}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+    }).sort((a, b) => a.year - b.year || a.month - b.month)
 }
 
 async function findActiveTableBills(billsSourceTable, periods) {

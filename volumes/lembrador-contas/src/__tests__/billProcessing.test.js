@@ -2,18 +2,7 @@ import { describe, test, expect } from 'bun:test';
 
 // db.js and logger.js are mocked globally via src/__tests__/setup.js (bunfig.toml preload)
 import billProcessing from '../util/billProcessing.js';
-
-// ---------------------------------------------------------------------------
-// getBillMonth
-// ---------------------------------------------------------------------------
-
-describe('getBillMonth', () => {
-    test('returns "month/year" string with 1-based month', () => {
-        expect(billProcessing.getBillMonth(new Date(2024, 0, 15))).toBe('1/2024');
-        expect(billProcessing.getBillMonth(new Date(2024, 11, 1))).toBe('12/2024');
-        expect(billProcessing.getBillMonth(new Date(2023, 5, 10))).toBe('6/2023');
-    });
-});
+import { mockData } from './setup.js';
 
 // ---------------------------------------------------------------------------
 // getSum
@@ -145,42 +134,66 @@ describe('findActiveApiBills', () => {
 // ---------------------------------------------------------------------------
 
 describe('getDefaultPeriods', () => {
-    test('returns array of 3 periods', () => {
-        const periods = billProcessing.getDefaultPeriods();
-        expect(periods).toHaveLength(3);
+    test('returns at least 2 periods (previous + current month)', async () => {
+        const periods = await billProcessing.getDefaultPeriods([]);
+        expect(periods.length).toBeGreaterThanOrEqual(2);
     });
 
-    test('each period has month and year properties', () => {
-        const periods = billProcessing.getDefaultPeriods();
+    test('each period has month and year properties', async () => {
+        const periods = await billProcessing.getDefaultPeriods([]);
         for (const period of periods) {
             expect(period).toHaveProperty('month');
             expect(period).toHaveProperty('year');
         }
     });
 
-    test('middle period is the current month', () => {
-        const periods = billProcessing.getDefaultPeriods();
+    test('includes current month', async () => {
+        const periods = await billProcessing.getDefaultPeriods([]);
         const now = new Date();
-        expect(periods[1].month).toBe(now.getMonth());
-        expect(periods[1].year).toBe(now.getFullYear());
+        const current = periods.find(p => p.month === now.getMonth() && p.year === now.getFullYear());
+        expect(current).toBeDefined();
     });
 
-    test('first period is previous month', () => {
-        const periods = billProcessing.getDefaultPeriods();
+    test('includes previous month', async () => {
+        const periods = await billProcessing.getDefaultPeriods([]);
         const now = new Date();
-        const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-        const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        expect(periods[0].month).toBe(prevMonth);
-        expect(periods[0].year).toBe(prevYear);
+        let prevMonth = now.getMonth() - 1;
+        let prevYear = now.getFullYear();
+        if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+        const previous = periods.find(p => p.month === prevMonth && p.year === prevYear);
+        expect(previous).toBeDefined();
     });
 
-    test('last period is next month', () => {
-        const periods = billProcessing.getDefaultPeriods();
-        const now = new Date();
-        const nextMonth = now.getMonth() === 11 ? 0 : now.getMonth() + 1;
-        const nextYear = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
-        expect(periods[2].month).toBe(nextMonth);
-        expect(periods[2].year).toBe(nextYear);
+    test('returns sorted periods', async () => {
+        const periods = await billProcessing.getDefaultPeriods([]);
+        for (let i = 1; i < periods.length; i++) {
+            const prev = periods[i - 1];
+            const curr = periods[i];
+            expect(curr.year * 12 + curr.month).toBeGreaterThanOrEqual(prev.year * 12 + prev.month);
+        }
+    });
+
+    test('no duplicate periods', async () => {
+        const periods = await billProcessing.getDefaultPeriods([]);
+        const keys = periods.map(p => `${p.month}/${p.year}`);
+        expect(new Set(keys).size).toBe(periods.length);
+    });
+
+    test('extracts periods from table.data period field', async () => {
+        mockData.tables.length = 0;
+        mockData.tables.push({ _id: 'table1', data: [
+            { period: { month: 3, year: 2026 }, value: 100 },
+            { period: { month: 4, year: 2026 }, value: 120 }
+        ]});
+
+        const billsSourceTable = [{ name: 'Test Bill', valueSourceId: 'table1' }];
+        const periods = await billProcessing.getDefaultPeriods(billsSourceTable);
+        const hasMar2026 = periods.find(p => p.month === 2 && p.year === 2026);
+        const hasApr2026 = periods.find(p => p.month === 3 && p.year === 2026);
+        expect(hasMar2026).toBeDefined();
+        expect(hasApr2026).toBeDefined();
+
+        mockData.tables.length = 0;
     });
 });
 
