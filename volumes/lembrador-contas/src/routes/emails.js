@@ -5,8 +5,6 @@ import template from './template.js';
 import db from '../db.js';
 import gmail from '../util/gmail.js';
 import emailUtils from '../util/emailUtils.js';
-import vm from 'vm';
-import cpflEmailParser from '../parser/cpflEmailParser.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
 import { validateBody } from '../middleware/validate.js';
@@ -113,29 +111,15 @@ router.get('/test/:id', asyncHandler(async function (req, res) {
     if (!email) {
         return res.status(404).send('Email not found');
     }
-    const message = await emailUtils.getLastMessage(email.address, email.subject);
-
     let values = [];
-    if (db.DataTypeEnum[email.dataType] === db.DataTypeEnum.PDF_ATTACHMENT) {
-        getEmailPDFAttachmentData(values);
-    } else if(db.DataTypeEnum[email.dataType] === db.DataTypeEnum.BODY) {
-        const info = await cpflEmailParser.parseEmailData(message);
-        values.push(info);
-    }
+    const parserName = db.DataParserEnum[email.dataParser];
+    const message = await emailUtils.getLastMessage(email.address, email.subject);
+    const parser = await import(`../parser/${parserName}.js`);
+    const info = await parser.parseEmailData(message);
+    if (info) values.push(info);
+    
     console.table(values);
     res.render('email/emailValue', { nome: email.address, valor: JSON.stringify(values) });
 }));
-
-async function getEmailPDFAttachmentData(value) {
-    let att = await emailUtils.getAttachmentFromMessage(message);
-    let pdfData = await emailUtils.getPDFFromAttachment(att.attachment.data);
-
-    email.valueData.forEach(val => {
-        let obj = { name: val.name, value: ''};
-        let str = 'pdfData = JSON.parse(\'' + JSON.stringify(pdfData) + '\');' + 'decodeURIComponent(' + val.value + ')';
-        obj.value = vm.runInNewContext(str);
-        value.push(obj);
-    })
-}
 
 export default router;

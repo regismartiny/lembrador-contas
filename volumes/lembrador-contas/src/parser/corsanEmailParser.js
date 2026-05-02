@@ -25,9 +25,13 @@ async function fetch(address, subject, period) {
         return [];
     }
 
-    try {
-        const message = messages[0];
+    const message = messages[0];
+    return parseEmailData(message);
+    
+}
 
+async function parseEmailData(message) {
+    try {
         const html = extractHTMLBody(message);
         if (!html) throw new Error('No HTML body found in CORSAN email');
 
@@ -341,9 +345,9 @@ function extractTotalFromPDF(pdfData) {
 
 function extractDueDateFromPDF(pdfData) {
     const dateRegex = /(\d{2}\/\d{2}\/\d{4})/;
-    for (const page of pdfData.Pages) {
-        let vencItem = null;
 
+    // Pass 1: Look for "Vencimento" with date on same line
+    for (const page of pdfData.Pages) {
         for (const text of page.Texts) {
             const decoded = decodeText(text.R[0].T);
             if (decoded.toLowerCase().includes('vencimento')) {
@@ -351,25 +355,45 @@ function extractDueDateFromPDF(pdfData) {
                 if (match) {
                     return parseDDMMYYYY(match[1]);
                 }
+            }
+        }
+    }
+
+    // Pass 2: Look for "Venc." or other shortened labels with date on same line
+    for (const page of pdfData.Pages) {
+        for (const text of page.Texts) {
+            const decoded = decodeText(text.R[0].T);
+            if (decoded.toLowerCase().includes('venc.')) {
+                const match = decoded.match(dateRegex);
+                if (match) {
+                    return parseDDMMYYYY(match[1]);
+                }
+            }
+        }
+    }
+
+    // Pass 3: Find "Vencimento" header, then search nearby y lines for date
+    for (const page of pdfData.Pages) {
+        let vencItem = null;
+
+        for (const text of page.Texts) {
+            const decoded = decodeText(text.R[0].T);
+            if (decoded.toLowerCase().includes('vencimento')) {
                 vencItem = text;
             }
         }
 
         if (!vencItem) continue;
 
-        // Find the date closest to Vencimento's x position on nearby y lines
+        // Find candidates on nearby y lines (increased tolerance to 50px)
         const candidates = page.Texts.filter(t => {
             if (t === vencItem) return false;
             const decoded = decodeText(t.R[0].T);
-            // Skip Emissão and other label items
             if (decoded.toLowerCase().includes('emiss')) return false;
-            // Must be on a nearby y line (header row or value row below it)
-            if (Math.abs(t.y - vencItem.y) > 25) return false;
-            // Must contain a date
+            if (Math.abs(t.y - vencItem.y) > 50) return false;
             return decoded.match(dateRegex);
         });
 
-        // Sort by x-distance to Vencimento header, pick closest
         candidates.sort((a, b) => Math.abs(a.x - vencItem.x) - Math.abs(b.x - vencItem.x));
 
         for (const candidate of candidates) {
@@ -378,6 +402,32 @@ function extractDueDateFromPDF(pdfData) {
             if (match) {
                 return parseDDMMYYYY(match[1]);
             }
+        }
+    }
+
+    // Pass 4: Broader search - find any date that appears near "vencimento" anywhere on page
+    for (const page of pdfData.Pages) {
+        let vencItem = null;
+        for (const text of page.Texts) {
+            const decoded = decodeText(text.R[0].T);
+            if (decoded.toLowerCase().includes('venc')) {
+                vencItem = text;
+                break;
+            }
+        }
+
+        if (!vencItem) continue;
+
+        // Find all dates on same horizontal band (within 100px vertically)
+        const candidates = page.Texts.filter(t => {
+            const decoded = decodeText(t.R[0].T);
+            return Math.abs(t.y - vencItem.y) < 100 && decoded.match(dateRegex);
+        });
+
+        if (candidates.length > 0) {
+            candidates.sort((a, b) => Math.abs(a.x - vencItem.x) - Math.abs(b.x - vencItem.x));
+            const match = decodeText(candidates[0].R[0].T).match(dateRegex);
+            if (match) return parseDDMMYYYY(match[1]);
         }
     }
 
@@ -445,5 +495,5 @@ function parseDDMMYYYY(str) {
     return new Date(year, month - 1, day);
 }
 
-export { fetch, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer };
+export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer };
 export default { fetch };
