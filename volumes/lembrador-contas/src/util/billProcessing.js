@@ -16,9 +16,13 @@ async function processBills(bills, selectedPeriods) {
     let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
     let billsSourceApi = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.API)
 
+    const now = new Date()
+    const currentPeriod = { month: now.getMonth(), year: now.getFullYear() }
+    const nonFuturePeriods = periods.filter(p => !isFuturePeriod(p, currentPeriod))
+
     const promises = [findActiveTableBills(billsSourceTable, periods),
-                        findActiveEmailBills(billsSourceEmail, periods),
-                        findActiveApiBills(billsSourceApi, periods)]
+                        findActiveEmailBills(billsSourceEmail, nonFuturePeriods),
+                        findActiveApiBills(billsSourceApi, nonFuturePeriods)]
     const activeBills = await runParallel(promises)
 
     for (const activeBill of activeBills) {
@@ -45,6 +49,12 @@ function getDefaultPeriods() {
     return [ { month: previousMonthDate.getMonth(), year: previousMonthDate.getFullYear() },
             { month: currentDate.getMonth(), year: currentDate.getFullYear()},
             { month: nextMonthDate.getMonth(), year: nextMonthDate.getFullYear() }]
+}
+
+function isFuturePeriod(period, current) {
+    if (period.year > current.year) return true
+    if (period.year < current.year) return false
+    return period.month > current.month
 }
 
 async function findActiveTableBills(billsSourceTable, periods) {
