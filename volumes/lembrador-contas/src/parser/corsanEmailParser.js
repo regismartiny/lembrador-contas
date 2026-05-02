@@ -26,8 +26,13 @@ async function fetch(address, subject, period) {
     }
 
     const message = messages[0];
-    return [await parseEmailData(message)];
+    const parsedData = await parseEmailData(message);
+
+    if (!parsedData) {
+        return []
+    }
     
+    return [parsedData]
 }
 
 async function parseEmailData(message) {
