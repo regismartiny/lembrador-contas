@@ -41,7 +41,7 @@ router.get('/dashboard-new', asyncHandler(async function (req, res) {
     const paymentTypeSummaries = billProcessing.groupByPaymentType(currentMonthBills)
 
     const activeBillData = currentMonthBills.length > 0
-        ? [{ month: billProcessing.getBillMonth(currentMonthBills[0].dueDate), billList, totalValue, paymentTypeSummaries }]
+        ? [{ month: currentMonthBills[0].referencePeriod, billList, totalValue, paymentTypeSummaries }]
         : []
 
     res.render('dashboard/dashboard-new', { template, title: 'Demonstrativo mensal', activeBillData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, lastUpdate, periodFilterEnum: db.PeriodFilterEnum })
@@ -62,7 +62,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     logger.info('activeBills', activeBills)
 
     const monthBillsMap = activeBills.reduce((map, bill) => {
-        let month = billProcessing.getBillMonth(bill.dueDate)
+        let month = bill.referencePeriod
         if (!map.has(month)) map.set(month, [])
         map.get(month).push(bill)
         return map

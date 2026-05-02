@@ -36,10 +36,6 @@ async function processBills(bills, selectedPeriods) {
     logger.info("Finished processing bills for periods:", periods)
 }
 
-function getBillMonth(dueDate) {
-    return Number(dueDate?.getMonth()) + 1 + "/" + dueDate?.getFullYear()
-}
-
 function getSum(total, num) {
     return total + ((isNaN(num) || num == undefined) ? 0 : num);
 }
@@ -241,7 +237,6 @@ async function runParallel(promises) {
 }
 
 export default {
-    getBillMonth,
     getSum,
     groupByPaymentType,
     findActiveTableBills,
