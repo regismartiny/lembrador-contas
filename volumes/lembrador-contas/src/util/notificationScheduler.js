@@ -2,7 +2,7 @@ import logger from './logger.js';
 import WebPush from 'web-push';
 
 // Lazy import db to avoid circular dependency with www/app
-const getDb = () => require('./db.js').default;
+const getDb = async () => (await import('./db.js')).default;
 
 let schedulerInterval = null;
 
@@ -16,36 +16,39 @@ export function startScheduler() {
 
     logger.info(`[NotificationScheduler] Starting scheduler (interval: ${intervalMs}ms, reminderDays: ${reminderDays})`);
 
-    // Defer first run until Mongoose finishes connecting to MongoDB
-    const db = getDb();
-    const waitForConnection = () => {
-        return new Promise((resolve) => {
-            if (db.Mongoose?.connection?.readyState === 1) {
-                resolve();
-                return;
-            }
-            let timer;
-            const handler = async () => {
-                if (timer) clearTimeout(timer);
-                await checkAndNotify();
-                cleanupExpiredSubscriptions();
-                resolve();
-            };
-            db.Mongoose?.connection?.once('open', handler);
-            // Fallback: after 10 seconds, run anyway
-            timer = setTimeout(handler, 10000);
-        });
-    };
+    // Lazy-load db module and wait for connection before first run
+    getDb().then((db) => {
+        const waitForConnection = () => {
+            return new Promise((resolve) => {
+                if (db.Mongoose?.connection?.readyState === 1) {
+                    resolve();
+                    return;
+                }
+                let timer;
+                const handler = async () => {
+                    if (timer) clearTimeout(timer);
+                    await checkAndNotify(db, reminderDays);
+                    await cleanupExpiredSubscriptions(db);
+                    resolve();
+                };
+                db.Mongoose?.connection?.once('open', handler);
+                // Fallback: after 10 seconds, run anyway
+                timer = setTimeout(handler, 10000);
+            });
+        };
 
-    waitForConnection().then(() => {
-        schedulerInterval = setInterval(async () => {
-            try {
-                await checkAndNotify();
-                cleanupExpiredSubscriptions();
-            } catch (err) {
-                logger.error('[NotificationScheduler] Error in scheduled run:', err);
-            }
-        }, intervalMs);
+        waitForConnection().then(() => {
+            schedulerInterval = setInterval(async () => {
+                try {
+                    await checkAndNotify(db, reminderDays);
+                    await cleanupExpiredSubscriptions(db);
+                } catch (err) {
+                    logger.error('[NotificationScheduler] Error in scheduled run:', err);
+                }
+            }, intervalMs);
+        });
+    }).catch((err) => {
+        logger.error('[NotificationScheduler] Failed to load db module:', err);
     });
 }
 
@@ -64,8 +67,7 @@ export function stopScheduler() {
  * Check for unpaid bills due soon and send push notifications.
  * Idempotent: skips bills that already have a reminder with notifiedAt set.
  */
-export async function checkAndNotify() {
-    const reminderDays = parseInt(process.env.REMINDER_DAYS || '3', 10);
+export async function checkAndNotify(db, reminderDays) {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
     const vapidMailto = process.env.VAPID_MAILTO;
@@ -82,7 +84,6 @@ export async function checkAndNotify() {
         dueDateLimit.setHours(23, 59, 59, 999);
 
         // Find UNPAID active bills within the reminder window
-        const db = getDb();
         const unpaidBills = await db.ActiveBill.find({
             status: 'UNPAID',
             dueDate: { $gte: now, $lte: dueDateLimit }
@@ -116,7 +117,7 @@ export async function checkAndNotify() {
             const body = `A conta "${bill.name}" vence em ${reminderDays} dia(s).`;
 
             // Send push to all subscriptions
-            await sendPushToAll({ title, body });
+            await sendPushToAll(db, { title, body });
 
             // Create a BillReminder record with notifiedAt to prevent duplicates
             if (billIdStr) {
@@ -141,13 +142,13 @@ export async function checkAndNotify() {
 /**
  * Send a push notification to all active subscriptions.
  */
-async function sendPushToAll({ title, body }) {
+async function sendPushToAll(db, { title, body }) {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
     const vapidMailto = process.env.VAPID_MAILTO;
 
     try {
-        const subscriptions = await getDb().PushNotificationSubscription.find({}).lean();
+        const subscriptions = await db.PushNotificationSubscription.find({}).lean();
 
         if (!subscriptions.length) {
             logger.info('[NotificationScheduler] No active subscriptions.');
@@ -173,7 +174,7 @@ async function sendPushToAll({ title, body }) {
             } catch (err) {
                 if (err.statusCode === 410 || err.statusCode === 404) {
                     logger.warn(`[NotificationScheduler] Subscription expired (${err.statusCode}). Removing.`);
-                    await getDb().PushNotificationSubscription.deleteOne({ _id: sub._id });
+                    await db.PushNotificationSubscription.deleteOne({ _id: sub._id });
                 } else {
                     logger.error(`[NotificationScheduler] Failed to send push:`, err.message);
                 }
@@ -187,15 +188,15 @@ async function sendPushToAll({ title, body }) {
 /**
  * Clean up expired or gone subscriptions.
  */
-async function cleanupExpiredSubscriptions() {
+async function cleanupExpiredSubscriptions(db) {
     try {
-        const subscriptions = await getDb().PushNotificationSubscription.find({}).lean();
+        const subscriptions = await db.PushNotificationSubscription.find({}).lean();
         let removed = 0;
 
         for (const sub of subscriptions) {
             // Remove if past expiration time
             if (sub.expirationTime && new Date(sub.expirationTime) < new Date()) {
-                await getDb().PushNotificationSubscription.deleteOne({ _id: sub._id });
+                await db.PushNotificationSubscription.deleteOne({ _id: sub._id });
                 logger.info(`[NotificationScheduler] Removed expired subscription (expirationTime: ${sub.expirationTime}).`);
                 removed++;
             }

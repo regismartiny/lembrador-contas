@@ -38,7 +38,8 @@ router.post('/push/register', asyncHandler(async function (req, res) {
 router.post('/push/send', asyncHandler(async function (req, res) {
    logger.info("/push/send", req.body)
    // Trigger the scheduler's check-and-notify logic (manual trigger for testing)
-   await checkAndNotify();
+   const reminderDays = parseInt(process.env.REMINDER_DAYS || '3', 10);
+   await checkAndNotify(db, reminderDays);
    return res.status(201).send()
 }));
 
