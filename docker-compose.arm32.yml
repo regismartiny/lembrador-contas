@@ -17,9 +17,6 @@ services:
       - 27017:27017
     volumes:
       - ./volumes/mongodb/data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -39,8 +36,6 @@ services:
         condition: service_healthy
     environment:
       - MONGODB_IP=lembrador-contas_mongodb
-      - MONGODB_USER=${MONGODB_USER}
-      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lembrador-contas}
       - SESSION_SECRET=${SESSION_SECRET}
       - APP_PASSWORD=${APP_PASSWORD}
