@@ -16,13 +16,37 @@ export function startScheduler() {
 
     logger.info(`[NotificationScheduler] Starting scheduler (interval: ${intervalMs}ms, reminderDays: ${reminderDays})`);
 
-    // Run immediately on start
-    checkAndNotify();
+    // Defer first run until Mongoose finishes connecting to MongoDB
+    const db = getDb();
+    const waitForConnection = () => {
+        return new Promise((resolve) => {
+            if (db.Mongoose?.connection?.readyState === 1) {
+                resolve();
+                return;
+            }
+            let timer;
+            const handler = async () => {
+                if (timer) clearTimeout(timer);
+                await checkAndNotify();
+                cleanupExpiredSubscriptions();
+                resolve();
+            };
+            db.Mongoose?.connection?.once('open', handler);
+            // Fallback: after 10 seconds, run anyway
+            timer = setTimeout(handler, 10000);
+        });
+    };
 
-    schedulerInterval = setInterval(() => {
-        checkAndNotify();
-        cleanupExpiredSubscriptions();
-    }, intervalMs);
+    waitForConnection().then(() => {
+        schedulerInterval = setInterval(async () => {
+            try {
+                await checkAndNotify();
+                cleanupExpiredSubscriptions();
+            } catch (err) {
+                logger.error('[NotificationScheduler] Error in scheduled run:', err);
+            }
+        }, intervalMs);
+    });
 }
 
 /**
@@ -72,7 +96,7 @@ export async function checkAndNotify() {
         logger.info(`[NotificationScheduler] Found ${unpaidBills.length} unpaid bill(s) within reminder window.`);
 
         // Get existing reminders to avoid duplicates
-        const existingReminders = await getDb().BillReminder.find({}).lean();
+        const existingReminders = await db.BillReminder.find({}).lean();
         const notifiedBillIds = new Set(
             existingReminders
                 .filter(r => r.notifiedAt !== null && r.activeBill != null)
