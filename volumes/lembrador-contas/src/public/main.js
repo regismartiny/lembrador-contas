@@ -107,15 +107,21 @@ async function subscribePushManager() {
      });
    }
 
- async function send(method, url, data) {
-    const options = {
-       method: method,
-       headers: {
-          // 'Accept': 'application/json',
-          'Content-Type': 'application/json'
-       },
-       body: JSON.stringify(data)
-    }
+  async function send(method, url, data) {
+     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+     const headers = {
+        // 'Accept': 'application/json',
+        'Content-Type': 'application/json'
+     };
+     if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken;
+     }
+
+     const options = {
+        method: method,
+        headers: headers,
+        body: JSON.stringify(data)
+     }
     const rawContent = await fetch(url, options)
     const content = await rawContent.text()
     return content

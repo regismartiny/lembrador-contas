@@ -29,12 +29,7 @@ function checkNotificationsPermission() {
 self.addEventListener('activate', async () => {
    // This will be called only once when the service worker is activated.
    console.log('[Service Worker] Activated.')
-
-   setTimeout(() => {
-      sendNotification({title: 'Lembrador de contas', body: 'Bem vindo ao Lembrador de Contas!'})
-   }, 2000);
-
- })
+})
 
 self.addEventListener('push', event => {
    console.log('[Service Worker] Push Received.')
@@ -58,23 +53,43 @@ self.addEventListener('notificationclick', function(event) {
    event.notification.close()
 
    event.waitUntil(
-      clients.openWindow('https://developers.google.com/web/')
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+         for (const client of clientList) {
+            if ('focus' in client) return client.focus();
+         }
+         return clients.openWindow('/');
+      })
    )
 })
 
-self.addEventListener('pushsubscriptionchange', function(event) {
+self.addEventListener('pushsubscriptionchange', async function(event) {
    console.log('[Service Worker]: \'pushsubscriptionchange\' event fired.')
-   const applicationServerKey = urlB64ToUint8Array(applicationServerPublicKey)
-   event.waitUntil(
-      self.registration.pushManager.subscribe({
+   
+   try {
+      const resp = await fetch('/notifications/push/public_key')
+      const data = await resp.json()
+      if (!data.publicKey) {
+         console.error('No public key available for re-subscription')
+         return
+      }
+      const applicationServerKey = urlB64ToUint8Array(data.publicKey)
+      
+      const newSubscription = await self.registration.pushManager.subscribe({
          userVisibleOnly: true,
          applicationServerKey: applicationServerKey
       })
-      .then(async function(newSubscription) {
-         console.log('[Service Worker] New subscription: ', newSubscription)
-         updateSubscriptionOnServer(newSubscription)
+      
+      console.log('[Service Worker] New subscription: ', newSubscription)
+      
+      // Send the new subscription to the register endpoint
+      await fetch('/notifications/push/register', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ subscription: newSubscription })
       })
-   );
+   } catch (err) {
+      console.error('[Service Worker] pushsubscriptionchange error:', err)
+   }
 });
 
 const showLocalNotification = (title, body, event) => {
@@ -84,30 +99,4 @@ const showLocalNotification = (title, body, event) => {
      // here you can add more properties like icon, image, vibrate, etc.
    };
    event.waitUntil(self.registration.showNotification(title, options));
- };
-
-async function sendNotification(data) {
-   //Teste de notificacao
-   await send('POST', '/notifications/push/send', data)
-}
-
-async function updateSubscriptionOnServer(subscription) {
-   await send('POST', '/notifications/push/register', {
-      subscription
-   })
-}
-
-async function send(method, url, data) {
-   const options = {
-      method: method,
-      headers: {
-         // 'Accept': 'application/json',
-         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-   }
-
-   const rawContent = await fetch(url, options)
-   const content = await rawContent.text()
-   return content
-}
+};

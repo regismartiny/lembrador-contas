@@ -6,6 +6,7 @@
 
 import app from '../app.js';
 import logger from '../util/logger.js';
+import { startScheduler, stopScheduler } from '../util/notificationScheduler.js';
 
 import http from 'http';
 
@@ -29,6 +30,10 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+// Graceful shutdown: stop scheduler on exit
+process.on('SIGTERM', () => { stopScheduler(); server.close(); });
+process.on('SIGINT', () => { stopScheduler(); server.close(); });
 
 /**
  * Normalize a port into a number, string, or false.
@@ -88,4 +93,7 @@ function onListening() {
     ? 'pipe ' + addr
     : 'port ' + addr.port;
   logger.info('Listening on ' + bind);
+  
+  // Start the notification scheduler once server is listening
+  startScheduler();
 }

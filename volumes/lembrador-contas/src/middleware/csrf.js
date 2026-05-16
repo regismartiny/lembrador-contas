@@ -13,4 +13,16 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
     getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] || req.body._csrf,
 });
 
-export { generateCsrfToken as generateToken, doubleCsrfProtection };
+// Skip CSRF protection for service-worker endpoints that cannot send tokens
+const csrfSkipPaths = [
+    '/notifications/push/register',
+    '/notifications/push/public_key',
+];
+
+const doubleCsrfProtectionWithSkip = (req, res, next) => {
+    const skip = csrfSkipPaths.some(path => req.path === path);
+    if (skip) return next();
+    return doubleCsrfProtection(req, res, next);
+};
+
+export { generateCsrfToken as generateToken, doubleCsrfProtectionWithSkip };

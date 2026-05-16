@@ -10,6 +10,7 @@ process.env.APP_PASSWORD = undefined;
 mock.module('../middleware/csrf.js', () => ({
     generateToken: (req, res) => 'test-csrf-token',
     doubleCsrfProtection: (req, res, next) => next(),
+    doubleCsrfProtectionWithSkip: (req, res, next) => next(),
 }));
 
 // Mock auth middleware to always allow access
@@ -55,6 +56,7 @@ export const mockData = {
     emails: [],
     apis: [],
     pushSubscriptions: [],
+    reminders: [],
 };
 
 export function resetMockData() {
@@ -65,6 +67,7 @@ export function resetMockData() {
     mockData.emails.length = 0;
     mockData.apis.length = 0;
     mockData.pushSubscriptions.length = 0;
+    mockData.reminders.length = 0;
 }
 
 // Prevent db.js from connecting to MongoDB during tests
@@ -140,10 +143,21 @@ mock.module('../db.js', () => {
     class MockPushNotificationSubscription {
         constructor(data) { Object.assign(this, data); }
         save() { return Promise.resolve(this); }
-        static find()        { return makeQuery(mockData.pushSubscriptions); }
-        static findById()    { return makeQuery(null); }
-        static deleteMany()  { return leanChain; }
-        static create()      { return Promise.resolve({}); }
+        static find()                  { return makeQuery(mockData.pushSubscriptions); }
+        static findById()              { return makeQuery(null); }
+        static findOne(query)          { const s = mockData.pushSubscriptions.find(x => x.endpoint === query?.endpoint); return makeQuery(s || null); }
+        static deleteMany()            { return leanChain; }
+        static deleteOne({ _id })      { const idx = mockData.pushSubscriptions.findIndex(x => x._id == _id); if (idx !== -1) mockData.pushSubscriptions.splice(idx, 1); return Promise.resolve({ deletedCount: 1 }); }
+        static create()                { return Promise.resolve({}); }
+    }
+
+    class MockBillReminder {
+        constructor(data) { Object.assign(this, data); }
+        save() { mockData.reminders.push(this); return Promise.resolve(this); }
+        static find()                  { return makeQuery(mockData.reminders); }
+        static findById()              { return makeQuery(null); }
+        static findOneAndUpdate()      { return makeQuery(null); }
+        static deleteMany()            { return leanChain; }
     }
 
     // Return the default export object that db.js provides
@@ -156,7 +170,7 @@ mock.module('../db.js', () => {
             Email: MockEmail,
             Table: MockTable,
             API: MockAPI,
-            BillReminder: null,
+            BillReminder: MockBillReminder,
             PushNotificationSubscription: MockPushNotificationSubscription,
             PeriodFilterEnum: { ALL: 'ALL', CURRENT_AND_FUTURE: 'CURRENT_AND_FUTURE' },
             StatusEnum: { ACTIVE: 'ACTIVE', INACTIVE: 'INACTIVE' },

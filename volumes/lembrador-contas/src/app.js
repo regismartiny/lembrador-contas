@@ -18,7 +18,7 @@ import htmlparser from './routes/htmlparser.js';
 import auth from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { cloudflareAuth } from './middleware/cfAccess.js';
-import { doubleCsrfProtection, generateToken } from './middleware/csrf.js';
+import { doubleCsrfProtectionWithSkip as doubleCsrfProtection, generateToken } from './middleware/csrf.js';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
