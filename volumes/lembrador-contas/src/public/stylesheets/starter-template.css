@@ -220,7 +220,8 @@ select.form-control {
 .table tbody td { color: var(--text-primary); }
 
 /* ===== Bootstrap 4 Form Controls ===== */
-.form-control {
+.form-control,
+.form-control-sm {
   background-color: var(--bg-input);
   color: var(--text-primary);
   border: 1.5px solid var(--border);
