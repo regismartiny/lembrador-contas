@@ -30,30 +30,6 @@ mock.module('jose', () => ({
         throw new Error('Invalid token');
     }
 }));
-mock.module('jose', () => ({
-    createRemoteJWKSet: () => ({
-        // Mock JWKS that will be used by jwtVerify
-    }),
-    jwtVerify: async (token, jwks, options) => {
-        // Mock JWT verification - return different payloads based on token
-        if (token === 'admin-token') {
-            return {
-                payload: {
-                    email: 'admin@example.com',
-                    // Cloudflare admin user
-                }
-            };
-        } else if (token === 'user-token') {
-            return {
-                payload: {
-                    email: 'user@example.com',
-                    // Cloudflare regular user
-                }
-            };
-        }
-        throw new Error('Invalid token');
-    }
-}));
 
 // Test the authentication logic by simulating the middleware behavior
 describe('Authentication Logic Tests', () => {
