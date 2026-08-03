@@ -32,6 +32,22 @@ describe('getSum', () => {
 // groupByPaymentType
 // ---------------------------------------------------------------------------
 
+describe('logger formatting', () => {
+    test('includes additional values in the logged message', async () => {
+        const { formatLogMessage } = await import('../util/logger.js');
+        const periods = [{ month: 0, year: 2024 }];
+        expect(formatLogMessage('Processing bills for periods', periods)).toBe('Processing bills for periods [{"month":0,"year":2024}]');
+    });
+
+    test('formats Error instances with their message', async () => {
+        const { formatLogMessage } = await import('../util/logger.js');
+        const error = new Error('boom');
+        const formatted = formatLogMessage('Failed to process bill', error);
+        expect(formatted).toContain('Failed to process bill');
+        expect(formatted).toContain('boom');
+    });
+});
+
 describe('groupByPaymentType', () => {
     test('returns empty array for an empty bill list', () => {
         expect(billProcessing.groupByPaymentType([])).toEqual([]);

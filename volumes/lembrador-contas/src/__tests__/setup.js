@@ -187,6 +187,20 @@ mock.module('../db.js', () => {
 });
 
 // Mock logger to prevent console output during tests
-mock.module('../util/logger.js', () => ({
-    default: { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} }
-}));
+mock.module('../util/logger.js', () => {
+    const formatLogMessage = (message, ...args) => {
+        if (args.length === 0) return message;
+        const formattedArgs = args.map(arg => {
+            if (arg instanceof Error) return arg.message;
+            if (typeof arg === 'string') return arg;
+            if (arg === undefined || arg === null) return String(arg);
+            return JSON.stringify(arg);
+        });
+        return `${message} ${formattedArgs.join(' ')}`;
+    };
+
+    return {
+        default: { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} },
+        formatLogMessage,
+    };
+});
