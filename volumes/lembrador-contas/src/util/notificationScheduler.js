@@ -2,7 +2,8 @@ import logger from './logger.js';
 import WebPush from 'web-push';
 
 // Lazy import db to avoid circular dependency with www/app
-const getDb = async () => (await import('./db.js')).default;
+// `db.js` lives in src/, so from src/util this should be ../db.js
+const getDb = async () => (await import('../db.js')).default;
 
 let schedulerInterval = null;
 
