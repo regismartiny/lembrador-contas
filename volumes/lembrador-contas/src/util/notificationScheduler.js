@@ -125,7 +125,7 @@ export async function checkAndNotify(db, reminderDays) {
                 const reminder = new db.BillReminder({
                     title,
                     body,
-                    status: 'Criado',
+                    status: 'CREATED',
                     dueDate: bill.dueDate,
                     daysBeforeDue: reminderDays,
                     activeBill: bill._id,
