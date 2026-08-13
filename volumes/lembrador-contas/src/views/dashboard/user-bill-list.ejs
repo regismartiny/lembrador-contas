@@ -51,7 +51,7 @@ var currentY = currentYear || new Date().getFullYear();
                                     <a href="/dashboard/active-bills/edit/<%= bill._id %>" class="btn btn-sm btn-outline-secondary">Editar</a>
                                     <form action="/dashboard/active-bills/remove/<%= bill._id %>" method="post" style="display:inline">
                                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remover esta conta ativa?')">Remover</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remover esta linha da conta ativa?')">Remover linha</button>
                                     </form>
                                 </div>
                             </td>

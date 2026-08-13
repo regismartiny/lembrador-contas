@@ -121,7 +121,7 @@ router.get('/active-bills/new', requireAdmin, asyncHandler(async function (req, 
 
     res.render('dashboard/active-bill-edit', {
         template,
-        title: 'Nova conta ativa',
+        title: 'Nova linha de conta ativa',
         activeBill: {
             users: [],
             name: '',

@@ -192,7 +192,7 @@ describe('GET /dashboard/active-bills/new', () => {
         const res = await fetch(`${baseUrl}/dashboard/active-bills/new`);
         expect(res.status).toBe(200);
         const html = await res.text();
-        expect(html).toContain('Nova conta ativa');
+        expect(html).toContain('Nova linha de conta ativa');
     });
 });
 
