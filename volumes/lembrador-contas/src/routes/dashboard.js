@@ -50,10 +50,22 @@ router.get('/dashboard-new', asyncHandler(async function (req, res) {
 router.get('/user-bill-list', asyncHandler(async function (req, res) {
     let userId = req.query.userId
     let periodFilter = req.query.periodFilter
+    const sessionEmail = req.session?.email || ''
+    const currentUser = sessionEmail ? await db.User.findOne({ email: sessionEmail }).lean() : null
+    const isAdmin = !!currentUser?.admin
 
     if (!userId || userId == 'null') {
         let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
-        res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData: {}, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, currentMonth: prev.getMonth() + 1, currentYear: prev.getFullYear() })
+        res.render('dashboard/user-bill-list', {
+            template,
+            title: 'Demonstrativo mensal',
+            userBillsData: {},
+            activeBillStatusEnum: db.ActiveBillStatusEnum,
+            paymentTypeEnum: db.PaymentTypeEnum,
+            currentMonth: prev.getMonth() + 1,
+            currentYear: prev.getFullYear(),
+            isAdmin,
+        })
         return
     }
 
@@ -91,7 +103,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     })
 
     if (periodFilter == 'ALL') {
-        renderUserBillListPage(res, userBillsData)
+        renderUserBillListPage(res, userBillsData, isAdmin)
     } else {
         // Default: CURRENT_AND_FUTURE — show only previous month and future bills
         let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
@@ -104,7 +116,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
             return (month >= activeMonth && (year >= activeYear || year > activeYear))
         })
 
-        renderUserBillListPage(res, userBillsData)
+        renderUserBillListPage(res, userBillsData, isAdmin)
     }
 }));
 
@@ -223,10 +235,19 @@ router.post('/paybill/:id', requireAdmin, validateObjectId('id'), asyncHandler(a
     res.redirect('/dashboard')
 }));
 
-function renderUserBillListPage(res, userBillsData) {
+function renderUserBillListPage(res, userBillsData, isAdmin = false) {
     let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
     logger.info("userBillsData", userBillsData);
-    res.render('dashboard/user-bill-list', { template, title: 'Demonstrativo mensal', userBillsData, activeBillStatusEnum: db.ActiveBillStatusEnum, paymentTypeEnum: db.PaymentTypeEnum, currentMonth: prev.getMonth() + 1, currentYear: prev.getFullYear() })
+    res.render('dashboard/user-bill-list', {
+        template,
+        title: 'Demonstrativo mensal',
+        userBillsData,
+        activeBillStatusEnum: db.ActiveBillStatusEnum,
+        paymentTypeEnum: db.PaymentTypeEnum,
+        currentMonth: prev.getMonth() + 1,
+        currentYear: prev.getFullYear(),
+        isAdmin,
+    })
 }
 
 export default router

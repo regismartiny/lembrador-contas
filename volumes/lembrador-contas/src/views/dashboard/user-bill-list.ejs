@@ -3,6 +3,7 @@
      <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
  <% } %>
  <%
+var isAdminUser = !!isAdmin;
 var monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function formatMonth(m) {
     var parts = m.split('/');
@@ -23,9 +24,11 @@ var currentY = currentYear || new Date().getFullYear();
             <h2 class="month-title"><%= formatMonth(data.month) %></h2>
             <span class="month-total">Total: <strong class="money"><%= Number(data.totalValue).toFixed(2) %></strong></span>
         </div>
+        <% if (isAdminUser) { %>
         <div class="d-flex justify-content-end mb-2">
             <a href="/dashboard/active-bills/new" class="btn btn-primary btn-sm">Adicionar linha</a>
         </div>
+        <% } %>
         <div class="payment-badges">
             <% data.paymentTypeSummaries?.forEach(function(summary){ %>
                 <span class="badge badge-secondary">
@@ -49,6 +52,7 @@ var currentY = currentYear || new Date().getFullYear();
                             <td><%= bill.name %></td>
                             <td class="d-none d-sm-table-cell"><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
                             <td><span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span></td>
+                            <% if (isAdminUser) { %>
                             <td class="text-right">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a href="/dashboard/active-bills/edit/<%= bill._id %>" class="btn btn-sm btn-outline-secondary">Editar</a>
@@ -58,6 +62,9 @@ var currentY = currentYear || new Date().getFullYear();
                                     </form>
                                 </div>
                             </td>
+                            <% } else { %>
+                            <td class="text-right text-muted small">Somente admin</td>
+                            <% } %>
                         </tr>
                     <%})%>
                 </tbody>

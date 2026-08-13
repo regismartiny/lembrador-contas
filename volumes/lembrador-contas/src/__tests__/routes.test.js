@@ -240,6 +240,34 @@ describe('POST /dashboard/active-bills/remove/:id', () => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /dashboard/user-bill-list — admin-only actions
+// ---------------------------------------------------------------------------
+
+describe('GET /dashboard/user-bill-list', () => {
+    test('hides edit controls for non-admin users', async () => {
+        const validUserId = '507f1f77bcf86cd799439012';
+        mockData.activeBills = [{
+            _id: '507f1f77bcf86cd799439011',
+            users: [{ _id: validUserId, name: 'Admin User' }],
+            name: 'Internet',
+            dueDate: new Date('2026-08-10T00:00:00Z'),
+            value: 125.5,
+            icon: 'fa-wifi',
+            status: 'UNPAID',
+            paymentType: 'PIX',
+            referencePeriod: '08/2026'
+        }];
+        mockData.users = [{ _id: validUserId, name: 'Admin User', email: 'user@example.com', status: 'ACTIVE' }];
+
+        const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${validUserId}&periodFilter=CURRENT_AND_FUTURE`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).not.toContain('Adicionar linha');
+        expect(html).not.toContain('Editar');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // POST /dashboard/processBills
 // ---------------------------------------------------------------------------
 
