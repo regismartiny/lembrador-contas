@@ -184,6 +184,62 @@ describe('POST /dashboard/active-bills/update', () => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /dashboard/active-bills/new
+// ---------------------------------------------------------------------------
+
+describe('GET /dashboard/active-bills/new', () => {
+    test('renders a form to create a new active bill', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/new`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('Nova conta ativa');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// POST /dashboard/active-bills/add
+// ---------------------------------------------------------------------------
+
+describe('POST /dashboard/active-bills/add', () => {
+    test('creates a new active bill and redirects to the dashboard', async () => {
+        const body = new URLSearchParams({
+            name: 'Energia',
+            dueDate: '2026-08-15',
+            value: '89.90',
+            status: 'UNPAID',
+            paymentType: 'PIX',
+            referencePeriod: '08/2026',
+        });
+
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+            redirect: 'manual',
+        });
+
+        expect(res.status).toBe(302);
+        expect(res.headers.get('location')).toBe('/dashboard');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// POST /dashboard/active-bills/remove/:id
+// ---------------------------------------------------------------------------
+
+describe('POST /dashboard/active-bills/remove/:id', () => {
+    test('deletes an active bill and redirects to the dashboard', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/remove/507f1f77bcf86cd799439011`, {
+            method: 'POST',
+            redirect: 'manual',
+        });
+
+        expect(res.status).toBe(302);
+        expect(res.headers.get('location')).toBe('/dashboard');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // POST /dashboard/processBills
 // ---------------------------------------------------------------------------
 

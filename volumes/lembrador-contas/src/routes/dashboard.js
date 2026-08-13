@@ -115,6 +115,50 @@ router.post('/processBills', requireAdmin, asyncHandler(async function (req, res
     res.json({ success: true })
 }));
 
+/* GET New ActiveBill page. */
+router.get('/active-bills/new', requireAdmin, asyncHandler(async function (req, res) {
+    const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
+
+    res.render('dashboard/active-bill-edit', {
+        template,
+        title: 'Nova conta ativa',
+        activeBill: {
+            users: [],
+            name: '',
+            dueDate: '',
+            value: '',
+            icon: '',
+            status: 'UNPAID',
+            paymentType: 'PIX',
+            referencePeriod: new Date().toISOString().slice(0, 7).replace('-', '/'),
+        },
+        activeUsers,
+        activeBillStatusEnum: db.ActiveBillStatusEnum,
+        paymentTypeEnum: db.PaymentTypeEnum,
+        isNew: true,
+    })
+}));
+
+/* POST Add ActiveBill. */
+router.post('/active-bills/add', requireAdmin, asyncHandler(async function (req, res) {
+    const { name, dueDate, value, status, paymentType, referencePeriod, icon } = req.body
+    const users = Array.isArray(req.body.users) ? req.body.users : req.body.users ? [req.body.users] : []
+
+    const activeBill = new db.ActiveBill({
+        users,
+        name,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        value: value !== '' ? Number(value) : undefined,
+        icon,
+        status: status || 'UNPAID',
+        paymentType: paymentType || 'PIX',
+        referencePeriod: referencePeriod || `${new Date().getMonth() + 1}/${new Date().getFullYear()}`,
+    })
+    await activeBill.save()
+
+    res.redirect('/dashboard')
+}));
+
 /* GET ActiveBill edit page. */
 router.get('/active-bills/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
     const [activeBill, activeUsers] = await Promise.all([
@@ -133,6 +177,7 @@ router.get('/active-bills/edit/:id', requireAdmin, validateObjectId('id'), async
         activeUsers,
         activeBillStatusEnum: db.ActiveBillStatusEnum,
         paymentTypeEnum: db.PaymentTypeEnum,
+        isNew: false,
     })
 }));
 
@@ -157,6 +202,12 @@ router.post('/active-bills/update', requireAdmin, asyncHandler(async function (r
         { new: true }
     )
 
+    res.redirect('/dashboard')
+}));
+
+/* POST Remove ActiveBill. */
+router.post('/active-bills/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    await db.ActiveBill.findOneAndDelete({ _id: req.params.id })
     res.redirect('/dashboard')
 }));
 

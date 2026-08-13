@@ -47,7 +47,13 @@ var currentY = currentYear || new Date().getFullYear();
                             <td class="d-none d-sm-table-cell"><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
                             <td><span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span></td>
                             <td class="text-right">
-                                <a href="/dashboard/active-bills/edit/<%= bill._id %>" class="btn btn-sm btn-outline-secondary">Editar</a>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="/dashboard/active-bills/edit/<%= bill._id %>" class="btn btn-sm btn-outline-secondary">Editar</a>
+                                    <form action="/dashboard/active-bills/remove/<%= bill._id %>" method="post" style="display:inline">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remover esta conta ativa?')">Remover</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     <%})%>

@@ -84,6 +84,14 @@ mock.module('../db.js', () => {
             else mockData.activeBills.push(next);
             return makeQuery(next);
         }
+        static findOneAndDelete(query) {
+            const idx = mockData.activeBills.findIndex(x => x._id?.toString?.() === query?._id?.toString?.());
+            if (idx >= 0) {
+                const [deleted] = mockData.activeBills.splice(idx, 1);
+                return makeQuery(deleted || null);
+            }
+            return makeQuery(null);
+        }
         static deleteMany()             { return makeQuery({ deletedCount: 0 }); }
         static collection = { createIndex: () => Promise.resolve() };
     }
