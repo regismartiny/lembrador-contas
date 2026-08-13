@@ -660,3 +660,8 @@ html.light-theme .navbar-toggler-icon {
     font-size: 1rem;
   }
 }
+
+/* Edit mode visibility toggle */
+.hidden-edit-mode {
+  display: none !important;
+}

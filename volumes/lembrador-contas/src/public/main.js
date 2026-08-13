@@ -189,16 +189,15 @@ window.updateEditModeUI = function() {
        toggleBtn.textContent = isEditMode ? 'Desabilitar edição' : 'Habilitar edição';
    }
    
-   // Show/hide edit action buttons and add button
-   const editActions = document.querySelectorAll('.edit-actions');
-   const addButtons = document.querySelectorAll('.add-button-container');
+   // Show/hide edit action buttons and add button using class toggle
+   const hiddenElements = document.querySelectorAll('.hidden-edit-mode');
    
-   editActions.forEach(element => {
-       element.style.display = isEditMode ? 'table-cell' : 'none';
-   });
-   
-   addButtons.forEach(element => {
-       element.style.display = isEditMode ? 'flex' : 'none';
+   hiddenElements.forEach(element => {
+       if (isEditMode) {
+           element.classList.remove('hidden-edit-mode');
+       } else {
+           element.classList.add('hidden-edit-mode');
+       }
    });
 };
 
