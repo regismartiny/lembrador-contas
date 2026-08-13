@@ -8,10 +8,10 @@ async function processBills(bills, selectedPeriods) {
     logger.info("Processing bills for periods:", periods)
 
     //delete previously processed bills of current periods
-    const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
-    await db.ActiveBill.deleteMany({referencePeriod: {$in: referencePeriods}}).catch((err) => {
-        logger.error("Error deleting previous active bills", err)
-    })
+    // const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
+    // await db.ActiveBill.deleteMany({referencePeriod: {$in: referencePeriods}}).catch((err) => {
+    //     logger.error("Error deleting previous active bills", err)
+    // })
 
     let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
     let billsSourceApi = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.API)
@@ -49,13 +49,20 @@ async function getDefaultPeriods(billsSourceTable) {
     ]
 
     if (billsSourceTable && billsSourceTable.length > 0) {
+        // Only include periods that are the previous month, current month or in the future
+        const cutoffYear = previousMonthDate.getFullYear()
+        const cutoffMonth = previousMonthDate.getMonth()
         for (const bill of billsSourceTable) {
             let table = await db.Table.findById(bill.valueSourceId).lean().catch(() => null)
             if (!table || !table.data) continue
             for (const data of table.data) {
                 if (data.period && data.period.month && data.period.year) {
                     const month0 = data.period.month - 1
-                    periods.push({ month: month0, year: data.period.year })
+                    const year = data.period.year
+                    // include only if (year, month0) >= (cutoffYear, cutoffMonth)
+                    if (year > cutoffYear || (year === cutoffYear && month0 >= cutoffMonth)) {
+                        periods.push({ month: month0, year })
+                    }
                 }
             }
         }

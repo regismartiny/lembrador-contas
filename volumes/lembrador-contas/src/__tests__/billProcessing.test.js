@@ -204,10 +204,23 @@ describe('getDefaultPeriods', () => {
 
         const billsSourceTable = [{ name: 'Test Bill', valueSourceId: 'table1' }];
         const periods = await billProcessing.getDefaultPeriods(billsSourceTable);
-        const hasMar2026 = periods.find(p => p.month === 2 && p.year === 2026);
-        const hasApr2026 = periods.find(p => p.month === 3 && p.year === 2026);
-        expect(hasMar2026).toBeDefined();
-        expect(hasApr2026).toBeDefined();
+
+        // Only expect table periods to be included when they are the previous, current or future months
+        const now = new Date();
+        let prevMonth = now.getMonth() - 1;
+        let prevYear = now.getFullYear();
+        if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+
+        for (const d of [{ month: 3, year: 2026 }, { month: 4, year: 2026 }]) {
+            const month0 = d.month - 1;
+            const shouldInclude = (d.year > prevYear) || (d.year === prevYear && month0 >= prevMonth);
+            const found = periods.find(p => p.month === month0 && p.year === d.year);
+            if (shouldInclude) {
+                expect(found).toBeDefined();
+            } else {
+                expect(found).toBeUndefined();
+            }
+        }
 
         mockData.tables.length = 0;
     });
