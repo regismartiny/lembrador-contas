@@ -23,6 +23,9 @@ var currentY = currentYear || new Date().getFullYear();
             <h2 class="month-title"><%= formatMonth(data.month) %></h2>
             <span class="month-total">Total: <strong class="money"><%= Number(data.totalValue).toFixed(2) %></strong></span>
         </div>
+        <div class="d-flex justify-content-end mb-2">
+            <a href="/dashboard/active-bills/new" class="btn btn-primary btn-sm">Adicionar linha</a>
+        </div>
         <div class="payment-badges">
             <% data.paymentTypeSummaries?.forEach(function(summary){ %>
                 <span class="badge badge-secondary">
