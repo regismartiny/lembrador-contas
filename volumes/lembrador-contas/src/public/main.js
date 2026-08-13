@@ -179,16 +179,8 @@ function toggleTheme() {
    }
 }
 
-// Function to toggle edit mode for active bills
-function toggleEditMode() {
-   const currentMode = localStorage.getItem('editMode') === 'true';
-   const newMode = !currentMode;
-   localStorage.setItem('editMode', newMode);
-   updateEditModeUI();
-}
-
 // Function to update the UI based on edit mode state
-function updateEditModeUI() {
+window.updateEditModeUI = function() {
    const isEditMode = localStorage.getItem('editMode') === 'true';
    const toggleBtn = document.getElementById('btn-toggle-edit-mode');
    
@@ -208,9 +200,19 @@ function updateEditModeUI() {
    addButtons.forEach(element => {
        element.style.display = isEditMode ? 'flex' : 'none';
    });
-}
+};
+
+// Function to toggle edit mode for active bills
+window.toggleEditMode = function() {
+   const currentMode = localStorage.getItem('editMode') === 'true';
+   const newMode = !currentMode;
+   localStorage.setItem('editMode', newMode);
+   window.updateEditModeUI();
+};
 
 // Initialize edit mode on page load
 $(document).ready(function() {
-   updateEditModeUI();
+   if (window.updateEditModeUI) {
+       window.updateEditModeUI();
+   }
 });

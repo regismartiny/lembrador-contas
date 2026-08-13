@@ -102,7 +102,9 @@
                         $('#billList').html('<div class="text-center py-5"><div class="spinner-border" role="status" style="color:var(--accent)"><span class="sr-only">Carregando...</span></div></div>');
                         $('#billList').load('/dashboard/user-bill-list/?userId=' + userId + "&periodFilter=" + filter, function() {
                             applyMask();
-                            updateEditModeUI();
+                            if (window.updateEditModeUI) {
+                                window.updateEditModeUI();
+                            }
                         });
                     }
                 </script>
