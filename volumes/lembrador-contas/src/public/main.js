@@ -207,6 +207,11 @@ window.toggleEditMode = function() {
    const newMode = !currentMode;
    localStorage.setItem('editMode', newMode);
    window.updateEditModeUI();
+
+   const billList = document.getElementById('billList');
+   if (billList && typeof window.filterBills === 'function') {
+       window.filterBills();
+   }
 };
 
 // Initialize edit mode on page load
