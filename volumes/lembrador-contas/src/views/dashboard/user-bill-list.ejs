@@ -25,7 +25,7 @@ var currentY = currentYear || new Date().getFullYear();
             <span class="month-total">Total: <strong class="money"><%= Number(data.totalValue).toFixed(2) %></strong></span>
         </div>
         <% if (isAdminUser) { %>
-        <div class="d-flex justify-content-end mb-2">
+        <div class="d-flex justify-content-end mb-2 add-button-container" style="display:none">
             <a href="/dashboard/active-bills/new" class="btn btn-primary btn-sm">Adicionar linha</a>
         </div>
         <% } %>
@@ -53,7 +53,7 @@ var currentY = currentYear || new Date().getFullYear();
                             <td class="d-none d-sm-table-cell"><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
                             <td><span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span></td>
                             <% if (isAdminUser) { %>
-                            <td class="text-right">
+                            <td class="text-right edit-actions" style="display:none">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a href="/dashboard/active-bills/edit/<%= bill._id %>" class="btn btn-sm btn-outline-secondary">Editar</a>
                                     <form action="/dashboard/active-bills/remove/<%= bill._id %>" method="post" style="display:inline">

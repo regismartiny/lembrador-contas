@@ -178,3 +178,39 @@ function toggleTheme() {
        localStorage.setItem('theme', 'dark-theme');
    }
 }
+
+// Function to toggle edit mode for active bills
+function toggleEditMode() {
+   const currentMode = localStorage.getItem('editMode') === 'true';
+   const newMode = !currentMode;
+   localStorage.setItem('editMode', newMode);
+   updateEditModeUI();
+}
+
+// Function to update the UI based on edit mode state
+function updateEditModeUI() {
+   const isEditMode = localStorage.getItem('editMode') === 'true';
+   const toggleBtn = document.getElementById('btn-toggle-edit-mode');
+   
+   // Update button text
+   if (toggleBtn) {
+       toggleBtn.textContent = isEditMode ? 'Desabilitar edição' : 'Habilitar edição';
+   }
+   
+   // Show/hide edit action buttons and add button
+   const editActions = document.querySelectorAll('.edit-actions');
+   const addButtons = document.querySelectorAll('.add-button-container');
+   
+   editActions.forEach(element => {
+       element.style.display = isEditMode ? 'table-cell' : 'none';
+   });
+   
+   addButtons.forEach(element => {
+       element.style.display = isEditMode ? 'flex' : 'none';
+   });
+}
+
+// Initialize edit mode on page load
+$(document).ready(function() {
+   updateEditModeUI();
+});
