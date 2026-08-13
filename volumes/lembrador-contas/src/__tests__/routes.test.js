@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import http from 'http';
+import { mockData } from './setup.js';
 
 // db.js and logger.js are mocked globally via src/__tests__/setup.js (bunfig.toml preload).
 // APP_PASSWORD is unset so requireAuth calls next() immediately.
@@ -124,6 +125,61 @@ describe('POST /bills/add', () => {
             body: body.toString(),
         });
         expect(res.status).toBe(400);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// GET /dashboard/active-bills/edit/:id
+// ---------------------------------------------------------------------------
+
+describe('GET /dashboard/active-bills/edit/:id', () => {
+    test('renders the active bill editor for an existing record', async () => {
+        mockData.activeBills = [{
+            _id: '507f1f77bcf86cd799439011',
+            users: [{ _id: '1', name: 'Admin User' }],
+            name: 'Internet',
+            dueDate: new Date('2026-08-10T00:00:00Z'),
+            value: 125.5,
+            icon: 'fa-wifi',
+            status: 'UNPAID',
+            paymentType: 'PIX',
+            referencePeriod: '08/2026'
+        }];
+        mockData.users = [{ _id: '1', name: 'Admin User', email: 'admin@example.com', status: 'ACTIVE' }];
+
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/edit/507f1f77bcf86cd799439011`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('Edição de conta');
+        expect(html).toContain('Internet');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// POST /dashboard/active-bills/update
+// ---------------------------------------------------------------------------
+
+describe('POST /dashboard/active-bills/update', () => {
+    test('redirects back to the dashboard after updating an active bill', async () => {
+        const body = new URLSearchParams({
+            id: '507f1f77bcf86cd799439011',
+            name: 'Internet',
+            dueDate: '2026-08-10',
+            value: '125.50',
+            status: 'PAID',
+            paymentType: 'PIX',
+            referencePeriod: '08/2026',
+        });
+
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+            redirect: 'manual',
+        });
+
+        expect(res.status).toBe(302);
+        expect(res.headers.get('location')).toBe('/dashboard');
     });
 });
 

@@ -1,0 +1,76 @@
+<%- include ('../partials/header.ejs') %>
+
+<body>
+    <%- template.navbar %>
+    <div class="container">
+        <div class="starter-template">
+            <h1 class="title-1"><%= title %></h1>
+            <br>
+
+            <form action="/dashboard/active-bills/update" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="id" value="<%= activeBill._id %>">
+
+                <div class="form-group">
+                    <label for="users">Usuários</label>
+                    <select class="form-control" name="users" id="users" multiple>
+                        <% activeUsers.forEach(function(user){ %>
+                            <option value="<%= user._id %>" <%= (activeBill.users || []).some(u => u._id?.toString() === user._id.toString()) ? 'selected' : '' %>><%= user.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Nome</label>
+                    <input type="text" class="form-control" id="name" name="name" value="<%= activeBill.name %>" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="dueDate">Data de vencimento</label>
+                    <input type="date" class="form-control" id="dueDate" name="dueDate" value="<%= activeBill.dueDate ? new Date(activeBill.dueDate).toISOString().slice(0, 10) : '' %>">
+                </div>
+
+                <div class="form-group">
+                    <label for="value">Valor</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="value" name="value" value="<%= activeBill.value ?? '' %>">
+                </div>
+
+                <div class="form-group">
+                    <label for="icon">Ícone</label>
+                    <input type="text" class="form-control" id="icon" name="icon" value="<%= activeBill.icon || '' %>">
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Situação</label>
+                    <select name="status" class="form-control" id="status">
+                        <% Object.keys(activeBillStatusEnum).forEach(function(statusKey){ %>
+                            <option value="<%= statusKey %>" <%= activeBill.status === statusKey ? 'selected' : '' %>><%= activeBillStatusEnum[statusKey] %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentType">Tipo de pagamento</label>
+                    <select name="paymentType" class="form-control" id="paymentType">
+                        <% Object.keys(paymentTypeEnum).forEach(function(paymentKey){ %>
+                            <option value="<%= paymentKey %>" <%= activeBill.paymentType === paymentKey ? 'selected' : '' %>><%= paymentTypeEnum[paymentKey] %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="referencePeriod">Período de referência</label>
+                    <input type="text" class="form-control" id="referencePeriod" name="referencePeriod" value="<%= activeBill.referencePeriod || '' %>" required>
+                </div>
+
+                <br>
+                <div class="form-group-btn">
+                    <input type="submit" class="btn btn-primary center-block" value="Salvar" />
+                    <a href="/dashboard" class="btn btn-secondary center-block">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <%- template.scripts %>
+</body>
+</html>

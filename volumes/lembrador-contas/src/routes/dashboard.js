@@ -115,6 +115,51 @@ router.post('/processBills', requireAdmin, asyncHandler(async function (req, res
     res.json({ success: true })
 }));
 
+/* GET ActiveBill edit page. */
+router.get('/active-bills/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
+    const [activeBill, activeUsers] = await Promise.all([
+        db.ActiveBill.findById(req.params.id).lean(),
+        db.User.find({ status: 'ACTIVE' }).lean()
+    ])
+
+    if (!activeBill) {
+        return res.status(404).render('error', { message: 'Conta ativa não encontrada.' })
+    }
+
+    res.render('dashboard/active-bill-edit', {
+        template,
+        title: 'Edição de conta',
+        activeBill,
+        activeUsers,
+        activeBillStatusEnum: db.ActiveBillStatusEnum,
+        paymentTypeEnum: db.PaymentTypeEnum,
+    })
+}));
+
+/* POST update ActiveBill. */
+router.post('/active-bills/update', requireAdmin, asyncHandler(async function (req, res) {
+    const { id, name, dueDate, value, status, paymentType, referencePeriod, icon } = req.body
+    const users = Array.isArray(req.body.users) ? req.body.users : req.body.users ? [req.body.users] : []
+
+    await db.ActiveBill.findOneAndUpdate(
+        { _id: id },
+        { $set: {
+            users,
+            name,
+            dueDate: dueDate ? new Date(dueDate) : undefined,
+            value: value !== '' ? Number(value) : undefined,
+            icon,
+            status,
+            paymentType,
+            referencePeriod,
+            updated_at: new Date(),
+        } },
+        { new: true }
+    )
+
+    res.redirect('/dashboard')
+}));
+
 /* Delete processed bills. */
 router.post('/deleteProcessed', requireAdmin, asyncHandler(async function (req, res) {
     await db.ActiveBill.deleteMany({}).lean()

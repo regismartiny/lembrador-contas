@@ -76,8 +76,14 @@ mock.module('../db.js', () => {
         constructor(data) { Object.assign(this, data); }
         save() { return Promise.resolve(this); }
         static find()                   { return makeQuery(mockData.activeBills); }
-        static findById()               { return makeQuery(null); }
-        static findOneAndUpdate()       { return makeQuery(null); }
+        static findById(id)             { const bill = mockData.activeBills.find(x => x._id === id || x._id?.toString?.() === id.toString?.()); return makeQuery(bill || null); }
+        static findOneAndUpdate(query, update) {
+            const existing = mockData.activeBills.find(x => x._id?.toString?.() === query?._id?.toString?.() || x.name === query?.name);
+            const next = { ...(existing || {}), ...(update?.$set || {}), _id: existing?._id || query?._id || 'mock-active-bill-id' };
+            if (existing) Object.assign(existing, next);
+            else mockData.activeBills.push(next);
+            return makeQuery(next);
+        }
         static deleteMany()             { return makeQuery({ deletedCount: 0 }); }
         static collection = { createIndex: () => Promise.resolve() };
     }
