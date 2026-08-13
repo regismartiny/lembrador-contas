@@ -69,6 +69,11 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
         return
     }
 
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        renderUserBillListPage(res, { user: userId, billListPerMonth: [] }, isAdmin)
+        return
+    }
+
     const mongoUserId = new mongoose.Types.ObjectId(userId)
     const activeBills = await db.ActiveBill.find({ users: mongoUserId }).lean()
     logger.info('activeBills', activeBills)

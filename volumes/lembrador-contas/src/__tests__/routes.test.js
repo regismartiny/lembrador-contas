@@ -265,6 +265,13 @@ describe('GET /dashboard/user-bill-list', () => {
         expect(html).not.toContain('Adicionar linha');
         expect(html).not.toContain('Editar');
     });
+
+    test('returns an empty list for invalid user ids instead of crashing', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=invalid-value&periodFilter=CURRENT_AND_FUTURE`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('Nenhuma conta encontrada');
+    });
 });
 
 // ---------------------------------------------------------------------------
