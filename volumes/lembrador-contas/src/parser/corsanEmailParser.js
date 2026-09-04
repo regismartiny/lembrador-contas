@@ -142,7 +142,7 @@ async function downloadPDF(url) {
                             }
                             
                             // Check if this is the API response with PDF data
-                            if (responseUrl.includes('/fatura-eletronica/download') && contentType.includes('application/json')) {
+                            if (responseUrl.includes('/fatura-eletronica/download')) {
                                 try {
                                     const text = buffer.toString('utf-8');
                                     const json = JSON.parse(text);

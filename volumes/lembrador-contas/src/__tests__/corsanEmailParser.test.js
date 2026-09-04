@@ -4,6 +4,8 @@ import { mock, describe, test, expect, beforeEach, afterEach } from 'bun:test';
 let _responseHandler = null;
 let _mockPdfBuffer = null;
 let _nextPdfData = null;
+let _mockResponse = null;
+let _parsedPdfBuffer = null;
 
 mock.module('puppeteer', () => ({
     default: {
@@ -19,7 +21,7 @@ mock.module('puppeteer', () => ({
                     goto: mock(async (url) => {
                         // Simulate a PDF response by calling the registered response handler
                         return new Promise(resolve => {
-                            const fakeResponse = {
+                            const fakeResponse = _mockResponse || {
                                 url: () => url,
                                 status: () => 200,
                                 headers: () => ({ 'content-type': 'application/pdf' }),
@@ -125,17 +127,32 @@ function makeMessage(html) {
 // Set the PDF data that will be returned by the injected parser mock
 function setNextPdfData(pdfData) {
     // Inject a custom parser that returns our test data
-    setParsePDFBuffer(() => Promise.resolve(pdfData));
+    setParsePDFBuffer(buffer => {
+        _parsedPdfBuffer = Buffer.from(buffer);
+        return Promise.resolve(pdfData);
+    });
 }
 
 // Reset the parser back to default (for cleanup between tests)
 function resetParser() {
     setParsePDFBuffer(null);
+    _parsedPdfBuffer = null;
 }
 
 // Helper to create a fake PDF response for global fetch (no longer used, kept for compatibility)
 function mockFetchSuccess() {
     // No-op - puppeteer is mocked instead
+}
+
+function mockAegeaJsonResponse(pdfBuffer) {
+    _mockResponse = {
+        url: () => 'https://api.aegea.com.br/external/agencia-virtual/app/v1/publico/fatura-eletronica/download',
+        status: () => 200,
+        headers: () => ({}),
+        buffer: mock(() => Promise.resolve(Buffer.from(JSON.stringify({
+            content: { bytes: pdfBuffer.toString('base64') }
+        })))),
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -271,6 +288,7 @@ describe('corsanEmailParser.fetch', () => {
     afterEach(() => {
         // Clean up - reset parser back to default
         resetParser();
+        _mockResponse = null;
     });
 
     test('returns parsed data for a valid email with PDF', async () => {
@@ -306,6 +324,20 @@ describe('corsanEmailParser.fetch', () => {
         expect(result).toHaveLength(1);
         expect(result[0].value).toBe(75.63);
         expect(result[0].referencePeriod).toBe('04/2026');
+    });
+
+    test('parses PDF bytes from Aegea JSON response without content type', async () => {
+        mockGetMessages.mockImplementationOnce(() =>
+            Promise.resolve([makeMessage('<a href="https://cliente.aegea.com.br/fatura-eletronica/download?u=corsanweb&amp;nf=203064644&amp;k=test">Clique aqui para ver sua fatura</a>')])
+        );
+        mockAegeaJsonResponse(Buffer.from('%PDF-1.4 fake'));
+        setNextPdfData(PDF_FIXTURE_WITH_TOTAL);
+
+        const result = await corsanFetch('corsan@corsan.com.br', 'Conta de água', period);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].value).toBe(95);
+        expect(_parsedPdfBuffer.toString('ascii')).toBe('%PDF-1.4 fake');
     });
 
     test('returns empty array when no messages are found', async () => {
