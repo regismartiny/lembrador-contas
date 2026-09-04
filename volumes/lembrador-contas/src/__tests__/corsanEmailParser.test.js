@@ -6,6 +6,8 @@ let _mockPdfBuffer = null;
 let _nextPdfData = null;
 let _mockResponse = null;
 let _parsedPdfBuffer = null;
+let _mockEvaluateResult = null;
+let _evaluatedEndpoint = null;
 
 mock.module('puppeteer', () => ({
     default: {
@@ -14,7 +16,10 @@ mock.module('puppeteer', () => ({
             newPage: mock(() => {
                 const mockPage = {
                     setUserAgent: mock(() => Promise.resolve()),
-                    evaluate: mock(() => Promise.resolve([])),
+                    evaluate: mock((_, endpoint) => {
+                        if (endpoint) _evaluatedEndpoint = endpoint;
+                        return Promise.resolve(endpoint ? _mockEvaluateResult : []);
+                    }),
                     on: mock((event, handler) => {
                         if (event === 'response') _responseHandler = handler;
                     }),
@@ -109,6 +114,15 @@ const PDF_FIXTURE_NO_VENCIMENT = makePDFData([
     [5, 30, '50,00'],
 ]);
 
+const PDF_FIXTURE_AEGEA_LAYOUT = makePDFData([
+    [504, 755.92, 'TOTAL A PAGAR'],
+    [505, 741.54, 'R$ 82,97'],
+    [504, 755.92, 'VENCIMENTO'],
+    [505, 704.54, '30/08/2026'],
+    [327, 755.92, 'REFERÊNCIA'],
+    [326, 741.54, '08/2026'],
+]);
+
 // ---------------------------------------------------------------------------
 // Helper to simulate message with HTML in parts
 // ---------------------------------------------------------------------------
@@ -145,14 +159,14 @@ function mockFetchSuccess() {
 }
 
 function mockAegeaJsonResponse(pdfBuffer) {
+    const body = JSON.stringify({ content: { bytes: pdfBuffer.toString('base64') } });
     _mockResponse = {
         url: () => 'https://api.aegea.com.br/external/agencia-virtual/app/v1/publico/fatura-eletronica/download',
         status: () => 200,
         headers: () => ({}),
-        buffer: mock(() => Promise.resolve(Buffer.from(JSON.stringify({
-            content: { bytes: pdfBuffer.toString('base64') }
-        })))),
+        buffer: mock(() => Promise.reject(new Error('Could not load body for this request'))),
     };
+    _mockEvaluateResult = { status: 200, body };
 }
 
 // ---------------------------------------------------------------------------
@@ -192,6 +206,38 @@ describe('corsanEmailParser.extractTotalFromPDF', () => {
     test('throws when TOTAL (R$) is not found', () => {
         expect(() => extractTotalFromPDF(PDF_FIXTURE_NO_TOTAL)).toThrow('TOTAL (R$) not found');
     });
+
+    test('extracts total from the current Aegea layout', () => {
+        expect(extractTotalFromPDF(PDF_FIXTURE_AEGEA_LAYOUT)).toBe(82.97);
+    });
+
+    test('extracts totals with Brazilian thousands separators', () => {
+        const pdfData = makePDFData([[1, 10, 'TOTAL A PAGAR'], [5, 10, 'R$ 1.234,56']]);
+        expect(extractTotalFromPDF(pdfData)).toBe(1234.56);
+    });
+
+    test('preserves dot-decimal totals', () => {
+        const pdfData = makePDFData([[1, 10, 'TOTAL (R$) 95.00']]);
+        expect(extractTotalFromPDF(pdfData)).toBe(95);
+    });
+
+    test('extracts thousands-separated totals inline without currency prefix', () => {
+        const pdfData = makePDFData([[1, 10, 'TOTAL A PAGAR 1.234,56']]);
+        expect(extractTotalFromPDF(pdfData)).toBe(1234.56);
+    });
+
+    test('ignores subtotal labels', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'SUBTOTAL A PAGAR 12,00'],
+            [1, 20, 'TOTAL A PAGAR 82,97'],
+        ]);
+        expect(extractTotalFromPDF(pdfData)).toBe(82.97);
+    });
+
+    test('ignores labels containing the invoice total text', () => {
+        const pdfData = makePDFData([[1, 10, 'NAO TOTAL A PAGAR 12,00']]);
+        expect(() => extractTotalFromPDF(pdfData)).toThrow('TOTAL (R$) not found');
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -221,6 +267,14 @@ describe('corsanEmailParser.extractDueDateFromPDF', () => {
     test('returns null when Vencimento is not found', () => {
         const result = extractDueDateFromPDF(PDF_FIXTURE_NO_VENCIMENT);
         expect(result).toBeNull();
+    });
+
+    test('extracts due date from the current Aegea layout', () => {
+        const result = extractDueDateFromPDF(PDF_FIXTURE_AEGEA_LAYOUT);
+        expect(result).toBeInstanceOf(Date);
+        expect(result.getDate()).toBe(30);
+        expect(result.getMonth()).toBe(7);
+        expect(result.getFullYear()).toBe(2026);
     });
 });
 
@@ -270,6 +324,18 @@ describe('corsanEmailParser.extractReferencePeriodFromPDF', () => {
         const result = extractReferencePeriodFromPDF(pdfData);
         expect(result).toBe('12/2024');
     });
+
+    test('handles October format Out/2024', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'REFERÊNCIA'],
+            [5, 10, 'Out/2024'],
+        ]);
+        expect(extractReferencePeriodFromPDF(pdfData)).toBe('10/2024');
+    });
+
+    test('extracts numeric reference period from the current Aegea layout', () => {
+        expect(extractReferencePeriodFromPDF(PDF_FIXTURE_AEGEA_LAYOUT)).toBe('08/2026');
+    });
 });
 
 const _originalFetch = globalThis.fetch;
@@ -289,6 +355,8 @@ describe('corsanEmailParser.fetch', () => {
         // Clean up - reset parser back to default
         resetParser();
         _mockResponse = null;
+        _mockEvaluateResult = null;
+        _evaluatedEndpoint = null;
     });
 
     test('returns parsed data for a valid email with PDF', async () => {
@@ -338,6 +406,7 @@ describe('corsanEmailParser.fetch', () => {
         expect(result).toHaveLength(1);
         expect(result[0].value).toBe(95);
         expect(_parsedPdfBuffer.toString('ascii')).toBe('%PDF-1.4 fake');
+        expect(_evaluatedEndpoint).toBe('https://api.aegea.com.br/external/agencia-virtual/app/v1/publico/fatura-eletronica/download?u=corsanweb&nf=203064644&k=test');
     });
 
     test('returns empty array when no messages are found', async () => {

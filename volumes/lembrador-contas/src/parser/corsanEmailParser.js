@@ -219,8 +219,34 @@ async function downloadPDF(url) {
                 console.log('Navigation error (may still succeed if PDF was captured):', e.message);
             }
             
-            // Wait for potential delayed downloads
-            await new Promise(r => setTimeout(r, 5000));
+            if (!resolved) {
+                const apiUrl = getAegeaApiUrl(url);
+                if (apiUrl) {
+                    try {
+                        const apiResponse = await page.evaluate(async endpoint => {
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 10000);
+                            try {
+                                const response = await fetch(endpoint, { signal: controller.signal });
+                                return { status: response.status, body: await response.text() };
+                            } finally {
+                                clearTimeout(timeoutId);
+                            }
+                        }, apiUrl);
+
+                        if (apiResponse.status >= 200 && apiResponse.status < 400) {
+                            const pdfData = extractPDFBufferFromApiBody(apiResponse.body);
+                            if (pdfData) {
+                                console.log('PDF decoded from browser API fetch! Size:', pdfData.length);
+                                resolved = true;
+                                resolve(pdfData);
+                            }
+                        }
+                    } catch (e) {
+                        console.log('Error fetching Aegea API response from page:', e.message);
+                    }
+                }
+            }
             
             // If no PDF found yet, try to find download links on the page
             if (!resolved) {
@@ -266,6 +292,39 @@ async function downloadPDF(url) {
     }
 }
 
+function getAegeaApiUrl(url) {
+    try {
+        const parsedUrl = new URL(url);
+        if (
+            parsedUrl.protocol !== 'https:' ||
+            parsedUrl.hostname !== 'cliente.aegea.com.br' ||
+            parsedUrl.port ||
+            parsedUrl.username ||
+            parsedUrl.password
+        ) return null;
+        parsedUrl.hostname = 'api.aegea.com.br';
+        parsedUrl.pathname = `/external/agencia-virtual/app/v1/publico${parsedUrl.pathname}`;
+        return parsedUrl.toString();
+    } catch {
+        return null;
+    }
+}
+
+function extractPDFBufferFromApiBody(body) {
+    try {
+        const json = JSON.parse(body);
+        const encodedPdf = json.content?.bytes || json.dados?.arquivo;
+        if (!encodedPdf) return null;
+
+        const pdfData = Buffer.isBuffer(encodedPdf)
+            ? encodedPdf
+            : Buffer.from(encodedPdf, 'base64');
+        return pdfData.toString('ascii', 0, 5).startsWith('%PDF') ? pdfData : null;
+    } catch {
+        return null;
+    }
+}
+
 async function parsePDFBuffer(buffer) {
     try {
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
@@ -300,14 +359,17 @@ function decodeText(text) {
 }
 
 function extractTotalFromPDF(pdfData) {
-    // Pass 1: inline total — "TOTAL (R$) 150,75" in one text item
+    const amountPattern = '\\d+(?:\\.\\d{3})*[\\.,]\\d{2}';
+    const currencyRegex = new RegExp(`R\\$\\s*(${amountPattern})`);
+    const amountRegex = new RegExp(`(${amountPattern})`);
+
     for (const page of pdfData.Pages) {
         for (const text of page.Texts) {
             const decoded = decodeText(text.R[0].T);
-            if (decoded.toUpperCase().includes('TOTAL') && decoded.includes('R$')) {
-                const match = decoded.match(/(\d+[\.,]\d{2})/);
+            if (isInvoiceTotalLabel(decoded)) {
+                const match = decoded.match(currencyRegex) || decoded.match(amountRegex);
                 if (match) {
-                    return parseFloat(match[1].replace(',', '.'));
+                    return parseBrazilianCurrency(match[1]);
                 }
             }
         }
@@ -319,20 +381,20 @@ function extractTotalFromPDF(pdfData) {
         const totalItems = [];
         for (const text of page.Texts) {
             const decoded = decodeText(text.R[0].T);
-            if (decoded.toUpperCase().includes('TOTAL') && decoded.includes('R$')) {
+            if (isInvoiceTotalLabel(decoded)) {
                 totalY = text.y;
                 totalItems.push(text);
             }
         }
         if (totalY !== null) {
             const candidates = page.Texts.filter(t =>
-                Math.abs(t.y - totalY) < 15 && !totalItems.includes(t)
+                Math.abs(t.y - totalY) < 20 && !totalItems.includes(t)
             );
             for (const candidate of candidates) {
                 const decoded = decodeText(candidate.R[0].T);
-                const match = decoded.match(/^(\d+[\.,]\d{2})$/);
+                const match = decoded.match(currencyRegex) || decoded.match(amountRegex);
                 if (match) {
-                    return parseFloat(match[1].replace(',', '.'));
+                    return parseBrazilianCurrency(match[1]);
                 }
             }
         }
@@ -346,6 +408,17 @@ function extractTotalFromPDF(pdfData) {
         }
     }
     throw new Error('TOTAL (R$) not found in CORSAN PDF');
+}
+
+function parseBrazilianCurrency(value) {
+    const normalized = value.includes(',')
+        ? value.replace(/\./g, '').replace(',', '.')
+        : value;
+    return parseFloat(normalized);
+}
+
+function isInvoiceTotalLabel(value) {
+    return /^\s*TOTAL\s+(?:\(R\$\)|A\s+PAGAR)(?:\s+R\$)?(?:\s+\d+(?:\.\d{3})*[\.,]\d{2})?\s*$/i.test(value);
 }
 
 function extractDueDateFromPDF(pdfData) {
@@ -457,7 +530,7 @@ function extractReferencePeriodFromPDF(pdfData) {
         jun: '06', junio: '06', junho: '06',
         jul: '07', julio: '07', julho: '07',
         ago: '08', agos: '08', agosto: '08',
-        set: '09', sept: '09', out: '09', outubro: '10',
+        set: '09', sept: '09', out: '10', outubro: '10',
         nov: '11', noviembre: '11', novembro: '11',
         dez: '12', dec: '12', diciembre: '12', dezembro: '12'
     };
@@ -474,6 +547,8 @@ function extractReferencePeriodFromPDF(pdfData) {
                     const monthNum = monthMap[monthStr.toLowerCase()];
                     if (monthNum) return `${monthNum}/${year}`;
                 }
+                const numericMatch = decoded.match(/\b(0[1-9]|1[0-2])\/(\d{4})\b/);
+                if (numericMatch) return `${numericMatch[1]}/${numericMatch[2]}`;
                 refY = text.y;
             }
         }
@@ -488,6 +563,8 @@ function extractReferencePeriodFromPDF(pdfData) {
                     const monthNum = monthMap[monthStr.toLowerCase()];
                     if (monthNum) return `${monthNum}/${year}`;
                 }
+                const numericMatch = decoded.match(/\b(0[1-9]|1[0-2])\/(\d{4})\b/);
+                if (numericMatch) return `${numericMatch[1]}/${numericMatch[2]}`;
             }
         }
     }
