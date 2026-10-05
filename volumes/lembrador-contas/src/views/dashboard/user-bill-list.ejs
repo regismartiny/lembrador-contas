@@ -43,7 +43,7 @@ var currentY = currentYear || new Date().getFullYear();
                         <th>Nome</th>
                         <th class="d-none d-sm-table-cell">Venc.</th>
                         <th>Valor</th>
-                        <th class="text-right">Ações</th>
+                        <th class="text-right hidden-edit-mode">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,7 +63,7 @@ var currentY = currentYear || new Date().getFullYear();
                                 </div>
                             </td>
                             <% } else { %>
-                            <td class="text-right text-muted small">Somente admin</td>
+                            <td class="text-right text-muted small hidden-edit-mode">Somente admin</td>
                             <% } %>
                         </tr>
                     <%})%>
