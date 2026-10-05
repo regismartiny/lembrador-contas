@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+.credentials/
+node_modules/
+downloads/
+.git/

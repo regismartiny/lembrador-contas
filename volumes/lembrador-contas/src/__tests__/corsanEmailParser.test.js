@@ -16,6 +16,7 @@ mock.module('puppeteer', () => ({
             newPage: mock(() => {
                 const mockPage = {
                     setUserAgent: mock(() => Promise.resolve()),
+                    setRequestInterception: mock(() => Promise.resolve()),
                     evaluate: mock((_, endpoint) => {
                         if (endpoint) _evaluatedEndpoint = endpoint;
                         return Promise.resolve(endpoint ? _mockEvaluateResult : []);
@@ -186,6 +187,19 @@ describe('corsanEmailParser.extractPDFLink', () => {
     test('returns null for empty HTML', () => {
         const result = extractPDFLink('');
         expect(result).toBeNull();
+    });
+
+    test('rejects invoice links outside approved HTTPS hosts', () => {
+        const unsafeUrls = [
+            'http://corsan.rs.gov.br/fatura/12345',
+            'https://corsan.rs.gov.br.attacker.example/fatura/12345',
+            'https://127.0.0.1/fatura/12345',
+        ];
+
+        for (const unsafeUrl of unsafeUrls) {
+            const html = `<a href="${unsafeUrl}">Clique aqui para ver sua fatura</a>`;
+            expect(extractPDFLink(html)).toBeNull();
+        }
     });
 });
 

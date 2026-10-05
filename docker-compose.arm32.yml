@@ -28,7 +28,7 @@ services:
     build:
       context: ./volumes/lembrador-contas
       dockerfile: Dockerfile
-    command: bun run start
+    command: sh -c 'bun install --frozen-lockfile --production && bun run start'
     working_dir: /root/lembrador-contas
     restart: unless-stopped
     depends_on:

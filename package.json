@@ -1,7 +1,4 @@
 {
-  "dependencies": {
-    "pdfjs-dist": "^3.11.174"
-  },
   "devDependencies": {
     "cross-env": "^10.1.0"
   }

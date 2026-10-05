@@ -1,4 +1,4 @@
-FROM oven/bun:latest
+FROM oven/bun:1.3.5
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -43,9 +43,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /root/lembrador-contas
 
-# Install dependencies at build time
-COPY package.json ./
-RUN bun install
+# Install the locked production dependencies and matching browser at build time
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
+RUN bunx puppeteer browsers install chrome
 
 # Copy source (overridden by volume mount in development, baked-in for production)
 COPY . .

@@ -1,13 +1,22 @@
 lembrador-contas:
   container_name: lembrador-contas
-  image: node:18
-  command: bash -c 'yarn install && npm run startm'
+  image: lembrador-contas:latest
+  build:
+    context: ../../volumes/lembrador-contas
+    dockerfile: Dockerfile
+  command: bun run start
   working_dir: /root/lembrador-contas
   restart: unless-stopped
+  env_file:
+    - ../../.env
+  environment:
+    PORT: "9090"
   ports:
-    - 3000:3000
+    - 3000:9090
+    - 9091:9091
   volumes:
-    - ./volumes/lembrador-contas:/root/lembrador-contas
+    - ../../volumes/lembrador-contas/.credentials:/root/lembrador-contas/.credentials
+    - ../../volumes/lembrador-contas/downloads:/root/lembrador-contas/downloads
   logging:
     driver: json-file
     options:

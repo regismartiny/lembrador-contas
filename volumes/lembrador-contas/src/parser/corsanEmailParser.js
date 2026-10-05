@@ -7,6 +7,11 @@ import fs from 'fs';
 import path from 'path';
 
 const DOWNLOADS_DIR = path.join(process.cwd(), 'downloads');
+const ALLOWED_BILL_HOSTS = new Set([
+    'corsan.rs.gov.br',
+    'cliente.aegea.com.br',
+    'api.aegea.com.br',
+]);
 
 // Allow tests to inject a custom PDF parser (for mocking)
 let _parsePDFBufferFn = null;
@@ -86,10 +91,28 @@ function extractPDFLink(html) {
         a.textContent.includes('Clique aqui para ver sua fatura')
     );
     if (!link) return null;
-    return link.getAttribute('href') || link.href;
+    const href = link.getAttribute('href') || link.href;
+    return isAllowedBillUrl(href) ? new URL(href).href : null;
+}
+
+function isAllowedBillUrl(value) {
+    try {
+        const parsedUrl = new URL(value);
+        return parsedUrl.protocol === 'https:' &&
+            ALLOWED_BILL_HOSTS.has(parsedUrl.hostname) &&
+            !parsedUrl.port &&
+            !parsedUrl.username &&
+            !parsedUrl.password;
+    } catch {
+        return false;
+    }
 }
 
 async function downloadPDF(url) {
+    if (!isAllowedBillUrl(url)) {
+        throw new Error('Blocked PDF URL outside approved domains');
+    }
+
     console.log('CORSAN PDF URL:', url);
     let browser = null;
     try {
@@ -99,6 +122,15 @@ async function downloadPDF(url) {
         });
         
         const page = await browser.newPage();
+        await page.setRequestInterception(true);
+        page.on('request', request => {
+            const requestAction = isAllowedBillUrl(request.url())
+                ? request.continue()
+                : request.abort();
+            requestAction.catch(error => {
+                console.warn('Could not enforce approved PDF request host:', error.message);
+            });
+        });
         
         // Set user agent to avoid blocking
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');

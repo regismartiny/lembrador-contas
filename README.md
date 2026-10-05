@@ -24,7 +24,7 @@ A personal bill-tracking web application. Keeps track of recurring bills, fetche
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) ≥ 1.1.0
+- [Bun](https://bun.sh) ≥ 1.3.5
 - MongoDB instance (local or remote)
 
 ---
