@@ -1,4 +1,4 @@
-import { mock, describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { mock, describe, test, expect, beforeEach, afterEach, afterAll } from 'bun:test';
 
 // Mock puppeteer to avoid real browser navigation in tests
 let _responseHandler = null;
@@ -52,6 +52,10 @@ const mockGetMessages = mock(() => Promise.resolve(null));
 mock.module('../util/emailUtils.js', () => ({
     default: { getMessagesByDateInterval: mockGetMessages }
 }));
+
+afterAll(() => {
+    mock.restore();
+});
 
 // Mock base64Util as identity (so raw HTML passes through)
 mock.module('../util/base64Util.js', () => ({

@@ -1,9 +1,13 @@
-import { mock, describe, test, expect } from 'bun:test';
+import { mock, describe, test, expect, afterAll } from 'bun:test';
 
 // Mock Gmail-dependent modules — db.js and logger.js are handled by setup.js preload
 mock.module('../util/emailUtils.js', () => ({
     default: { getMessagesByDateInterval: mock(() => Promise.resolve(null)) }
 }));
+
+afterAll(() => {
+    mock.restore();
+});
 
 mock.module('../util/base64Util.js', () => ({
     default: {
