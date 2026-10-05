@@ -9,12 +9,7 @@ afterAll(() => {
     mock.restore();
 });
 
-mock.module('../util/base64Util.js', () => ({
-    default: {
-        fixBase64:    mock(s => s),
-        base64ToText: mock(s => s),
-    }
-}));
+const encodeBodyData = (text) => Buffer.from(text, 'utf8').toString('base64');
 
 import { parseHTML, parseEmailData } from '../parser/cpflEmailParser.js';
 
@@ -77,8 +72,7 @@ describe('cpflEmailParser.parseHTML', () => {
 
 describe('cpflEmailParser.parseEmailData', () => {
     test('parses a message object using its body data', () => {
-        // base64Util is mocked as identity functions, so raw HTML flows through
-        const msg = { payload: { body: { data: CPFL_HTML_FIXTURE } } };
+        const msg = { payload: { body: { data: encodeBodyData(CPFL_HTML_FIXTURE) } } };
         const result = parseEmailData(msg);
         expect(result.valor).toBe(150);
         expect(result.vencimento).toBeInstanceOf(Date);

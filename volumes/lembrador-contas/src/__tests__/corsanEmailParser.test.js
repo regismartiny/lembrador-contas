@@ -57,13 +57,7 @@ afterAll(() => {
     mock.restore();
 });
 
-// Mock base64Util as identity (so raw HTML passes through)
-mock.module('../util/base64Util.js', () => ({
-    default: {
-        fixBase64: mock(s => s),
-        base64ToText: mock(s => s),
-    }
-}));
+const encodeBodyData = (text) => Buffer.from(text, 'utf8').toString('base64');
 
 import { fetch as corsanFetch, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer } from '../parser/corsanEmailParser.js';
 
@@ -137,7 +131,7 @@ function makeMessage(html) {
             mimeType: 'multipart/alternative',
             parts: [
                 { mimeType: 'text/plain', body: { data: 'plain text' } },
-                { mimeType: 'text/html', body: { data: html } }
+                { mimeType: 'text/html', body: { data: encodeBodyData(html) } }
             ]
         }
     };
