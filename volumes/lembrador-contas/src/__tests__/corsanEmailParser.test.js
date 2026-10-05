@@ -361,16 +361,22 @@ describe('corsanEmailParser.fetch', () => {
     const period = { month: 0, year: 2024 };
 
     beforeEach(() => {
+        mockGetMessages.mockReset();
+        mockGetMessages.mockImplementation(() => Promise.resolve(null));
+
         // Reset the parser mock before each test
         resetParser();
+        _responseHandler = null;
     });
 
     afterEach(() => {
         // Clean up - reset parser back to default
         resetParser();
+        mockGetMessages.mockReset();
         _mockResponse = null;
         _mockEvaluateResult = null;
         _evaluatedEndpoint = null;
+        _responseHandler = null;
     });
 
     test('returns parsed data for a valid email with PDF', async () => {
