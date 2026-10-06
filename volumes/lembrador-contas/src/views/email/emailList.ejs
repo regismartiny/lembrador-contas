@@ -19,12 +19,12 @@
                             </thead>
                             <tbody>
                                 <% emailList.forEach(function(email){ %>
-                                    <tr>
+                                    <tr class="swipe-delete-row" tabindex="0" aria-label="E-mail <%= email.address %>">
                                         <td style="word-break:break-all;text-align:left"><%= email.address %></td>
                                         <td><%= statusEnum[email.status] %></td>
                                         <td class="text-nowrap">
                                             <a href='/emails/edit/<%= email._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                            <form action="/emails/remove/<%= email._id %>" method="post" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined">delete</span></button></form>
+                                            <form action="/emails/remove/<%= email._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir e-mail <%= email.address %>" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></form>
                                             <a href='/emails/test/<%= email._id %>'>Testar</a>
                                         </td>
                                     </tr>

@@ -12,7 +12,7 @@
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>Email</th>
+                                <th class="d-none d-md-table-cell">Email</th>
                                 <th>Situação</th>
                                 <th>Administrador</th>
                                 <th></th>
@@ -20,14 +20,14 @@
                         </thead>
                         <tbody>
                             <% userList.forEach(function(user){ %>
-                                <tr>
+                                <tr class="swipe-delete-row" tabindex="0" aria-label="Usuário <%= user.name %>">
                                     <td><%= user.name %></td>
-                                    <td style="word-break:break-all"><%= user.email %></td>
+                                    <td class="d-none d-md-table-cell" style="word-break:break-all"><%= user.email %></td>
                                     <td><%= statusEnum[user.status] %></td>
                                     <td><%= user.admin ? 'Sim' : 'Não' %></td>
                                     <td class="text-nowrap">
                                         <a href='/users/edit/<%= user._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/users/remove/<%= user._id %>" method="post" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" onclick="return confirm('Excluir o usuário \'<%= user.name %>\'?')"><span class="material-symbols-outlined symbol-red">delete</span></button></form>
+                                        <form action="/users/remove/<%= user._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir usuário <%= user.name %>" onclick="return confirm('Excluir o usuário \'<%= user.name %>\'?')"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
                                     </td>
                                 </tr>
                             <%})%>

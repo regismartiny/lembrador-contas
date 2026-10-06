@@ -220,3 +220,63 @@ $(document).ready(function() {
        window.updateEditModeUI();
    }
 });
+
+const swipeDeleteRows = document.querySelectorAll('.swipe-delete-row');
+let activeSwipeDelete = null;
+
+document.addEventListener('pointerdown', function(event) {
+   if (event.pointerType !== 'touch' || !event.isPrimary || !window.matchMedia('(max-width: 768px)').matches) {
+      return;
+   }
+
+   const row = event.target.closest('.swipe-delete-row');
+   if (!row || event.target.closest('a, button, form')) {
+      if (!row) {
+         swipeDeleteRows.forEach(function(swipeRow) {
+            swipeRow.classList.remove('is-delete-revealed');
+         });
+      }
+      activeSwipeDelete = null;
+      return;
+   }
+
+   swipeDeleteRows.forEach(function(swipeRow) {
+      if (swipeRow !== row) {
+         swipeRow.classList.remove('is-delete-revealed');
+      }
+   });
+   activeSwipeDelete = { row: row, pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+});
+
+document.addEventListener('pointerup', function(event) {
+   if (!activeSwipeDelete || event.pointerId !== activeSwipeDelete.pointerId) {
+      return;
+   }
+
+   const deltaX = event.clientX - activeSwipeDelete.x;
+   const deltaY = event.clientY - activeSwipeDelete.y;
+   if (Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      activeSwipeDelete.row.classList.toggle('is-delete-revealed', deltaX < 0);
+   }
+   activeSwipeDelete = null;
+});
+
+document.addEventListener('pointercancel', function(event) {
+   if (event.pointerId === activeSwipeDelete?.pointerId) {
+      activeSwipeDelete = null;
+   }
+});
+
+swipeDeleteRows.forEach(function(row) {
+   row.addEventListener('keydown', function(event) {
+      if (event.key === 'ArrowLeft' && event.target === row) {
+         row.classList.add('is-delete-revealed');
+         row.querySelector('.swipe-delete-form button').focus();
+         event.preventDefault();
+      } else if (event.key === 'Escape' && row.classList.contains('is-delete-revealed')) {
+         row.classList.remove('is-delete-revealed');
+         row.focus();
+         event.preventDefault();
+      }
+   });
+});

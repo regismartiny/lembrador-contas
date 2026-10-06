@@ -18,12 +18,12 @@
                         </thead>
                         <tbody>
                             <% apiList.forEach(function(api){ %>
-                                <tr>
+                                <tr class="swipe-delete-row" tabindex="0" aria-label="API <%= api.name %>">
                                     <td><%= api.name %></td>
                                     <td><%= statusEnum[api.status] %></td>
                                     <td class="text-nowrap">
                                         <a href='/apis/edit/<%= api._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/apis/remove/<%= api._id %>" method="post" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined symbol-red">delete</span></button></form>
+                                        <form action="/apis/remove/<%= api._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir API <%= api.name %>" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
                                     </td>
                                 </tr>
                             <%})%>
