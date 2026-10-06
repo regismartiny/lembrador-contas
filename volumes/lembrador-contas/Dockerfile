@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxss1 \
     libxtst6 \
     lsb-release \
+    unzip \
     wget \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
@@ -44,6 +45,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /root/lembrador-contas
 
 # Install the locked production dependencies and matching browser at build time
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_CACHE_DIR=/root/.cache/puppeteer
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 RUN bunx puppeteer browsers install chrome
