@@ -224,28 +224,83 @@ $(document).ready(function() {
 const swipeDeleteRows = document.querySelectorAll('.swipe-delete-row');
 let activeSwipeDelete = null;
 
+function getSwipeDeleteWidth(row) {
+   return parseFloat(getComputedStyle(row).getPropertyValue('--swipe-delete-width')) || 72;
+}
+
+function getSwipeOpenOffset(row) {
+   const width = getSwipeDeleteWidth(row);
+   return getComputedStyle(row).direction === 'rtl' ? width : -width;
+}
+
+function setSwipeDeleteOpen(row, isOpen) {
+   row.classList.toggle('is-delete-revealed', isOpen);
+   row.style.removeProperty('--swipe-offset');
+   row.style.removeProperty('--swipe-reveal-width');
+}
+
 document.addEventListener('pointerdown', function(event) {
    if (event.pointerType !== 'touch' || !event.isPrimary || !window.matchMedia('(max-width: 768px)').matches) {
       return;
    }
 
    const row = event.target.closest('.swipe-delete-row');
-   if (!row || event.target.closest('a, button, form')) {
-      if (!row) {
-         swipeDeleteRows.forEach(function(swipeRow) {
-            swipeRow.classList.remove('is-delete-revealed');
-         });
-      }
+   if (!row) {
+      swipeDeleteRows.forEach(function(swipeRow) {
+         setSwipeDeleteOpen(swipeRow, false);
+      });
       activeSwipeDelete = null;
       return;
    }
 
    swipeDeleteRows.forEach(function(swipeRow) {
       if (swipeRow !== row) {
-         swipeRow.classList.remove('is-delete-revealed');
+         setSwipeDeleteOpen(swipeRow, false);
       }
    });
-   activeSwipeDelete = { row: row, pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+   if (event.target.closest('a, button, form')) {
+      activeSwipeDelete = null;
+      return;
+   }
+
+   activeSwipeDelete = {
+      row: row,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startTime: event.timeStamp,
+      startOffset: row.classList.contains('is-delete-revealed') ? getSwipeOpenOffset(row) : 0,
+      axis: null
+   };
+});
+
+document.addEventListener('pointermove', function(event) {
+   if (!activeSwipeDelete || event.pointerId !== activeSwipeDelete.pointerId) {
+      return;
+   }
+
+   const deltaX = event.clientX - activeSwipeDelete.startX;
+   const deltaY = event.clientY - activeSwipeDelete.startY;
+   if (!activeSwipeDelete.axis) {
+      if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 8) {
+         return;
+      }
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+         activeSwipeDelete = null;
+         return;
+      }
+      activeSwipeDelete.axis = 'horizontal';
+      activeSwipeDelete.row.classList.add('is-swiping');
+   }
+
+   const width = getSwipeDeleteWidth(activeSwipeDelete.row);
+   const openOffset = getSwipeOpenOffset(activeSwipeDelete.row);
+   const nextOffset = activeSwipeDelete.startOffset + deltaX;
+   const offset = openOffset < 0
+      ? Math.max(openOffset, Math.min(0, nextOffset))
+      : Math.min(openOffset, Math.max(0, nextOffset));
+   activeSwipeDelete.row.style.setProperty('--swipe-offset', offset + 'px');
+   activeSwipeDelete.row.style.setProperty('--swipe-reveal-width', Math.abs(offset) + 'px');
 });
 
 document.addEventListener('pointerup', function(event) {
@@ -253,28 +308,45 @@ document.addEventListener('pointerup', function(event) {
       return;
    }
 
-   const deltaX = event.clientX - activeSwipeDelete.x;
-   const deltaY = event.clientY - activeSwipeDelete.y;
-   if (Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      activeSwipeDelete.row.classList.toggle('is-delete-revealed', deltaX < 0);
+   const swipe = activeSwipeDelete;
+   if (swipe.axis === 'horizontal') {
+      const width = getSwipeDeleteWidth(swipe.row);
+      const offset = parseFloat(swipe.row.style.getPropertyValue('--swipe-offset')) || 0;
+      const velocity = (event.clientX - swipe.startX) / Math.max(1, event.timeStamp - swipe.startTime);
+      const velocityTowardOpen = velocity * Math.sign(getSwipeOpenOffset(swipe.row));
+      const shouldOpen = velocityTowardOpen > 0.45
+         || (velocityTowardOpen >= -0.45 && Math.abs(offset) >= width / 2);
+      swipe.row.classList.remove('is-swiping');
+      setSwipeDeleteOpen(swipe.row, shouldOpen);
    }
    activeSwipeDelete = null;
 });
 
 document.addEventListener('pointercancel', function(event) {
    if (event.pointerId === activeSwipeDelete?.pointerId) {
+      activeSwipeDelete.row.classList.remove('is-swiping');
+      activeSwipeDelete.row.style.removeProperty('--swipe-offset');
+      activeSwipeDelete.row.style.removeProperty('--swipe-reveal-width');
       activeSwipeDelete = null;
+   }
+});
+
+document.addEventListener('focusin', function(event) {
+   const form = event.target.closest('.swipe-delete-form');
+   if (form) {
+      setSwipeDeleteOpen(form.closest('.swipe-delete-row'), true);
    }
 });
 
 swipeDeleteRows.forEach(function(row) {
    row.addEventListener('keydown', function(event) {
-      if (event.key === 'ArrowLeft' && event.target === row) {
-         row.classList.add('is-delete-revealed');
+   const openKey = getComputedStyle(row).direction === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
+   if (event.key === openKey && event.target === row) {
+         setSwipeDeleteOpen(row, true);
          row.querySelector('.swipe-delete-form button').focus();
          event.preventDefault();
       } else if (event.key === 'Escape' && row.classList.contains('is-delete-revealed')) {
-         row.classList.remove('is-delete-revealed');
+         setSwipeDeleteOpen(row, false);
          row.focus();
          event.preventDefault();
       }
