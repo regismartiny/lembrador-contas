@@ -1,12 +1,16 @@
-import gmail from './gmail.js';
 import base64Util from './base64Util.js';
 import PDFParser from 'pdf2json';
+
+async function loadGmail() {
+    return (await import('./gmail.js')).default;
+}
 
 async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     console.log("getMessagesByDateInterval()")
     startDate = formatDateYYYYMMDD(startDate)
     endDate = formatDateYYYYMMDD(endDate)
     let query = `from:${sender} subject:"${subject}" after:${startDate} before:${endDate}`
+    const gmail = await loadGmail();
     let messages = await gmail.findMessages(query)
     
     if (!messages || messages.length == 0) return false
@@ -34,6 +38,7 @@ async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
 
 async function getMessages(sender, subject) {
     console.log("getMessages()")
+    const gmail = await loadGmail();
     let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`)
     
     if (!messages || messages.length == 0) return false
@@ -61,6 +66,7 @@ async function getMessages(sender, subject) {
 
 async function getLastMessage(sender, subject) {
     console.log("getLastMessage()")
+    const gmail = await loadGmail();
     let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`)
 
     if (!messages || messages.length == 0) return false
@@ -80,6 +86,7 @@ async function getAttachmentFromMessage(message) {
 
     message.payload.headers = headers;
 
+    const gmail = await loadGmail();
     let attachments = await gmail.getAttachments(message);
 
     if (!attachments) return;

@@ -3,7 +3,6 @@ import logger from '../util/logger.js';
 import asyncHandler from '../util/asyncHandler.js';
 import template from './template.js';
 import db from '../db.js';
-import gmail from '../util/gmail.js';
 import emailUtils from '../util/emailUtils.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
@@ -76,33 +75,33 @@ router.post('/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(as
 }));
 
 /* GET unread db.Email page. */
-router.get('/unread', function (req, res) {
-    gmail.listUnreadMessages(function (messages) {
-        logger.info('MENSAGENS BUSCADAS');
-        res.render('email/unreadEmails', { title: 'Emails não lidos', messageList: messages });
-    });
-});
+router.get('/unread', asyncHandler(async function (req, res) {
+    const { default: gmail } = await import('../util/gmail.js');
+    const messages = await gmail.listUnreadMessages();
+    logger.info('MENSAGENS BUSCADAS');
+    res.render('email/unreadEmails', { title: 'Emails não lidos', messageList: messages });
+}));
 
 /* GET email page. */
-router.get('/get/:id', function (req, res) {
+router.get('/get/:id', asyncHandler(async function (req, res) {
     const id = req.params.id;
+    const { default: gmail } = await import('../util/gmail.js');
+    const message = await gmail.getMessage(id, ['From', 'Date', 'Subject']);
 
-    gmail.getMessage(id, ['From', 'Date', 'Subject'], function (message) {
-        logger.info('MENSAGEM ENCONTRADA');
+    logger.info('MENSAGEM ENCONTRADA');
 
-        const headers = message.payload.headers;
+    const headers = message.payload.headers;
 
-        for (let i = 0; i < headers.length; i++) {
-            if (headers[i].name === 'To') {
-                headers[i].value = headers[i].value.replace(/"/g, '\\"');
-            }
+    for (let i = 0; i < headers.length; i++) {
+        if (headers[i].name === 'To') {
+            headers[i].value = headers[i].value.replace(/"/g, '\\"');
         }
+    }
 
-        message.payload.headers = headers;
+    message.payload.headers = headers;
 
-        res.render('email/email', { title: 'Email', message: message });
-    });
-});
+    res.render('email/email', { title: 'Email', message: message });
+}));
 
 router.get('/test/:id', asyncHandler(async function (req, res) {
     let emailId = req.params.id;
