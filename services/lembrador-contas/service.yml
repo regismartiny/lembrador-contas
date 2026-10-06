@@ -4,7 +4,7 @@ lembrador-contas:
   build:
     context: ../../volumes/lembrador-contas
     dockerfile: Dockerfile
-  command: bun run start
+  command: sh ./scripts/start-container.sh bun run start
   working_dir: /root/lembrador-contas
   restart: unless-stopped
   env_file:

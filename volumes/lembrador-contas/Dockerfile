@@ -51,4 +51,4 @@ RUN bunx puppeteer browsers install chrome
 # Copy source (overridden by volume mount in development, baked-in for production)
 COPY . .
 
-CMD ["bun", "run", "start"]
+CMD ["sh", "./scripts/start-container.sh", "bun", "run", "start"]
