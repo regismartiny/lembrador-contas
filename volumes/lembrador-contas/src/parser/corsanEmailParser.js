@@ -1,7 +1,7 @@
 import emailUtils from '../util/emailUtils.js';
 import base64Util from '../util/base64Util.js';
 import { JSDOM } from 'jsdom';
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
@@ -114,6 +114,35 @@ async function downloadPDF(url) {
     }
 
     console.log('CORSAN PDF URL:', url);
+
+    const apiUrl = getAegeaApiUrl(url);
+    if (apiUrl) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        try {
+            const response = await globalThis.fetch(apiUrl, {
+                signal: controller.signal,
+                redirect: 'error',
+                headers: {
+                    accept: 'application/json',
+                    origin: 'https://cliente.aegea.com.br',
+                    referer: 'https://cliente.aegea.com.br/',
+                },
+            });
+            if (response.status >= 200 && response.status < 400) {
+                const pdfBuffer = extractPDFBufferFromApiBody(await response.text());
+                if (pdfBuffer) {
+                    console.log('PDF decoded from direct Aegea API fetch! Size:', pdfBuffer.length);
+                    return persistPDFBuffer(pdfBuffer);
+                }
+            }
+        } catch (e) {
+            console.log('Direct Aegea API fetch failed; falling back to browser:', e.message);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
     let browser = null;
     try {
         browser = await puppeteer.launch({
@@ -308,20 +337,23 @@ async function downloadPDF(url) {
             }
         });
         
-        if (!pdfBuffer.toString('ascii', 0, 5).startsWith('%PDF')) {
-            throw new Error('Downloaded content is not a valid PDF');
-        }
-        
-        fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
-        const filename = `corsan_fatura_${Date.now()}.pdf`;
-        fs.writeFileSync(path.join(DOWNLOADS_DIR, filename), pdfBuffer);
-        
-        return pdfBuffer;
+        return persistPDFBuffer(pdfBuffer);
     } finally {
         if (browser) {
             await browser.close();
         }
     }
+}
+
+function persistPDFBuffer(pdfBuffer) {
+    if (!pdfBuffer.toString('ascii', 0, 5).startsWith('%PDF')) {
+        throw new Error('Downloaded content is not a valid PDF');
+    }
+
+    fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+    const filename = `corsan_fatura_${Date.now()}.pdf`;
+    fs.writeFileSync(path.join(DOWNLOADS_DIR, filename), pdfBuffer);
+    return pdfBuffer;
 }
 
 function getAegeaApiUrl(url) {
