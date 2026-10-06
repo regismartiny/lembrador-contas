@@ -417,6 +417,11 @@ describe('corsanEmailParser.fetch', () => {
         mockGetMessages.mockImplementationOnce(() =>
             Promise.resolve([makeMessage('<a href="https://cliente.aegea.com.br/fatura-eletronica/download?u=corsanweb&amp;nf=203064644&amp;k=test">Clique aqui para ver sua fatura</a>')])
         );
+        globalThis.fetch = mock(() => Promise.resolve({
+            status: 401,
+            headers: { get: () => 'application/json' },
+            arrayBuffer: () => Promise.resolve(Buffer.from('{}')),
+        }));
         mockAegeaJsonResponse(Buffer.from('%PDF-1.4 fake'));
         setNextPdfData(PDF_FIXTURE_WITH_TOTAL);
 
@@ -433,10 +438,14 @@ describe('corsanEmailParser.fetch', () => {
             Promise.resolve([makeMessage('<a href="https://cliente.aegea.com.br/fatura-eletronica/download?u=corsanweb&amp;nf=205956599&amp;k=test">Clique aqui para ver sua fatura</a>')])
         );
         const pdfBuffer = Buffer.from('%PDF-1.4 direct');
-        const fetchMock = mock(() => Promise.resolve({
-            status: 200,
-            text: () => Promise.resolve(JSON.stringify({ content: { bytes: pdfBuffer.toString('base64') } })),
-        }));
+        let fetchOptions;
+        const fetchMock = mock((...args) => {
+            fetchOptions = args[1];
+            return Promise.resolve({
+                status: 200,
+                arrayBuffer: () => Promise.resolve(Buffer.from(JSON.stringify({ content: { bytes: pdfBuffer.toString('base64') } }))),
+            });
+        });
         globalThis.fetch = fetchMock;
         setNextPdfData(PDF_FIXTURE_WITH_TOTAL);
 
@@ -445,6 +454,28 @@ describe('corsanEmailParser.fetch', () => {
         expect(result).toHaveLength(1);
         expect(result[0].value).toBe(95);
         expect(_parsedPdfBuffer.toString('ascii')).toBe('%PDF-1.4 direct');
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchOptions.headers['user-agent']).toContain('Chrome/120.0.0.0');
+    });
+
+    test('downloads a raw PDF response from the Aegea API without launching a browser', async () => {
+        mockGetMessages.mockImplementationOnce(() =>
+            Promise.resolve([makeMessage('<a href="https://cliente.aegea.com.br/fatura-eletronica/download?u=corsanweb&amp;nf=205956599&amp;k=test">Clique aqui para ver sua fatura</a>')])
+        );
+        const pdfBuffer = Buffer.from('%PDF-1.7 raw');
+        const fetchMock = mock(() => Promise.resolve({
+            status: 200,
+            headers: { get: () => 'application/pdf' },
+            arrayBuffer: () => Promise.resolve(pdfBuffer),
+        }));
+        globalThis.fetch = fetchMock;
+        setNextPdfData(PDF_FIXTURE_WITH_TOTAL);
+
+        const result = await corsanFetch('corsan@corsan.com.br', 'Water bill', period);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].value).toBe(95);
+        expect(_parsedPdfBuffer.toString('ascii')).toBe('%PDF-1.7 raw');
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 

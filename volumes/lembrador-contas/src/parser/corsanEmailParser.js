@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 const DOWNLOADS_DIR = path.join(process.cwd(), 'downloads');
+const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const ALLOWED_BILL_HOSTS = new Set([
     'corsan.rs.gov.br',
     'cliente.aegea.com.br',
@@ -127,14 +128,20 @@ async function downloadPDF(url) {
                     accept: 'application/json',
                     origin: 'https://cliente.aegea.com.br',
                     referer: 'https://cliente.aegea.com.br/',
+                    'user-agent': BROWSER_USER_AGENT,
                 },
             });
-            if (response.status >= 200 && response.status < 400) {
-                const pdfBuffer = extractPDFBufferFromApiBody(await response.text());
+            const contentType = response.headers?.get('content-type') || 'unknown';
+            if (response.status >= 200 && response.status < 300) {
+                const responseBody = Buffer.from(await response.arrayBuffer());
+                const pdfBuffer = extractPDFBufferFromApiBody(responseBody);
                 if (pdfBuffer) {
                     console.log('PDF decoded from direct Aegea API fetch! Size:', pdfBuffer.length);
                     return persistPDFBuffer(pdfBuffer);
                 }
+                console.warn(`Direct Aegea API returned no PDF payload (HTTP ${response.status}, ${contentType}); falling back to browser`);
+            } else {
+                console.warn(`Direct Aegea API returned HTTP ${response.status} (${contentType}); falling back to browser`);
             }
         } catch (e) {
             console.log('Direct Aegea API fetch failed; falling back to browser:', e.message);
@@ -162,7 +169,7 @@ async function downloadPDF(url) {
         });
         
         // Set user agent to avoid blocking
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        await page.setUserAgent(BROWSER_USER_AGENT);
         
         // Set up response handler to capture the PDF download
         const pdfBuffer = await new Promise(async (resolve, reject) => {
@@ -376,6 +383,12 @@ function getAegeaApiUrl(url) {
 
 function extractPDFBufferFromApiBody(body) {
     try {
+        if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
+            const bodyBuffer = Buffer.from(body);
+            if (bodyBuffer.toString('ascii', 0, 5).startsWith('%PDF')) return bodyBuffer;
+            body = bodyBuffer.toString('utf8');
+        }
+
         const json = JSON.parse(body);
         const encodedPdf = json.content?.bytes || json.dados?.arquivo;
         if (!encodedPdf) return null;
