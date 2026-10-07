@@ -1,5 +1,8 @@
 export const PeriodFilterEnum = {
     CURRENT_AND_FUTURE: 'Mês atual e futuros',
+    LAST_3_MONTHS: 'Últimos 3 meses',
+    LAST_6_MONTHS: 'Últimos 6 meses',
+    CURRENT_YEAR: 'Este ano',
     ALL: 'Todos'
 }
 

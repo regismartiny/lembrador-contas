@@ -25,6 +25,15 @@ describe('GET /dashboard/', () => {
         const res = await fetch(`${baseUrl}/dashboard/`);
         expect(res.status).toBe(200);
     });
+
+    test('shows the additional period filter options', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/`);
+        const html = await res.text();
+
+        expect(html).toContain('Últimos 3 meses');
+        expect(html).toContain('Últimos 6 meses');
+        expect(html).toContain('Este ano');
+    });
 });
 
 describe('GET /dashboard/dashboard-new', () => {

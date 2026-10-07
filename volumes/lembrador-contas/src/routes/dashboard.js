@@ -109,6 +109,26 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
 
     if (periodFilter == 'ALL') {
         renderUserBillListPage(res, userBillsData, isAdmin)
+    } else if (periodFilter == 'LAST_3_MONTHS' || periodFilter == 'LAST_6_MONTHS') {
+        const currentDate = new Date()
+        const currentPeriod = currentDate.getFullYear() * 12 + currentDate.getMonth()
+        const monthsToShow = periodFilter == 'LAST_3_MONTHS' ? 3 : 6
+
+        userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
+            const [month, year] = billList.month.split('/').map(Number)
+            const billPeriod = year * 12 + month - 1
+            return billPeriod >= currentPeriod - monthsToShow + 1 && billPeriod <= currentPeriod
+        })
+
+        renderUserBillListPage(res, userBillsData, isAdmin)
+    } else if (periodFilter == 'CURRENT_YEAR') {
+        const currentYear = new Date().getFullYear()
+        userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
+            const year = Number(billList.month.split('/')[1])
+            return year === currentYear
+        })
+
+        renderUserBillListPage(res, userBillsData, isAdmin)
     } else {
         // Default: CURRENT_AND_FUTURE — show only previous month and future bills
         let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);

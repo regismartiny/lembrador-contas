@@ -244,6 +244,47 @@ describe('POST /dashboard/active-bills/remove/:id', () => {
 // ---------------------------------------------------------------------------
 
 describe('GET /dashboard/user-bill-list', () => {
+    test('applies the recent-month and current-year period filters', async () => {
+        const validUserId = '507f1f77bcf86cd799439012';
+        const now = new Date();
+        const periods = [-3, -2, -1, 0, 1].map(offset => {
+            const date = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+            return `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        });
+        mockData.users = [{ _id: validUserId, name: 'Test User', email: 'user@example.com', status: 'ACTIVE' }];
+        mockData.activeBills = periods.map((referencePeriod, index) => ({
+            _id: `507f1f77bcf86cd79943901${index}`,
+            users: [{ _id: validUserId, name: 'Test User' }],
+            name: `Conta ${index}`,
+            dueDate: new Date(),
+            value: 125.5,
+            status: 'UNPAID',
+            paymentType: 'PIX',
+            referencePeriod,
+        }));
+
+        const recentRes = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${validUserId}&periodFilter=LAST_3_MONTHS`);
+        const recentHtml = await recentRes.text();
+        expect(recentHtml).toContain('Conta 1');
+        expect(recentHtml).toContain('Conta 2');
+        expect(recentHtml).toContain('Conta 3');
+        expect(recentHtml).not.toContain('Conta 0');
+        expect(recentHtml).not.toContain('Conta 4');
+
+        const sixMonthsRes = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${validUserId}&periodFilter=LAST_6_MONTHS`);
+        const sixMonthsHtml = await sixMonthsRes.text();
+        expect(sixMonthsHtml).toContain('Conta 0');
+        expect(sixMonthsHtml).toContain('Conta 3');
+        expect(sixMonthsHtml).not.toContain('Conta 4');
+
+        const yearRes = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${validUserId}&periodFilter=CURRENT_YEAR`);
+        const yearHtml = await yearRes.text();
+        for (let index = 0; index < periods.length; index++) {
+            const isCurrentYear = periods[index].endsWith(`/${now.getFullYear()}`);
+            expect(yearHtml.includes(`Conta ${index}`)).toBe(isCurrentYear);
+        }
+    });
+
     test('hides edit controls for non-admin users', async () => {
         const validUserId = '507f1f77bcf86cd799439012';
         mockData.activeBills = [{
