@@ -51,7 +51,7 @@ var currentY = currentYear || new Date().getFullYear();
                         <tr>
                             <td><%= bill.name %></td>
                             <td class="d-none d-sm-table-cell"><span class="date"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></span></td>
-                            <td><span class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></span></td>
+                            <td><span class="money"><%= bill.value != null ? Number(bill.value).toFixed(2) : '' %></span></td>
                             <% if (isAdminUser) { %>
                             <td class="text-right edit-actions hidden-edit-mode">
                                 <div class="d-flex justify-content-end gap-2">

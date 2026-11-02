@@ -1,6 +1,11 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import http from 'http';
+import ejs from 'ejs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import app from '../app.js';
+
+const dashboardViewsPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../views/dashboard');
 
 let server;
 let baseUrl;
@@ -33,6 +38,51 @@ describe('GET /dashboard/', () => {
         expect(html).toContain('Últimos 3 meses');
         expect(html).toContain('Últimos 6 meses');
         expect(html).toContain('Este ano');
+    });
+});
+
+describe('Dashboard bill values', () => {
+    test('renders zero-valued bills as 0.00', async () => {
+        const html = await ejs.renderFile(path.join(dashboardViewsPath, 'user-bill-list.ejs'), {
+            isAdmin: false,
+            userBillsData: {
+                billListPerMonth: [{
+                    month: '11/2026',
+                    totalValue: 0,
+                    paymentTypeSummaries: [],
+                    billList: [{ name: 'Conta zerada', value: 0 }],
+                }],
+            },
+            currentMonth: 11,
+            currentYear: 2026,
+            csrfToken: '',
+        });
+
+        expect(html).toContain('Conta zerada');
+        expect(html).toContain('<span class="money">0.00</span>');
+    });
+
+    test('renders zero-valued bills in the alternate dashboard and leaves missing values blank', async () => {
+        const html = await ejs.renderFile(path.join(dashboardViewsPath, 'dashboard-new.ejs'), {
+            title: 'Demonstrativo mensal',
+            template: { head: '', navbar: '', scripts: '' },
+            currentUserEmail: '',
+            csrfToken: '',
+            lastUpdate: null,
+            activeBillData: [{
+                month: 'Novembro/2026',
+                totalValue: 0,
+                paymentTypeSummaries: [],
+                billList: [
+                    { name: 'Conta zerada', icon: '', value: 0 },
+                    { name: 'Conta sem valor nulo', icon: '', value: null },
+                    { name: 'Conta sem valor ausente', icon: '' },
+                ],
+            }],
+        });
+
+        expect(html).toContain('<p class="money">0.00</p>');
+        expect(html.match(/<p class="money"><\/p>/g)).toHaveLength(2);
     });
 });
 

@@ -21,7 +21,7 @@
                                 <i class="fas <%= bill.icon %>"></i>
                                 <div>
                                     <h2><%= bill.name %></h2>
-                                    <p class="money"><%= bill.value ? Number(bill.value).toFixed(2) : '' %></p>
+                                    <p class="money"><%= bill.value != null ? Number(bill.value).toFixed(2) : '' %></p>
                                     <p class="date" data-mask="00/00"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></p>
                                 </div>
                             </div>
