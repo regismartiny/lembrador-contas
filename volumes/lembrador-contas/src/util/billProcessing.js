@@ -4,8 +4,7 @@ import logger from './logger.js';
 async function processBills(bills, selectedPeriods) {
     let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
     const periods = !!selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
-
-    logger.info("Processing bills for periods:", periods)
+    logger.info({ periods, billCount: bills.length }, 'Processing bills')
 
     //delete previously processed bills of current periods
     // const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
@@ -29,11 +28,11 @@ async function processBills(bills, selectedPeriods) {
             { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType, referencePeriod: activeBill.referencePeriod },
             { upsert: true }
         ).catch((err) => {
-            logger.error(`Error saving activeBill '${activeBill.name}'`, err)
+            logger.error({ err }, 'Failed to save processed bill')
         })
     }
 
-    logger.info("Finished processing bills for periods:", periods)
+    logger.info({ periods, processedBillCount: activeBills.length }, 'Finished processing bills')
 }
 
 function getSum(total, num) {
@@ -89,7 +88,7 @@ function deduplicatePeriods(periods) {
 }
 
 async function findActiveTableBills(billsSourceTable, periods) {
-    logger.info("findActiveTableBills started")
+    logger.debug({ billCount: billsSourceTable.length, periodCount: periods.length }, 'Processing table-backed bills')
     const promises = []
     for (const period of periods) {
         for (const bill of billsSourceTable) {
@@ -97,32 +96,31 @@ async function findActiveTableBills(billsSourceTable, periods) {
         }
     }
     const bills = await runParallel(promises)
-    logger.info("findActiveTableBills finished")
+    logger.debug({ resultCount: bills.length }, 'Finished processing table-backed bills')
     return bills
 }
 
 async function findTableBills(bill, period) {
-    logger.info("findTableBills for bill", bill.name, "and period", period)
+    logger.debug({ billId: bill._id?.toString(), period }, 'Processing table-backed bill')
 
     let bills = []
     let table = await db.Table.findById(bill.valueSourceId).lean()
     if (!table) {
-        logger.info(`No table found for bill '${bill.name}'`)
+        logger.debug({ billId: bill._id?.toString() }, 'Bill table configuration was not found')
         return bills;
     }
             
     let currentPeriodDataIndex = table.data.findIndex(data => filterCurrentPeriodData(data, period))
     
     if (currentPeriodDataIndex < 0) {
-        logger.info(`No data found for bill '${bill.name}' for period ${period.month + 1}/${period.year}`)
+        logger.debug({ billId: bill._id?.toString(), period }, 'No table data found for bill period')
         return bills;
     }
 
     let currentPeriodData = table.data[currentPeriodDataIndex]
-    logger.info("currentPeriodData", currentPeriodData)
 
     if (!currentPeriodData || !currentPeriodData.period || !currentPeriodData.period.month || !currentPeriodData.period.year) {
-        logger.info(`Invalid data for bill '${bill.name}' for period ${period.month + 1}/${period.year}`)
+        logger.warn({ billId: bill._id?.toString(), period }, 'Invalid table data for bill period')
         return bills;
     }
 
@@ -157,7 +155,7 @@ function filterCurrentPeriodData(data, period) {
 }
 
 async function findActiveEmailBills(billsSourceEmail, periods) {
-    logger.info("findActiveEmailBills started")
+    logger.debug({ billCount: billsSourceEmail.length, periodCount: periods.length }, 'Processing email-backed bills')
     const promises = []
     for (const period of periods) {
         for (const bill of billsSourceEmail) {
@@ -165,7 +163,7 @@ async function findActiveEmailBills(billsSourceEmail, periods) {
         }
     }
     const bills = await runParallel(promises)
-    logger.info("findActiveEmailBills finished")
+    logger.debug({ resultCount: bills.length }, 'Finished processing email-backed bills')
     return bills
 }
 
@@ -190,18 +188,12 @@ async function findEmailBills(bill, period) {
 }
 
 async function parseEmailData(email, period) {
-    try {
-        const parser = require(`../parser/${db.DataParserEnum[email.dataParser]}`);
-        let parsedData = await parser.fetch(email.address, email.subject, period)
-        return parsedData
-    } catch(error) {
-        logger.error("Error parsing data", error)
-        return []
-    }
+    const parser = require(`../parser/${db.DataParserEnum[email.dataParser]}`);
+    return parser.fetch(email.address, email.subject, period)
 }
 
 async function findActiveApiBills(billsSourceApi, periods) {
-    logger.info("findActiveApiBills started")
+    logger.debug({ billCount: billsSourceApi.length, periodCount: periods.length }, 'Processing API-backed bills')
     const promises = []
     for (const period of periods) {
         for (const bill of billsSourceApi) {
@@ -209,7 +201,7 @@ async function findActiveApiBills(billsSourceApi, periods) {
         }
     }
     const bills = await runParallel(promises)
-    logger.info("findActiveApiBills finished")
+    logger.debug({ resultCount: bills.length }, 'Finished processing API-backed bills')
     return bills
 }
 
@@ -217,7 +209,7 @@ async function findApiBills(bill, period) {
     let bills = []
     let api = await db.API.findById(bill.valueSourceId).lean()
     if (!api) {
-        logger.info(`No API config found for bill '${bill.name}'`)
+        logger.warn({ billId: bill._id?.toString() }, 'API configuration for bill was not found')
         return bills
     }
 
@@ -233,7 +225,7 @@ async function findApiBills(bill, period) {
 
         const response = await fetch(api.url, fetchOptions)
         if (!response.ok) {
-            logger.error(`API request failed for bill '${bill.name}': ${response.status} ${response.statusText}`)
+            logger.error({ statusCode: response.status }, 'Configured bill API returned an unsuccessful response')
             bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
             return bills
         }
@@ -244,7 +236,7 @@ async function findApiBills(bill, period) {
         const status = !isNaN(value) ? 'UNPAID' : 'ERROR'
         bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, value: isNaN(value) ? undefined : value, icon: bill.icon, paymentType: bill.paymentType, status }))
     } catch (error) {
-        logger.error(`Error fetching API data for bill '${bill.name}'`, error)
+        logger.error({ errorName: error.name }, 'Failed to fetch configured bill API data')
         bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
     }
 

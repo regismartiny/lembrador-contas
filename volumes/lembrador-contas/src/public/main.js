@@ -3,11 +3,9 @@ function hideNotificationsToast() {
 }
  
 async function requestNotificationPermission() {
-   console.log('requestNotificationPermission')
    hideNotificationsToast()
    const areNotificationsGranted = window.Notification.permission === "granted"
    if (areNotificationsGranted) {
-      console.log("Notifications permission granted")
       await subscribePushManager()
       return
    }
@@ -15,11 +13,9 @@ async function requestNotificationPermission() {
    const result = await window.Notification.requestPermission()
    // If the user rejects the permission result will be "denied"
    if (result === "granted") {
-      console.log('Notifications permission granted')
       await subscribePushManager()
       showNotification()
    } else {
-      console.log('Notifications permission denied')
    }
 }
 
@@ -60,16 +56,13 @@ async function subscribePushManager() {
    const subscription = await swRegistration.pushManager.getSubscription()
    const isSubscribed = !(subscription === null)
    if (!isSubscribed) {
-      console.log('No pushManager subscription found. Creating one.')
       const publicKeyResponse = await send('GET', '/notifications/push/public_key')
-      console.log('publicKeyResponse', publicKeyResponse)
       const parsed = JSON.parse(publicKeyResponse)
       if (!parsed.publicKey) {
          console.warn('Push notifications not available: server has no VAPID public key configured.')
          return
       }
       applicationServerPublicKey = urlB64ToUint8Array(parsed.publicKey)
-      console.log('applicationServerKey', applicationServerPublicKey)
 
       subscription = await swRegistration.pushManager.subscribe({
          userVisibleOnly: true,
@@ -77,10 +70,9 @@ async function subscribePushManager() {
       })
    }
 
-   console.log('subscription', subscription)
 
    if (subscription === null) {
-      console.error('Unable to subscribe to pushManager.', err)
+      console.error('Unable to subscribe to push notifications')
       return
    }
 
@@ -95,12 +87,11 @@ async function subscribePushManager() {
        }
      })
      .catch(function(error) {
-       console.log('Error unsubscribing', error)
+      console.error('Unable to unsubscribe from push notifications:', error.name)
      })
      .then(function() {
        updateSubscriptionOnServer(null)
    
-       console.log('User is unsubscribed.')
        isSubscribed = false
    
      //   updateBtn()
@@ -128,16 +119,14 @@ async function subscribePushManager() {
  }
 
 if ('serviceWorker' in navigator && 'PushManager' in window) {
-    console.log('Service Worker and Push are supported')
 
    navigator.serviceWorker.register('/sw.js')
    .then(async function(swReg) {
-      console.log('Service Worker is registered', swReg)
       swRegistration = swReg
       requestNotificationPermission()
    })
    .catch(function(error) {
-      console.error('Service Worker Error: ', error)
+      console.error('Service worker registration failed:', error.name)
    })
 } else {
    console.warn('Push messaging is not supported')

@@ -1,4 +1,5 @@
 import base64Util from './base64Util.js';
+import logger from './logger.js';
 import PDFParser from 'pdf2json';
 
 async function loadGmail() {
@@ -6,7 +7,6 @@ async function loadGmail() {
 }
 
 async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
-    console.log("getMessagesByDateInterval()")
     startDate = formatDateYYYYMMDD(startDate)
     endDate = formatDateYYYYMMDD(endDate)
     let query = `from:${sender} subject:"${subject}" after:${startDate} before:${endDate}`
@@ -14,10 +14,7 @@ async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     let messages = await gmail.findMessages(query)
     
     if (!messages || messages.length == 0) return false
-
-    console.log(`Mensagens encontradas: ${messages.length}`)
-
-    console.log(messages)
+    logger.debug({ messageCount: messages.length }, 'Gmail messages matched date interval');
 
     let fullMessages = []
 
@@ -27,25 +24,18 @@ async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
         if (!fullMessage) return
 
         fullMessages.push(fullMessage)
-
-        console.log('Mensagem carregada: ', fullMessage.id)
     }
-
-    console.log(`Mensagens carregadas: ${fullMessages.length}`)
+    logger.debug({ messageCount: fullMessages.length }, 'Gmail messages loaded');
 
     return fullMessages
 }
 
 async function getMessages(sender, subject) {
-    console.log("getMessages()")
     const gmail = await loadGmail();
     let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`)
     
     if (!messages || messages.length == 0) return false
-
-    console.log(`Mensagens encontradas: ${messages.length}`)
-
-    console.log(messages)
+    logger.debug({ messageCount: messages.length }, 'Gmail messages matched query');
 
     let fullMessages = []
 
@@ -55,17 +45,14 @@ async function getMessages(sender, subject) {
         if (!fullMessage) return
 
         fullMessages.push(fullMessage)
-
-        console.log('Mensagem carregada: ', fullMessage.id)
     }
 
-    console.log(`Mensagens carregadas: ${fullMessages.length}`)
+    logger.debug({ messageCount: fullMessages.length }, 'Gmail messages loaded');
 
     return fullMessages
 }
 
 async function getLastMessage(sender, subject) {
-    console.log("getLastMessage()")
     const gmail = await loadGmail();
     let messages = await gmail.findMessages(`from:${sender} subject:"${subject}"`)
 
@@ -91,9 +78,8 @@ async function getAttachmentFromMessage(message) {
 
     if (!attachments) return;
 
-    console.log('ANEXOS ENCONTRADOS');
+    logger.debug({ attachmentCount: attachments.length }, 'Gmail attachments found');
     const att = attachments[0];
-    //fs.writeFile('anexo.pdf', JSON.stringify(att), () => console.log('Anexo salvo'));
     att.attachment.data = base64Util.fixBase64(att.attachment.data);
     return att;
 }
@@ -106,9 +92,9 @@ async function getPDFFromAttachment(attData) {
     try {
         let pdfParser = new PDFParser();
 
-        pdfParser.on("pdfParser_dataError", errData => console.error(errData.parserError));
+        pdfParser.on("pdfParser_dataError", errData => logger.error({ err: errData.parserError }, 'Failed to parse email PDF'));
 
-        console.log('FAZENDO PARSE DO PDF');
+        logger.debug('Parsing email PDF attachment');
         pdfParser.parseBuffer(binArray);
         let pdfData = await new Promise(function (resolve, reject) {
             pdfParser.on("pdfParser_dataReady", (pdfData) => {

@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import path from 'path';
 import favicon from 'serve-favicon';
-import logger from 'morgan';
+import logger from './util/logger.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import index from './routes/index.js';
@@ -27,7 +27,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me') {
-    console.error('FATAL: SESSION_SECRET env var is not set or uses the default value. Refusing to start.');
+      logger.fatal('SESSION_SECRET is missing or uses the default value; refusing to start');
     process.exit(1);
 }
 
@@ -51,10 +51,24 @@ const limiter = rateLimit({
 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
 // Apply the rate limiting middleware to all requests
+app.use(function requestLogger(req, res, next) {
+  const startTime = process.hrtime.bigint();
+  res.on('finish', () => {
+    const responseTimeMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+    logger.info({
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      responseTimeMs: Number(responseTimeMs.toFixed(2)),
+    }, 'HTTP request completed');
+  });
+  next();
+});
+
+// Apply rate limiting after request logging so rejected requests are recorded.
 app.use(limiter)
 
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -128,12 +142,21 @@ app.use(function (err, req, res, next) {
     return next(err);
   }
 
+  const statusCode = err.status || 500;
+  const log = statusCode >= 500 ? logger.error : logger.warn;
+  log.call(logger, {
+    err: { type: err.name, message: err.message, stack: err.stack },
+    method: req.method,
+    path: req.path,
+    statusCode,
+  }, 'HTTP request failed');
+
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
-  res.status(err.status || 500);
+  res.status(statusCode);
   res.render('error');
 });
 

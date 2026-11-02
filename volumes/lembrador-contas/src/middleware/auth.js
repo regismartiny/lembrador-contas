@@ -18,9 +18,9 @@ export async function requireAdmin(req, res, next) {
         return res.redirect('/login')
     }
     try {
-        logger.info(`Checking admin access for ${req.session.email} (loginMethod: ${req.session.loginMethod})`);
+        logger.debug({ loginMethod: req.session.loginMethod }, 'Checking admin access');
         const user = await db.User.findOne({ email: req.session.email }).lean()
-        logger.info(`User ${req.session.email} admin status: ${user?.admin || false}`);
+        logger.debug({ isAdmin: Boolean(user?.admin) }, 'Admin access checked');
         if (!user || !user.admin) {
             return res.status(403).send('Acesso negado. Apenas administradores podem realizar esta ação.')
         }

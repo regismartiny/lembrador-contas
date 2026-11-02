@@ -15,7 +15,7 @@ export function startScheduler() {
     const intervalMs = parseInt(process.env.NOTIFICATION_CHECK_INTERVAL || '3600000', 10);
     const reminderDays = parseInt(process.env.REMINDER_DAYS || '3', 10);
 
-    logger.info(`[NotificationScheduler] Starting scheduler (interval: ${intervalMs}ms, reminderDays: ${reminderDays})`);
+    logger.info({ intervalMs, reminderDays }, 'Notification scheduler started');
 
     // Lazy-load db module and wait for connection before first run
     getDb().then((db) => {
@@ -44,12 +44,12 @@ export function startScheduler() {
                     await checkAndNotify(db, reminderDays);
                     await cleanupExpiredSubscriptions(db);
                 } catch (err) {
-                    logger.error('[NotificationScheduler] Error in scheduled run:', err);
+                    logger.error({ err }, 'Notification scheduler run failed');
                 }
             }, intervalMs);
         });
     }).catch((err) => {
-        logger.error('[NotificationScheduler] Failed to load db module:', err);
+        logger.error({ err }, 'Notification scheduler failed to load database module');
     });
 }
 
@@ -60,7 +60,7 @@ export function stopScheduler() {
     if (schedulerInterval) {
         clearInterval(schedulerInterval);
         schedulerInterval = null;
-        logger.info('[NotificationScheduler] Scheduler stopped.');
+        logger.info('Notification scheduler stopped');
     }
 }
 
@@ -74,7 +74,7 @@ export async function checkAndNotify(db, reminderDays) {
     const vapidMailto = process.env.VAPID_MAILTO;
 
     if (!vapidPublicKey || !vapidPrivateKey || !vapidMailto) {
-        logger.warn('[NotificationScheduler] VAPID credentials not set. Skipping notification check.');
+        logger.warn('VAPID credentials are missing; skipping notification check');
         return;
     }
 
@@ -91,11 +91,11 @@ export async function checkAndNotify(db, reminderDays) {
         }).lean();
 
         if (!unpaidBills.length) {
-            logger.info('[NotificationScheduler] No unpaid bills within reminder window.');
+            logger.debug('No unpaid bills within reminder window');
             return;
         }
 
-        logger.info(`[NotificationScheduler] Found ${unpaidBills.length} unpaid bill(s) within reminder window.`);
+        logger.info({ unpaidBillCount: unpaidBills.length }, 'Found bills within notification window');
 
         // Get existing reminders to avoid duplicates
         const existingReminders = await db.BillReminder.find({}).lean();
@@ -110,7 +110,7 @@ export async function checkAndNotify(db, reminderDays) {
 
             // Skip if already notified
             if (billIdStr && notifiedBillIds.has(billIdStr)) {
-                logger.info(`[NotificationScheduler] Bill "${bill.name}" already notified, skipping.`);
+                logger.debug({ billId: billIdStr }, 'Bill reminder already exists');
                 continue;
             }
 
@@ -132,11 +132,11 @@ export async function checkAndNotify(db, reminderDays) {
                     notifiedAt: new Date()
                 });
                 await reminder.save();
-                logger.info(`[NotificationScheduler] Created BillReminder for bill "${bill.name}" (id: ${billIdStr}).`);
+                logger.info({ billId: billIdStr }, 'Created bill reminder');
             }
         }
     } catch (err) {
-        logger.error('[NotificationScheduler] Error in checkAndNotify:', err);
+        logger.error({ err }, 'Notification check failed');
     }
 }
 
@@ -152,7 +152,7 @@ async function sendPushToAll(db, { title, body }) {
         const subscriptions = await db.PushNotificationSubscription.find({}).lean();
 
         if (!subscriptions.length) {
-            logger.info('[NotificationScheduler] No active subscriptions.');
+            logger.debug('No active push subscriptions');
             return;
         }
 
@@ -171,18 +171,18 @@ async function sendPushToAll(db, { title, body }) {
                     payload,
                     { vapidDetails: { subject: `mailto:${vapidMailto}`, publicKey: vapidPublicKey, privateKey: vapidPrivateKey } }
                 );
-                logger.info(`[NotificationScheduler] Push sent to endpoint: ${sub.endpoint.substring(0, 50)}...`);
+                logger.debug('Push notification delivered');
             } catch (err) {
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                    logger.warn(`[NotificationScheduler] Subscription expired (${err.statusCode}). Removing.`);
+                    logger.warn({ statusCode: err.statusCode }, 'Push subscription expired; removing it');
                     await db.PushNotificationSubscription.deleteOne({ _id: sub._id });
                 } else {
-                    logger.error(`[NotificationScheduler] Failed to send push:`, err.message);
+                    logger.error({ errorName: err.name, statusCode: err.statusCode }, 'Failed to send push notification');
                 }
             }
         }
     } catch (err) {
-        logger.error('[NotificationScheduler] Error in sendPushToAll:', err);
+        logger.error({ err }, 'Failed to send push notifications');
     }
 }
 
@@ -198,15 +198,15 @@ async function cleanupExpiredSubscriptions(db) {
             // Remove if past expiration time
             if (sub.expirationTime && new Date(sub.expirationTime) < new Date()) {
                 await db.PushNotificationSubscription.deleteOne({ _id: sub._id });
-                logger.info(`[NotificationScheduler] Removed expired subscription (expirationTime: ${sub.expirationTime}).`);
+                logger.info('Removed expired push subscription');
                 removed++;
             }
         }
 
         if (removed > 0) {
-            logger.info(`[NotificationScheduler] Cleaned up ${removed} expired subscription(s).`);
+                logger.info({ removedCount: removed }, 'Cleaned up expired push subscriptions');
         }
     } catch (err) {
-        logger.error('[NotificationScheduler] Error in cleanupExpiredSubscriptions:', err);
+        logger.error({ err }, 'Failed to clean up expired push subscriptions');
     }
 }

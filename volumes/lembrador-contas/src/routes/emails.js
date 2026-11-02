@@ -117,7 +117,6 @@ router.get('/test/:id', asyncHandler(async function (req, res) {
     const info = await parser.parseEmailData(message);
     if (info) values.push(info);
     
-    console.table(values);
     res.render('email/emailValue', { template, title: 'Teste de Email', nome: email.address, valor: JSON.stringify(values) });
 }));
 

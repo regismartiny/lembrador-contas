@@ -16,7 +16,7 @@ export async function cloudflareAuth(req, res, next) {
     
     // Never override explicit login from login screen
     if (req.session?.authenticated && req.session?.loginMethod === 'explicit') {
-        logger.info(`Skipping Cloudflare auth - user has explicit login as ${req.session.email}`);
+        logger.debug('Skipping Cloudflare auth for explicit login');
         return next();
     }
     
@@ -30,7 +30,7 @@ export async function cloudflareAuth(req, res, next) {
             issuer: `https://${CF_TEAM_DOMAIN}`,
             audience: CF_AUD,
         });
-        logger.info(`Cloudflare auth - setting email to ${payload.email}`);
+        logger.debug({ loginMethod: 'cloudflare' }, 'Cloudflare Access authenticated request');
         req.session.authenticated = true;
         req.session.email = payload.email;
         req.session.loginMethod = 'cloudflare'; // Mark as Cloudflare auth
@@ -38,7 +38,7 @@ export async function cloudflareAuth(req, res, next) {
             req.session.save(err => (err ? reject(err) : resolve()))
         );
     } catch (err) {
-        logger.warn(`Cloudflare Access JWT verification failed: ${err.message}`);
+        logger.warn({ err }, 'Cloudflare Access JWT verification failed');
     }
 
     next();

@@ -37,16 +37,16 @@ let options = {
 
 let dbUrl = `mongodb://${DB_ADDRESS}:${DB_PORT}`
 
-logger.info(`Connecting to database: ${dbUrl}`)
+logger.info({ host: DB_ADDRESS, port: DB_PORT, database: DB_NAME }, 'Connecting to MongoDB')
 
 mongoose.connect(dbUrl, options).catch((err) => {
     if (err.message.indexOf("ECONNREFUSED") !== -1) {
-        logger.error("Error: The server was not able to reach MongoDB. Maybe it's not running?")
+        logger.error({ err }, 'Could not connect to MongoDB; verify that the database is running')
         process.exit(1)
     } else {
         throw err
     }
-}).then(() => logger.info(`Database connected!`))
+}).then(() => logger.info({ database: DB_NAME }, 'MongoDB connected'))
 
 export default {
     Mongoose: mongoose,

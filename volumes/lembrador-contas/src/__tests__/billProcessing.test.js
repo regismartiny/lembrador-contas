@@ -122,6 +122,19 @@ describe('findActiveTableBills', () => {
     });
 });
 
+describe('findActiveEmailBills', () => {
+    test('rejects when email configuration cannot be loaded', async () => {
+        const bill = {
+            name: 'Electricity', valueSourceId: 'missing-email-config',
+            dueDay: 15, users: [], icon: null, paymentType: 'PIX'
+        };
+
+        await expect(
+            billProcessing.findActiveEmailBills([bill], [{ month: 0, year: 2024 }])
+        ).rejects.toThrow();
+    });
+});
+
 // ---------------------------------------------------------------------------
 // findActiveApiBills — mocked db always returns null for findById
 // ---------------------------------------------------------------------------

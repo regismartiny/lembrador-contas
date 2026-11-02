@@ -13,7 +13,7 @@ const router = express.Router();
 /* GET Dashboard page. */
 router.get('/', asyncHandler(async function (req, res) {
     const activeBills = await db.ActiveBill.find().lean()
-    logger.info('activeBills', activeBills)
+    logger.debug({ activeBillCount: activeBills.length }, 'Loaded dashboard bills')
 
     let usersIds = activeBills.map(bill => bill.users).flat().map(user => user._id.toString())
     usersIds = [...new Set(usersIds)]
@@ -76,7 +76,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
 
     const mongoUserId = new mongoose.Types.ObjectId(userId)
     const activeBills = await db.ActiveBill.find({ users: mongoUserId }).lean()
-    logger.info('activeBills', activeBills)
+    logger.debug({ activeBillCount: activeBills.length }, 'Loaded user dashboard bills')
 
     const monthBillsMap = activeBills.reduce((map, bill) => {
         let month = bill.referencePeriod
@@ -262,7 +262,7 @@ router.post('/paybill/:id', requireAdmin, validateObjectId('id'), asyncHandler(a
 
 function renderUserBillListPage(res, userBillsData, isAdmin = false) {
     let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
-    logger.info("userBillsData", userBillsData);
+    logger.debug({ periodCount: userBillsData.billListPerMonth?.length || 0 }, 'Rendering user bill list')
     res.render('dashboard/user-bill-list', {
         template,
         title: 'Demonstrativo mensal',

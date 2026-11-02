@@ -5,6 +5,7 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import logger from '../util/logger.js';
 
 const DOWNLOADS_DIR = path.join(process.cwd(), 'downloads');
 const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -27,7 +28,7 @@ async function fetch(address, subject, period) {
 
     const messages = await emailUtils.getMessagesByDateInterval(address, subject, startDate, endDate);
     if (!messages || messages.length === 0) {
-        console.error('No email found');
+        logger.warn({ year: period.year, month: period.month + 1 }, 'No CORSAN email found for period');
         return [];
     }
 
@@ -56,11 +57,11 @@ async function parseEmailData(message) {
         const dueDate = extractDueDateFromPDF(pdfData);
         const referencePeriod = extractReferencePeriodFromPDF(pdfData);
 
-        console.log(`Extracted from CORSAN PDF: dueDate=${dueDate}, value=${value}, referencePeriod=${referencePeriod}`);
+    logger.info({ hasReferencePeriod: Boolean(referencePeriod) }, 'CORSAN invoice parsed');
 
         return { dueDate, value, referencePeriod };
     } catch (e) {
-        console.error('Failed to parse CORSAN email:', e.message);
+        logger.error({ err: e }, 'Failed to parse CORSAN email');
         return null;
     }
 }
@@ -114,7 +115,6 @@ async function downloadPDF(url) {
         throw new Error('Blocked PDF URL outside approved domains');
     }
 
-    console.log('CORSAN PDF URL:', url);
 
     const apiUrl = getAegeaApiUrl(url);
     if (apiUrl) {
@@ -136,15 +136,15 @@ async function downloadPDF(url) {
                 const responseBody = Buffer.from(await response.arrayBuffer());
                 const pdfBuffer = extractPDFBufferFromApiBody(responseBody);
                 if (pdfBuffer) {
-                    console.log('PDF decoded from direct Aegea API fetch! Size:', pdfBuffer.length);
+                    logger.debug({ pdfBytes: pdfBuffer.length }, 'PDF decoded from direct Aegea API fetch');
                     return persistPDFBuffer(pdfBuffer);
                 }
-                console.warn(`Direct Aegea API returned no PDF payload (HTTP ${response.status}, ${contentType}); falling back to browser`);
+                logger.warn({ status: response.status, contentType }, 'Direct Aegea API returned no PDF payload; falling back to browser');
             } else {
-                console.warn(`Direct Aegea API returned HTTP ${response.status} (${contentType}); falling back to browser`);
+                logger.warn({ status: response.status, contentType }, 'Direct Aegea API failed; falling back to browser');
             }
         } catch (e) {
-            console.log('Direct Aegea API fetch failed; falling back to browser:', e.message);
+            logger.warn({ errorName: e.name }, 'Direct Aegea API fetch failed; falling back to browser');
         } finally {
             clearTimeout(timeoutId);
         }
@@ -164,7 +164,7 @@ async function downloadPDF(url) {
                 ? request.continue()
                 : request.abort();
             requestAction.catch(error => {
-                console.warn('Could not enforce approved PDF request host:', error.message);
+                logger.warn({ err: error }, 'Could not enforce approved PDF request host');
             });
         });
         
@@ -181,8 +181,7 @@ async function downloadPDF(url) {
                     const contentType = response.headers()['content-type'] || '';
                     const status = response.status();
                     const responseUrl = response.url();
-                    
-                    console.log(`Response: ${responseUrl} - Status: ${status} - Content-Type: ${contentType}`);
+                    logger.debug({ status, contentType }, 'Received invoice download response');
                     
                     // Try to get the buffer for all successful responses
                     if (status >= 200 && status < 400) {
@@ -191,7 +190,7 @@ async function downloadPDF(url) {
                             
                             // Check if it's a PDF by magic number
                             if (buffer.length > 5 && buffer.toString('ascii', 0, 5).startsWith('%PDF')) {
-                                console.log('PDF found! Size:', buffer.length);
+                                logger.debug({ pdfBytes: buffer.length }, 'PDF response detected');
                                 if (!resolved) {
                                     resolved = true;
                                     resolve(buffer);
@@ -201,7 +200,7 @@ async function downloadPDF(url) {
                             
                             // Accept if content-type indicates PDF
                             if (contentType.includes('application/pdf')) {
-                                console.log('PDF detected by content-type! Size:', buffer.length);
+                                logger.debug({ pdfBytes: buffer.length }, 'PDF response detected by content type');
                                 if (!resolved) {
                                     resolved = true;
                                     resolve(buffer);
@@ -214,16 +213,14 @@ async function downloadPDF(url) {
                                 try {
                                     const text = buffer.toString('utf-8');
                                     const json = JSON.parse(text);
-                                    console.log('API Response:', JSON.stringify(json).substring(0, 500));
                                     apiResponseData = json;
                                     
                                     // Check for base64 bytes in response.content.bytes (new format)
                                     if (json.content && json.content.bytes) {
-                                        console.log('Found bytes in response.content');
                                         try {
                                             const pdfData = Buffer.from(json.content.bytes, 'base64');
                                             if (pdfData.toString('ascii', 0, 5).startsWith('%PDF')) {
-                                                console.log('PDF decoded from base64! Size:', pdfData.length);
+                                                logger.debug({ pdfBytes: pdfData.length }, 'PDF decoded from API response');
                                                 if (!resolved) {
                                                     resolved = true;
                                                     resolve(pdfData);
@@ -231,13 +228,12 @@ async function downloadPDF(url) {
                                                 return;
                                             }
                                         } catch (e) {
-                                            console.log('Failed to decode base64 bytes:', e.message);
+                                            logger.warn({ err: e }, 'Failed to decode PDF bytes from API response');
                                         }
                                     }
                                     
                                     // Check if there's base64 encoded PDF data in dados.arquivo (legacy format)
                                     if (json.dados && json.dados.arquivo) {
-                                        console.log('Found arquivo in response');
                                         let pdfData = json.dados.arquivo;
                                         
                                         // If it's base64 encoded
@@ -245,12 +241,12 @@ async function downloadPDF(url) {
                                             try {
                                                 pdfData = Buffer.from(pdfData, 'base64');
                                             } catch (e) {
-                                                console.log('Failed to decode base64:', e.message);
+                                                logger.warn({ err: e }, 'Failed to decode legacy PDF payload');
                                             }
                                         }
                                         
                                         if (Buffer.isBuffer(pdfData) && pdfData.toString('ascii', 0, 5).startsWith('%PDF')) {
-                                            console.log('PDF decoded from base64! Size:', pdfData.length);
+                                            logger.debug({ pdfBytes: pdfData.length }, 'PDF decoded from legacy API response');
                                             if (!resolved) {
                                                 resolved = true;
                                                 resolve(pdfData);
@@ -262,18 +258,18 @@ async function downloadPDF(url) {
                                     // Check for URL pointing to PDF
                                     if (json.url || json.downloadUrl || json.pdfUrl) {
                                         const pdfUrl = json.url || json.downloadUrl || json.pdfUrl;
-                                        console.log('Found PDF URL in API response:', pdfUrl);
+                                        logger.debug('API response contains a PDF URL');
                                     }
                                 } catch (e) {
-                                    console.log('Could not parse API response as JSON:', e.message);
+                                    logger.warn({ err: e }, 'Could not parse API response as JSON');
                                 }
                             }
                         } catch (e) {
-                            console.log('Error reading response buffer:', e.message);
+                            logger.warn({ err: e }, 'Could not read invoice response body');
                         }
                     }
                 } catch (e) {
-                    console.log('Error in response handler:', e.message);
+                    logger.warn({ err: e }, 'Invoice response handler failed');
                 }
             };
             
@@ -282,9 +278,9 @@ async function downloadPDF(url) {
             // Navigate to the URL
             try {
                 const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-                console.log('Page navigation completed. Status:', response?.status());
+                logger.debug({ status: response?.status() }, 'Invoice page navigation completed');
             } catch (e) {
-                console.log('Navigation error (may still succeed if PDF was captured):', e.message);
+                logger.warn({ errorName: e.name }, 'Invoice page navigation failed; captured PDF may still be available');
             }
             
             if (!resolved) {
@@ -305,13 +301,13 @@ async function downloadPDF(url) {
                         if (apiResponse.status >= 200 && apiResponse.status < 400) {
                             const pdfData = extractPDFBufferFromApiBody(apiResponse.body);
                             if (pdfData) {
-                                console.log('PDF decoded from browser API fetch! Size:', pdfData.length);
+                                logger.debug({ pdfBytes: pdfData.length }, 'PDF decoded from browser API fetch');
                                 resolved = true;
                                 resolve(pdfData);
                             }
                         }
                     } catch (e) {
-                        console.log('Error fetching Aegea API response from page:', e.message);
+                        logger.warn({ err: e }, 'Could not fetch Aegea API response from browser page');
                     }
                 }
             }
@@ -328,19 +324,18 @@ async function downloadPDF(url) {
                     });
                     
                     if (downloadLinks.length > 0) {
-                        console.log('Found download links on page:', downloadLinks);
+                        logger.debug({ downloadLinkCount: downloadLinks.length }, 'Invoice page contains download links');
                         const downloadUrl = downloadLinks[0];
-                        console.log('Trying to download from found link:', downloadUrl);
                         await page.goto(downloadUrl, { waitUntil: 'networkidle0', timeout: 30000 });
                         await new Promise(r => setTimeout(r, 2000));
                     }
                 } catch (e) {
-                    console.log('Error searching for download links:', e.message);
+                    logger.warn({ errorName: e.name }, 'Could not search invoice page for download links');
                 }
             }
             
             if (!resolved) {
-                reject(new Error('No PDF received from URL: ' + url));
+                reject(new Error('No PDF received from approved invoice URL'));
             }
         });
         
@@ -422,7 +417,7 @@ async function parsePDFBuffer(buffer) {
         
         return { Pages: pages };
     } catch (e) {
-        console.error('Failed to parse PDF with pdf.js:', e.message);
+        logger.error({ err: e }, 'Failed to parse PDF with pdf.js');
         throw new Error('Failed to parse CORSAN PDF');
     }
 }
@@ -477,13 +472,7 @@ function extractTotalFromPDF(pdfData) {
         }
     }
 
-    console.error('CORSAN PDF debug — all text items:');
-    for (const page of pdfData.Pages) {
-        for (const text of page.Texts) {
-            const decoded = decodeText(text.R[0].T);
-            console.error(`  x=${text.x}, y=${text.y} => "${decoded}"`);
-        }
-    }
+    logger.warn({ pageCount: pdfData.Pages.length }, 'CORSAN invoice total was not found in PDF');
     throw new Error('TOTAL (R$) not found in CORSAN PDF');
 }
 
@@ -586,14 +575,7 @@ function extractDueDateFromPDF(pdfData) {
         }
     }
 
-    console.error('CORSAN PDF debug — all text items (due date):');
-    for (const page of pdfData.Pages) {
-        for (const text of page.Texts) {
-            const decoded = decodeText(text.R[0].T);
-            console.error(`  x=${text.x}, y=${text.y} => "${decoded}"`);
-        }
-    }
-    console.error('Vencimento not found in CORSAN PDF');
+    logger.warn({ pageCount: pdfData.Pages.length }, 'CORSAN invoice due date was not found in PDF');
     return null;
 }
 

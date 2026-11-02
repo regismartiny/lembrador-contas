@@ -1,27 +1,25 @@
 import base64Util from '../util/base64Util.js';
 import emailUtils from '../util/emailUtils.js';
+import logger from '../util/logger.js';
 import jsdom from 'jsdom';
 
 export async function fetch(address, subject, period) {
-    console.log("address", address)
-    console.log("subject", subject)
-    console.log("period", period)
     let startDate = new Date(period.year, period.month, 1)
     let endDate = new Date(period.year, period.month, 31)
 
     const messages = 
         await emailUtils.getMessagesByDateInterval(address, subject, startDate, endDate);
     if (!messages) {
-        console.error("No email found")
+        logger.warn({ year: period.year, month: period.month + 1 }, 'No CPFL email found for period');
         return []
     }
 
     let message = messages[0] //use only the first message
+        logger.debug({ messageCount: messages.length }, 'CPFL emails found');
     const parsedData = await parseEmailData(message);
     if (!parsedData) {
         return []
     }
-    console.log("parsedData", parsedData);
     
     let response = { 
         dueDate: parsedData.vencimento, 
@@ -33,7 +31,6 @@ export async function fetch(address, subject, period) {
 
 export function parseEmailData(msg) {
     try {
-        console.log("parseEmailData()")
         let data = msg.payload.body.data
         if (!data) return
         
@@ -42,13 +39,12 @@ export function parseEmailData(msg) {
         
         return parseHTML(text)
     } catch(e) {
-        console.error("Failed to get info from HTML email", e)
+        logger.error({ err: e }, 'Failed to parse CPFL email HTML');
         return null
     }
 }
 
 export function parseHTML(text) {
-    console.log("parseHTML()")
     const dom = new jsdom.JSDOM(text)
     const elemValor = querySelectorIncludesText(dom, 'span', 'R$')
     const elemVencimento = elemValor.parentElement.parentElement.previousElementSibling.childNodes[0].childNodes[1]

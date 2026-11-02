@@ -53,8 +53,7 @@ router.post('/update', requireAdmin, validateBody({
     const email = req.body.email.toLowerCase()
     const status = req.body.status
     const admin = req.body.admin === 'true';
-
-    logger.info(`Updating user - admin value from form: ${req.body.admin}, parsed as: ${admin}`)
+    logger.info({ admin }, 'Updating user role')
 
     await db.User.findOneAndUpdate(
         { _id: userId },

@@ -8,7 +8,6 @@ const router = express.Router();
 
 router.get('/push/public_key', function (req, res) {
    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-   logger.info("/push/public_key", req.body)
    if (!vapidPublicKey) {
       return res.status(503).json({ error: 'Push notifications not configured (VAPID_PUBLIC_KEY missing)' })
    }
@@ -16,7 +15,6 @@ router.get('/push/public_key', function (req, res) {
 });
 
 router.post('/push/register', asyncHandler(async function (req, res) {
-   logger.info("/push/register", req.body)
    let subscription = req.body.subscription
    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return res.status(400).json({ error: 'Invalid subscription object' })
@@ -25,7 +23,7 @@ router.post('/push/register', asyncHandler(async function (req, res) {
    let keys = subscription.keys
 
    const subscriptionFound = await db.PushNotificationSubscription.find({ endpoint }).lean()
-   logger.info('subscriptionFound', subscriptionFound)
+   logger.debug({ matchingSubscriptions: subscriptionFound.length }, 'Push subscription lookup completed')
    if (!subscriptionFound.length) {
       logger.info('Saving registration')
       const subscription = new db.PushNotificationSubscription({ endpoint, keys });
@@ -36,7 +34,7 @@ router.post('/push/register', asyncHandler(async function (req, res) {
 }));
 
 router.post('/push/send', asyncHandler(async function (req, res) {
-   logger.info("/push/send", req.body)
+   logger.info('Manual push notification check requested')
    // Trigger the scheduler's check-and-notify logic (manual trigger for testing)
    const reminderDays = parseInt(process.env.REMINDER_DAYS || '3', 10);
    await checkAndNotify(db, reminderDays);

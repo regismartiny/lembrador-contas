@@ -3,7 +3,7 @@ import fs from 'fs';
 import http from 'http';
 import url from 'url';
 import destroyer from 'server-destroy';
-import e from 'express';
+import logger from './logger.js';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const CREDENTIALS_DIR = '.credentials/';
@@ -18,12 +18,10 @@ async function authenticate() {
     const oAuth2Client = await getAuthenticatedClient(await getKeysFile());
     
     oAuth2Client.on('tokens', (tokens) => {
-        console.log('tokens event')
         if (tokens.refresh_token) {
-            console.log(tokens.refresh_token);
             storeTokens(tokens)
         }
-        console.log(tokens.access_token);
+        logger.info('Google OAuth tokens updated');
     });
 
     return oAuth2Client;
@@ -46,7 +44,7 @@ function getAuthenticatedClient(keys) {
     // Check if we have previously stored a token.
     fs.readFile(TOKEN_PATH, (err, token) => {
         if (err) {
-            console.log('No token found. Refreshing token...');
+            logger.info('No stored Google OAuth token found; starting authorization');
             getNewToken(oAuth2Client)
                 .then((oAuth2Client) => resolve(oAuth2Client))
                 .catch((err) => reject(err));
@@ -77,7 +75,6 @@ function getNewToken(oAuth2Client) {
                     // acquire the code from the querystring, and close the web server.
                     const qs = new url.URL(req.url, redirectUrl.href).searchParams;
                     const code = qs.get('code');
-                    console.log(`Code is ${code}`);
                     res.end('Authentication successful! Please return to the console.');
                     server.destroy();
         
@@ -87,23 +84,20 @@ function getNewToken(oAuth2Client) {
                     oAuth2Client.setCredentials(r.tokens);
                     // Store the token to disk for later program executions
                     storeTokens(r.tokens)
-                    console.info('Tokens acquired.');
+                    logger.info('Google OAuth authorization completed');
                     resolve(oAuth2Client);
                 }
             } catch (e) {
                 reject(e);
             }
         }).listen(redirectUrl.port, () => {
-            console.log(authorizeUrl)
+            logger.info({ authorizationUrl: authorizeUrl }, 'Open this URL to authorize Google account');
             // open the browser to the authorize url to start the workflow
             // open(authorizeUrl, {wait: false}).then(cp => cp.unref());
         });
 
         server.on('error', (err) => {
             if (String(err).includes('EADDRINUSE')) {
-                console.log('Authorization server already running');
-                console.log('Access the authorization url to authorize:\n', authorizeUrl)
-                console.log('\n\n')
                 reject(err)
             }
         })
@@ -114,16 +108,18 @@ function getNewToken(oAuth2Client) {
 async function getKeysFile() {
     let keys = await fs.promises.readFile(CREDENTIALS_PATH)
     if (!keys) {
-        console.error("Error loading credentials file")
+        logger.error({ credentialsPath: CREDENTIALS_PATH }, 'Google OAuth credentials file is empty');
     }
     return JSON.parse(keys)
 }
 
 function storeTokens(tokens) {
     fs.writeFile(TOKEN_PATH, JSON.stringify(tokens), (err) => {
-        if (err) return console.error(err);
-        console.log('Token stored to', TOKEN_PATH);
+        if (err) return logger.error({ err, tokenPath: TOKEN_PATH }, 'Failed to store Google OAuth token');
+        logger.info({ tokenPath: TOKEN_PATH }, 'Google OAuth token stored');
     });
 }
 
-export default { authenticate: () => authenticate().catch(console.error) }
+export default {
+    authenticate: () => authenticate()
+}

@@ -15,12 +15,10 @@ function urlB64ToUint8Array(base64String) {
 
 function checkNotificationsPermission() {
    if (Notification.permission == 'denied') {
-      console.log("[Service Worker] Notifications permission wan't granted")
       return false;
    }
 
    if (Notification.permission == 'default') {
-      console.log("[Service Worker] Notifications permission request was dismissed")
    }
 
    return true;
@@ -28,12 +26,9 @@ function checkNotificationsPermission() {
 
 self.addEventListener('activate', async () => {
    // This will be called only once when the service worker is activated.
-   console.log('[Service Worker] Activated.')
 })
 
 self.addEventListener('push', event => {
-   console.log('[Service Worker] Push Received.')
-   console.log(`[Service Worker] Push had this data: "${event.data.text()}"`)
 
    if (!checkNotificationsPermission()) {
       return
@@ -43,12 +38,10 @@ self.addEventListener('push', event => {
       const msg = event.data.json()
       showLocalNotification(msg.title, msg.body, event);
    } else {
-      console.log("[Service Worker] Push event but no data")
     }
 })
 
 self.addEventListener('notificationclick', function(event) {
-   console.log('[Service Worker] Notification click Received.')
 
    event.notification.close()
 
@@ -63,7 +56,6 @@ self.addEventListener('notificationclick', function(event) {
 })
 
 self.addEventListener('pushsubscriptionchange', async function(event) {
-   console.log('[Service Worker]: \'pushsubscriptionchange\' event fired.')
    
    try {
       const resp = await fetch('/notifications/push/public_key')
@@ -79,7 +71,6 @@ self.addEventListener('pushsubscriptionchange', async function(event) {
          applicationServerKey: applicationServerKey
       })
       
-      console.log('[Service Worker] New subscription: ', newSubscription)
       
       // Send the new subscription to the register endpoint
       await fetch('/notifications/push/register', {
@@ -88,12 +79,11 @@ self.addEventListener('pushsubscriptionchange', async function(event) {
          body: JSON.stringify({ subscription: newSubscription })
       })
    } catch (err) {
-      console.error('[Service Worker] pushsubscriptionchange error:', err)
+      console.error('[Service Worker] Subscription refresh failed:', err.name)
    }
 });
 
 const showLocalNotification = (title, body, event) => {
-   console.log('[Service Worker] showLocalNotification')
    const options = {
      body
      // here you can add more properties like icon, image, vibrate, etc.

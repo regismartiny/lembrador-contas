@@ -17,7 +17,7 @@ userSchema.pre('validate', function (next) {
 
     User.findOne({ email: this.email }, 'email').then(function (results) {
         if (results) {
-            logger.warn('Resultados de validação: ', results)
+            logger.warn('Duplicate user email rejected during validation')
             self.invalidate("email", "Email deve ser único")
             next(new Error("email must be unique"))
         } else {
@@ -33,7 +33,8 @@ userSchema.pre('validate', function (next) {
             next()
         }
     }).catch(err => {
-        logger.info('Erro: ', err)
+        logger.error({ err }, 'User validation failed')
+        next(err)
     })
 })
 

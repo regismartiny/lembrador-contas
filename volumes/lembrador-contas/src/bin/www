@@ -71,11 +71,11 @@ function onError(error) {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      logger.error(bind + ' requires elevated privileges');
+        logger.error({ bind }, 'Server requires elevated privileges');
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      logger.error(bind + ' is already in use');
+        logger.error({ bind }, 'Server address is already in use');
       process.exit(1);
       break;
     default:
@@ -92,7 +92,7 @@ function onListening() {
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  logger.info('Listening on ' + bind);
+  logger.info({ bind }, 'HTTP server listening');
   
   // Start the notification scheduler once server is listening
   startScheduler();

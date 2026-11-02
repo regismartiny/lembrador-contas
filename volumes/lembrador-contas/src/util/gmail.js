@@ -1,21 +1,19 @@
 import { google } from 'googleapis';
 import googleAuth from './googleAuth.js';
+import logger from './logger.js';
 
 function listMessages(auth, query) {
     return new Promise(function (resolve, reject) {
 
-        console.log('query', query);
         const gmail = google.gmail({version: 'v1', auth});
         gmail.users.messages.list(query, function (err, res) {
             if (err) {
-                let msg = 'The API returned an error: ' + err;
-                console.log(msg);
-                reject(msg);
+                return reject(err);
             }
             if (res && res.data && res.data.messages && res.data.messages.length > 0) {
                 resolve(res.data.messages);                
             } else {
-                console.log('listMessages: No message found.');
+                logger.debug('Gmail message search returned no results');
                 resolve([]);
             }
         });
@@ -27,15 +25,13 @@ function getMessage(auth, query) {
         const gmail = google.gmail({version: 'v1', auth});
         gmail.users.messages.get(query, function (err, res) {
             if (err) {
-                let msg = 'The API returned an error: ' + err;
-                console.log(msg);
-                reject(msg);
+                return reject(err);
             }
             if (res && res.data) {
                 resolve(res.data);
             } else {
                 let msg = 'getMessage: No message found.'
-                console.log(msg);
+                logger.debug('Gmail message lookup returned no result');
                 resolve(false);
             }
         });
@@ -49,7 +45,7 @@ function getAttachmentsSync(auth, query, message) {
         const attachments = [];
         if (parts.length === 0) {
             let msg = 'Message has no attachment';
-            console.log(msg);
+            logger.warn({ operation: 'getAttachments' }, msg);
             reject(msg);
         }
         for (let i = 0; i < parts.length; i++) {
@@ -63,9 +59,7 @@ function getAttachmentsSync(auth, query, message) {
                     'auth': auth
                 }, function (err, res) {
                     if (err) {
-                        let msg = 'Error getting attachments: ' + err;
-                        console.log(msg);
-                        reject(false);
+                        return reject(err);
                     }
                     const att = { filename: part.filename, mimeType: part.mimeType, attachment: res.data };
                     attachments.push(att);
@@ -88,7 +82,7 @@ export default {
             let auth = await googleAuth.authenticate();
             return await listMessages(auth, query);
         } catch(e) {
-            console.log(e);
+            throw e;
         }
     },
     getMessage: async function (id, headers) {
@@ -104,7 +98,7 @@ export default {
             let auth = await googleAuth.authenticate();
             return await getMessage(auth, query);
         } catch(e) {
-            console.log(e);
+            throw e;
         }
     },
     findMessages: async function (q) {
@@ -116,7 +110,7 @@ export default {
             let auth = await googleAuth.authenticate(); 
             return await listMessages(auth, query);
         } catch(e) {
-            console.log(e);
+            throw e;
         }
     },
     listMessagesFrom: async function (sender) {
@@ -128,7 +122,7 @@ export default {
             let auth = await googleAuth.authenticate();
             return await listMessages(auth, query);
         } catch(e) {
-            console.log(e);
+            throw e;
         }
     },
     getAttachments: async function (message) {
@@ -139,7 +133,7 @@ export default {
             let auth = await googleAuth.authenticate();
             return await getAttachmentsSync(auth, query, message);
         } catch(e) {
-            console.log(e);
+            throw e;
         }
     }
 }
