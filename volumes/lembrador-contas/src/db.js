@@ -7,6 +7,8 @@ import { Email } from './models/Email.js'
 import { Table } from './models/Table.js'
 import { API } from './models/API.js'
 import { PushNotificationSubscription } from './models/PushNotificationSubscription.js'
+import { BillReminder } from './models/BillReminder.js'
+import { Bill } from './models/Bill.js'
 
 import {
     PeriodFilterEnum,
@@ -56,6 +58,8 @@ export default {
     Table,
     API,
     PushNotificationSubscription,
+    BillReminder,
+    Bill,
     PeriodFilterEnum,
     StatusEnum,
     HttpMethodEnum,
