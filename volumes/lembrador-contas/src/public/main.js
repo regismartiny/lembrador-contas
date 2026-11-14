@@ -156,7 +156,6 @@ $(document).ready(function () {
  })
 
 // Function to toggle between dark and light themes
-// eslint-disable-next-line no-unused-vars
 function toggleTheme() {
    const root = document.documentElement;
    if (root.classList.contains('dark-theme')) {
@@ -341,4 +340,37 @@ swipeDeleteRows.forEach(function(row) {
          event.preventDefault();
       }
    });
+});
+
+// Delegated confirm handler for buttons with data-confirm attribute
+document.addEventListener('click', function(event) {
+    const btn = event.target.closest('[data-confirm]');
+    if (btn && !confirm(btn.dataset.confirm)) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+});
+// Navbar button event listeners (replacing inline onclick handlers)
+document.addEventListener('click', function(event) {
+    const el = event.target.closest('[data-action]');
+    if (!el) return;
+    switch (el.dataset.action) {
+        case 'hide-toast':
+            hideNotificationsToast();
+            break;
+        case 'notify-allow':
+            requestNotificationPermission();
+            break;
+    }
+});
+
+$(document).ready(function() {
+    // Theme toggle
+    $('#btn-toggle-theme').on('click', toggleTheme);
+    // Process bills (defined in dashboard page script)
+    $('#btn-process-bills').on('click', function() {
+        if (typeof window.processBills === 'function') window.processBills();
+    });
+    // Toggle edit mode (defined in main.js)
+    $('#btn-toggle-edit-mode').on('click', window.toggleEditMode);
 });

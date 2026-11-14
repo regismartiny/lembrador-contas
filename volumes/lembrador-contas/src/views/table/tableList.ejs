@@ -23,7 +23,7 @@
                                     <td><%= statusEnum[table.status] %></td>
                                     <td class="text-nowrap">
                                         <a href='/tables/edit/<%= table._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/tables/remove/<%= table._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir tabela <%= table.name %>" onclick="return confirm('Excluir?')"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                        <form action="/tables/remove/<%= table._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir tabela <%= table.name %>" data-confirm="Excluir?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
                                     </td>
                                 </tr>
                             <%})%>

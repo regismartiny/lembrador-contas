@@ -37,7 +37,7 @@
                                                 <a href='/bills/edit/<%= bill._id %>'>
                                                     <span class="material-symbols-outlined">edit</span>
                                                 </a>
-                                                <form action="/bills/remove/<%= bill._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir conta <%= bill.name %>" onclick="return confirm('Excluir a conta \'<%= bill.name %>\'?')"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                                <form action="/bills/remove/<%= bill._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir conta <%= bill.name %>" data-confirm="Excluir a conta '<%= bill.name %>'?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
                                             </td>
                                         </tr>
                                         <%})%>

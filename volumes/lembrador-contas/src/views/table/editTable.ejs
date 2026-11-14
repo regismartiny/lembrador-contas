@@ -66,12 +66,12 @@
                                         </div>
                                         <div class="form-group mb-0 period-fill-btn-wrap">
                                             <label>&nbsp;</label>
-                                            <button type="button" class="btn btn-secondary btn-sm btn-block" onclick="fillPeriod()">Preencher</button>
+                                            <button type="button" class="btn btn-secondary btn-sm btn-block" id="btn-fill-period">Preencher</button>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-1">
-                                    <a href="javascript:addRow()">+ Adicionar linha</a>
+                                    <button type="button" class="btn btn-link btn-sm p-0" id="btn-add-row">+ Adicionar linha</button>
                                 </div>
                                 <br>
                                 <br>
@@ -131,7 +131,7 @@
                     }
 
                     function genRemoveAction() {
-                        return '<td><a href="javascript:removeRow(' + rowCount + ')"><span class="material-symbols-outlined">delete</span></a></td>';
+                        return '<td><button type="button" class="btn btn-link p-0 remove-row-btn" data-row="' + rowCount + '"><span class="material-symbols-outlined">delete</span></button></td>';
                     }
 
                     $( document ).ready(function() {
@@ -150,6 +150,12 @@
                             if (month && year) {
                                 $row.find('[name="period"]').val(year + '-' + n(parseInt(month)));
                             }
+                        });
+
+                        $('#btn-fill-period').on('click', fillPeriod);
+                        $('#btn-add-row').on('click', function() { addRow(); });
+                        $('#table').on('click', '.remove-row-btn', function() {
+                            removeRow($(this).data('row'));
                         });
                     });
 

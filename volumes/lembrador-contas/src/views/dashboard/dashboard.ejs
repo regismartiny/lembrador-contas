@@ -13,7 +13,7 @@
                     <div class="dashboard-filters">
                         <div class="filter-group">
                             <label for="user">Usuário</label>
-                            <select class="form-control" id="user" name="user" onchange="filterBills()">
+                            <select class="form-control" id="user" name="user">
                                 <% users.forEach(function(user){ %>
                                 <option value="<%= user._id %>" <%= user._id.toString() === defaultUserId ? 'selected' : '' %>><%= user.name %></option>
                                 <% }) %>
@@ -21,7 +21,7 @@
                         </div>
                         <div class="filter-group">
                             <label for="periodFilter">Período</label>
-                            <select class="form-control" id="periodFilter" name="periodFilter" onchange="filterBills()">
+                            <select class="form-control" id="periodFilter" name="periodFilter">
                                 <% var keys = Object.keys(periodFilterEnum); keys.forEach(function(pf){ %>
                                     <option value="<%= pf %>"><%= periodFilterEnum[pf] %></option>
                                 <%})%>
@@ -90,6 +90,8 @@
                     $(document).ready(function() {
                         $('[data-toggle="tooltip"]').tooltip();
                         filterBills();
+                        $('#user').on('change', filterBills);
+                        $('#periodFilter').on('change', filterBills);
                     });
 
                     function applyMask() {
