@@ -1,38 +1,43 @@
 import db from '../db.js';
 import logger from './logger.js';
 
+let _processingLock = false;
+
 async function processBills(bills, selectedPeriods) {
-    let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
-    const periods = selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
-    logger.info({ periods, billCount: bills.length }, 'Processing bills')
-
-    //delete previously processed bills of current periods
-    // const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
-    // await db.ActiveBill.deleteMany({referencePeriod: {$in: referencePeriods}}).catch((err) => {
-    //     logger.error("Error deleting previous active bills", err)
-    // })
-
-    let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
-    let billsSourceApi = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.API)
-
-    const nonFuturePeriods = periods.filter(p => !isFuturePeriod(p))
-
-    const promises = [findActiveTableBills(billsSourceTable, periods),
-                        findActiveEmailBills(billsSourceEmail, nonFuturePeriods),
-                        findActiveApiBills(billsSourceApi, nonFuturePeriods)]
-    const activeBills = await runParallel(promises)
-
-    for (const activeBill of activeBills) {
-        await db.ActiveBill.findOneAndUpdate(
-            { name: activeBill.name, dueDate: activeBill.dueDate },
-            { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType, referencePeriod: activeBill.referencePeriod },
-            { upsert: true }
-        ).catch((err) => {
-            logger.error({ err }, 'Failed to save processed bill')
-        })
+    if (_processingLock) {
+        logger.warn('processBills is already running; skipping concurrent invocation');
+        return;
     }
+    _processingLock = true;
+    try {
+        let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
+        const periods = selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
+        logger.info({ periods, billCount: bills.length }, 'Processing bills')
 
-    logger.info({ periods, processedBillCount: activeBills.length }, 'Finished processing bills')
+        let billsSourceEmail = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.EMAIL)
+        let billsSourceApi = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.API)
+
+        const nonFuturePeriods = periods.filter(p => !isFuturePeriod(p))
+
+        const promises = [findActiveTableBills(billsSourceTable, periods),
+                            findActiveEmailBills(billsSourceEmail, nonFuturePeriods),
+                            findActiveApiBills(billsSourceApi, nonFuturePeriods)]
+        const activeBills = await runParallel(promises)
+
+        for (const activeBill of activeBills) {
+            await db.ActiveBill.findOneAndUpdate(
+                { name: activeBill.name, dueDate: activeBill.dueDate },
+                { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType, referencePeriod: activeBill.referencePeriod },
+                { upsert: true }
+            ).catch((err) => {
+                logger.error({ err }, 'Failed to save processed bill')
+            })
+        }
+
+        logger.info({ periods, processedBillCount: activeBills.length }, 'Finished processing bills')
+    } finally {
+        _processingLock = false;
+    }
 }
 
 function getSum(total, num) {
@@ -188,7 +193,8 @@ async function findEmailBills(bill, period) {
 }
 
 async function parseEmailData(email, period) {
-    const parser = require(`../parser/${db.DataParserEnum[email.dataParser]}`);
+    const parserModule = await import(`../parser/${db.DataParserEnum[email.dataParser]}`);
+    const parser = parserModule.default || parserModule;
     return parser.fetch(email.address, email.subject, period)
 }
 

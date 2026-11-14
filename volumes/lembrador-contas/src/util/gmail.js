@@ -62,7 +62,7 @@ function getAttachmentsSync(auth, query, message) {
                     }
                     const att = { filename: part.filename, mimeType: part.mimeType, attachment: res.data };
                     attachments.push(att);
-                    if (i == parts.length) { //only last attachment
+                    if (i === parts.length - 1) { //only last attachment
                         resolve(attachments);
                     }
                 });

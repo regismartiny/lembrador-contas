@@ -27,7 +27,7 @@
                                     <td><%= user.admin ? 'Sim' : 'Não' %></td>
                                     <td class="text-nowrap">
                                         <a href='/users/edit/<%= user._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/users/remove/<%= user._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir usuário <%= user.name %>" onclick="return confirm('Excluir o usuário \'<%= user.name %>\'?')"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                        <form action="/users/remove/<%= user._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir usuário <%= user.name %>" data-confirm="Excluir o usuário '<%= user.name %>'?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
                                     </td>
                                 </tr>
                             <%})%>
@@ -35,7 +35,7 @@
                     </table>
                 </div>
             </div>
-            <%- template.scripts %>
+            <%- include('../templates/scripts.html') %>
     </body>
 
     </html>

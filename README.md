@@ -93,6 +93,8 @@ Copy `.env.example` to `.env` and fill in the values below.
 | `LOG_LEVEL` | No | Pino log level: `debug`, `info`, `warn`, `error` (default `info`) |
 | `CF_ACCESS_TEAM_DOMAIN` | No | Cloudflare Access team domain. Enables auto-login via Cloudflare JWT when set with `CF_ACCESS_AUD` |
 | `CF_ACCESS_AUD` | No | Cloudflare Access application audience tag |
+| `GOOGLE_OAUTH_REDIRECT_URL` | No | OAuth redirect URL for Gmail integration (default: `http://localhost:9090/oauth2/callback`) |
+| `DOWNLOADS_RETENTION_DAYS` | No | Days to retain downloaded PDFs before cleanup (default `7`) |
 
 ### Generating VAPID keys
 
@@ -146,8 +148,7 @@ Each bill has a **Value Source Type** that determines how the amount is fetched 
 | `GET` | `/apis/list` | API source list |
 | `GET` | `/notifications/push/public_key` | Get VAPID public key |
 | `POST` | `/notifications/push/register` | Register push subscription |
-| `POST` | `/notifications/push/send` | Send push notification to all subscribers |
-| `GET/POST` | `/html-parser` | HTML parsing utility |
+| `POST` | `/notifications/push/send` | Send push notification to all subscribers (admin only) |
 | `GET` | `/health` | Health check (returns `{"status":"ok"}`) |
 | `GET/POST` | `/login`, `/logout` | Authentication |
 
@@ -198,7 +199,7 @@ src/
 
 ## Testing
 
-Tests use Bun's built-in test runner. 19 test files cover middleware, utilities, parsers, and route handlers.
+Tests use Bun's built-in test runner. 22 test files cover middleware, utilities, parsers, and route handlers.
 
 ```bash
 bun run test              # run all tests

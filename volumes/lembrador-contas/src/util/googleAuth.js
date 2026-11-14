@@ -9,7 +9,7 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const CREDENTIALS_DIR = '.credentials/';
 const CREDENTIALS_PATH = CREDENTIALS_DIR + 'oauth2.keys.json';
 const TOKEN_PATH = CREDENTIALS_DIR + 'token.json';
-const REDIRECT_URL = "http://localhost:9091";
+const REDIRECT_URL = process.env.GOOGLE_OAUTH_REDIRECT_URL || "http://localhost:9091";
 
 /**
 * Start by acquiring a pre-authenticated oAuth2 client.
@@ -19,7 +19,7 @@ async function authenticate() {
     
     oAuth2Client.on('tokens', (tokens) => {
         if (tokens.refresh_token) {
-            storeTokens(tokens)
+            storeTokens(tokens).catch(e => logger.error({ err: e }, 'Failed to store refreshed tokens'));
         }
         logger.info('Google OAuth tokens updated');
     });
@@ -84,7 +84,7 @@ function getNewToken(oAuth2Client) {
                         // Make sure to set the credentials on the OAuth2 client.
                         oAuth2Client.setCredentials(r.tokens);
                         // Store the token to disk for later program executions
-                        storeTokens(r.tokens)
+                        await storeTokens(r.tokens);
                         logger.info('Google OAuth authorization completed');
                         resolve(oAuth2Client);
                     }
@@ -116,9 +116,16 @@ async function getKeysFile() {
 }
 
 function storeTokens(tokens) {
-    fs.writeFile(TOKEN_PATH, JSON.stringify(tokens), (err) => {
-        if (err) return logger.error({ err, tokenPath: TOKEN_PATH }, 'Failed to store Google OAuth token');
-        logger.info({ tokenPath: TOKEN_PATH }, 'Google OAuth token stored');
+    return new Promise((resolve, reject) => {
+        fs.writeFile(TOKEN_PATH, JSON.stringify(tokens), (err) => {
+            if (err) {
+                logger.error({ err, tokenPath: TOKEN_PATH }, 'Failed to store Google OAuth token');
+                reject(err);
+            } else {
+                logger.info({ tokenPath: TOKEN_PATH }, 'Google OAuth token stored');
+                resolve();
+            }
+        });
     });
 }
 

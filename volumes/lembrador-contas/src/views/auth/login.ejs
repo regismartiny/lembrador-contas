@@ -196,7 +196,7 @@
           <div class="password-wrapper">
             <input type="password" class="form-control" id="password" name="password"
               placeholder="Digite a senha" required>
-            <button type="button" class="password-toggle" onclick="togglePassword()" tabindex="-1"
+            <button type="button" class="password-toggle" tabindex="-1"
               aria-label="Mostrar/ocultar senha">
               <i class="material-icons" id="toggleIcon" style="font-size:1.25rem;">visibility</i>
             </button>
@@ -209,7 +209,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     document.querySelector('form').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); this.submit(); }
     });
@@ -225,6 +225,8 @@
         icon.textContent = 'visibility';
       }
     }
+
+    document.querySelector('.password-toggle').addEventListener('click', togglePassword);
   </script>
 </body>
 </html>

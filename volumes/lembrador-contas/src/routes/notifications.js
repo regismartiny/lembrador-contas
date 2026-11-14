@@ -3,6 +3,7 @@ import logger from '../util/logger.js';
 import asyncHandler from '../util/asyncHandler.js';
 import db from '../db.js';
 import { checkAndNotify } from '../util/notificationScheduler.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.post('/push/register', asyncHandler(async function (req, res) {
    return res.status(201).send()
 }));
 
-router.post('/push/send', asyncHandler(async function (req, res) {
+router.post('/push/send', requireAdmin, asyncHandler(async function (req, res) {
    logger.info('Manual push notification check requested')
    // Trigger the scheduler's check-and-notify logic (manual trigger for testing)
    const reminderDays = parseInt(process.env.REMINDER_DAYS || '3', 10);

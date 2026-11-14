@@ -96,8 +96,8 @@
                     </form>
                 </div>
             </div>
-            <%- template.scripts %>
-                <script>
+            <%- include('../templates/scripts.html') %>
+                <script nonce="<%= cspNonce %>">
                     $(document).ready(() => {
                         const EMAIL_REST = '/emails/listJSON';
                         const TABLE_REST = '/tables/listJSON';

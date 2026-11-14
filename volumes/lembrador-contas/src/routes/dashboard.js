@@ -89,7 +89,8 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
 
     for (let [key, value] of monthBillsMap) {
         value.forEach(bill => {
-            bill.value = bill.value / bill.users.length
+            const n = bill.users.length || 1
+            bill.value = bill.value / n
         });
 
         const paymentTypeSummaries = billProcessing.groupByPaymentType(value)
@@ -136,9 +137,9 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
         let activeMonth = prev.getMonth() + 1;
 
         userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
-            let month = billList.month.split("/")[0]
-            let year = billList.month.split("/")[1]
-            return (month >= activeMonth && (year >= activeYear || year > activeYear))
+            let month = Number(billList.month.split("/")[0])
+            let year = Number(billList.month.split("/")[1])
+            return year > activeYear || (year === activeYear && month >= activeMonth)
         })
 
         renderUserBillListPage(res, userBillsData, isAdmin)
@@ -250,7 +251,11 @@ router.post('/active-bills/remove/:id', requireAdmin, validateObjectId('id'), as
 
 /* Delete processed bills. */
 router.post('/deleteProcessed', requireAdmin, asyncHandler(async function (req, res) {
-    await db.ActiveBill.deleteMany({}).lean()
+    const periods = req.query.periods ? JSON.parse(req.query.periods) : []
+    const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
+    if (referencePeriods.length > 0) {
+        await db.ActiveBill.deleteMany({ referencePeriod: { $in: referencePeriods } })
+    }
     res.redirect('/dashboard')
 }));
 

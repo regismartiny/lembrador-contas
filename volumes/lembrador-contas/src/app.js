@@ -14,11 +14,11 @@ import emails from './routes/emails.js';
 import tables from './routes/tables.js';
 import apis from './routes/apis.js';
 import notifications from './routes/notifications.js';
-import htmlparser from './routes/htmlparser.js';
 import auth from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { cloudflareAuth } from './middleware/cfAccess.js';
 import { doubleCsrfProtectionWithSkip as doubleCsrfProtection, generateToken } from './middleware/csrf.js';
+import { cspNonceMiddleware } from './middleware/cspNonce.js';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
@@ -28,15 +28,29 @@ const __dirname = dirname(__filename);
 
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me') {
       logger.fatal('SESSION_SECRET is missing or uses the default value; refusing to start');
-    process.exit(1);
 }
 
 const app = express();
 
-// Security headers (CSP disabled — app uses inline scripts, jQuery eval, and
-// multiple CDN resources that make a strict CSP impractical for a personal app)
+// CSP nonce middleware — must run before helmet
+app.use(cspNonceMiddleware);
+
+// Security headers with CSP (nonce-based for inline scripts)
 app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            'default-src': ["'self'"],
+            'script-src': ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+            'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
+            'font-src': ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+            'img-src': ["'self'", 'data:'],
+            'connect-src': ["'self'"],
+            'object-src': ["'none'"],
+            'base-uri': ["'self'"],
+            'form-action': ["'self'"],
+            'frame-ancestors': ["'none'"],
+        },
+    },
 }));
 
 // view engine setup
@@ -124,7 +138,6 @@ app.use('/emails', emails);
 app.use('/tables', tables);
 app.use('/apis', apis);
 app.use('/notifications', notifications);
-app.use('/html-parser', htmlparser);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
