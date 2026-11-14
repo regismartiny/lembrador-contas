@@ -1,6 +1,6 @@
 {
   "name": "lembrador-contas",
-  "version": "0.2",
+  "version": "0.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,7 +18,7 @@
   "dependencies": {
     "bootstrap": "4.6.1",
     "cookie-parser": "~1.4.7",
-    "csrf-csrf": "^4.0.3",
+    "csrf-csrf": "^4.1.0",
     "ejs": "^3.1.10",
     "express": "^4.22.3",
     "express-rate-limit": "6.7.1",
@@ -35,7 +35,7 @@
     "pdfjs-dist": "^4.10.38",
     "pino": "^10.4.0",
     "popper.js": "^1.16.1",
-    "puppeteer": "^25.12.0",
+    "puppeteer": "^25.17.0",
     "serve-favicon": "~2.4.5",
     "server-destroy": "1.0.1",
     "url": "0.11.1",
