@@ -31,7 +31,7 @@
                     <div id="billList" class="mt-3"></div>
                 </div>
             </div>
-            <%- template.scripts %>
+            <%- include('../templates/scripts.html') %>
                 <script nonce="<%= cspNonce %>">
                     async function processBills() {
                         const btn = document.getElementById('btn-process-bills');

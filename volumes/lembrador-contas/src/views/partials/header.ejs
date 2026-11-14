@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials">
     <title><%= typeof title !='undefined' ? title : 'Lembrador de Contas' %></title>
-    <%- template.head %>
+    <%- include('../templates/head.html') %>
     <meta name="user-email" content="<%= currentUserEmail %>">
     <meta name="csrf-token" content="<%= csrfToken %>">
 </head>
