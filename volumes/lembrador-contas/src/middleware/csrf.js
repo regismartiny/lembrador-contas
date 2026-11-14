@@ -15,7 +15,6 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 
 // Skip CSRF protection for service-worker endpoints that cannot send tokens
 const csrfSkipPaths = [
-    '/notifications/push/register',
     '/notifications/push/public_key',
 ];
 

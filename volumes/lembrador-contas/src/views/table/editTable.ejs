@@ -83,7 +83,7 @@
                 </div>
             </div>
             <%- template.scripts %>
-                <script>
+                <script nonce="<%= cspNonce %>">
                     var rowCount = 0;
 
                     <% if (locals.table) { %>

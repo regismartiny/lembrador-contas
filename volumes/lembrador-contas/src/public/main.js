@@ -140,8 +140,9 @@ $(document).ready(function () {
     }
 
     // Show logged-in user email in navbar
-    if (window.__USER_EMAIL__) {
-        $('#navbar-user-email').text(window.__USER_EMAIL__);
+    const userEmail = document.querySelector('meta[name="user-email"]')?.content;
+    if (userEmail) {
+        $('#navbar-user-email').text(userEmail);
     }
 
     // Highlight active nav link based on current path

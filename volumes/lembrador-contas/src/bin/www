@@ -10,6 +10,12 @@ import { startScheduler, stopScheduler } from '../util/notificationScheduler.js'
 
 import http from 'http';
 
+// Validate required environment variables before starting the server
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me') {
+    logger.fatal('SESSION_SECRET is missing or uses the default value; refusing to start');
+    process.exit(1);
+}
+
 /**
  * Get port from environment and store in Express.
  */

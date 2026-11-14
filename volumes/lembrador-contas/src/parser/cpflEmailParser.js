@@ -2,6 +2,7 @@ import base64Util from '../util/base64Util.js';
 import emailUtils from '../util/emailUtils.js';
 import logger from '../util/logger.js';
 import jsdom from 'jsdom';
+import { findHTMLPart } from './corsanEmailParser.js';
 
 export async function fetch(address, subject, period) {
     let startDate = new Date(period.year, period.month, 1)
@@ -31,7 +32,7 @@ export async function fetch(address, subject, period) {
 
 export function parseEmailData(msg) {
     try {
-        let data = msg.payload.body.data
+        let data = findHTMLPart(msg.payload)
         if (!data) return
         
         let base64str = base64Util.fixBase64(data)

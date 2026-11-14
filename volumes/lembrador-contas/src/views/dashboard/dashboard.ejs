@@ -32,7 +32,7 @@
                 </div>
             </div>
             <%- template.scripts %>
-                <script>
+                <script nonce="<%= cspNonce %>">
                     async function processBills() {
                         const btn = document.getElementById('btn-process-bills');
                         if (!btn || btn.disabled) return;

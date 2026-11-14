@@ -9,7 +9,7 @@ info:
     **Authentication:** All routes (except `/health`, `/login`, `/logout`) require
     an active session. Set the `APP_PASSWORD` environment variable to enable the
     passphrase gate; leave it unset to disable auth entirely (dev mode).
-  version: "0.2"
+  version: "0.3"
 
 servers:
   - url: http://localhost:9090
@@ -823,7 +823,8 @@ paths:
   /notifications/push/send:
     post:
       tags: [notifications]
-      summary: Send a push notification to all subscribers
+      summary: Send a push notification to all subscribers (admin only)
+      description: Requires admin role. Sends a push notification to all registered subscribers.
       requestBody:
         required: true
         content:

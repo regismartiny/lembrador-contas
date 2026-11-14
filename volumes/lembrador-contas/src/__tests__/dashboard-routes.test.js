@@ -68,6 +68,7 @@ describe('Dashboard bill values', () => {
             template: { head: '', navbar: '', scripts: '' },
             currentUserEmail: '',
             csrfToken: '',
+            cspNonce: 'test-nonce',
             lastUpdate: null,
             activeBillData: [{
                 month: 'Novembro/2026',

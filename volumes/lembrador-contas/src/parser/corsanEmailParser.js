@@ -14,6 +14,53 @@ const ALLOWED_BILL_HOSTS = new Set([
     'cliente.aegea.com.br',
     'api.aegea.com.br',
 ]);
+const DOWNLOADS_RETENTION_DAYS = parseInt(process.env.DOWNLOADS_RETENTION_DAYS || '7', 10);
+
+// Reusable Puppeteer browser instance (module-level)
+let _browser = null;
+
+async function getBrowser() {
+    if (_browser && _browser.process && _browser.process.exitCode === null) {
+        return _browser;
+    }
+    _browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    return _browser;
+}
+
+function closeBrowser() {
+    if (_browser) {
+        _browser.close().catch(() => {});
+        _browser = null;
+    }
+}
+
+process.on('exit', closeBrowser);
+process.on('SIGTERM', closeBrowser);
+process.on('SIGINT', closeBrowser);
+
+// Cleanup old downloads
+function cleanupDownloads() {
+    try {
+        const files = fs.readdirSync(DOWNLOADS_DIR);
+        const now = Date.now();
+        const maxAge = DOWNLOADS_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+        for (const file of files) {
+            const filePath = path.join(DOWNLOADS_DIR, file);
+            const stat = fs.statSync(filePath);
+            if (now - stat.mtimeMs > maxAge) {
+                fs.unlinkSync(filePath);
+                logger.debug({ file }, 'Removed old download');
+            }
+        }
+    } catch (e) {
+        logger.warn({ err: e }, 'Failed to clean up downloads directory');
+    }
+}
+
+cleanupDownloads();
 
 // Allow tests to inject a custom PDF parser (for mocking)
 let _parsePDFBufferFn = null;
@@ -150,12 +197,8 @@ async function downloadPDF(url) {
         }
     }
 
-    let browser = null;
     try {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        const browser = await getBrowser();
         
         const page = await browser.newPage();
         await page.setRequestInterception(true);
@@ -340,10 +383,9 @@ async function downloadPDF(url) {
         });
         
         return persistPDFBuffer(pdfBuffer);
-    } finally {
-        if (browser) {
-            await browser.close();
-        }
+    } catch (e) {
+        logger.error({ err: e }, 'Failed to download PDF via browser');
+        throw e;
     }
 }
 
@@ -636,5 +678,5 @@ function parseDDMMYYYY(str) {
     return new Date(year, month - 1, day);
 }
 
-export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer };
+export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer, findHTMLPart };
 export default { fetch };

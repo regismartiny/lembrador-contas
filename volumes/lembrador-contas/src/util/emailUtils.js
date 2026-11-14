@@ -21,7 +21,7 @@ async function getMessagesByDateInterval(sender, subject, startDate, endDate) {
     for (const message of messages) {
         let fullMessage = await gmail.getMessage(message.id, null)
 
-        if (!fullMessage) return
+        if (!fullMessage) continue
 
         fullMessages.push(fullMessage)
     }
@@ -42,7 +42,7 @@ async function getMessages(sender, subject) {
     for (const message of messages) {
         let fullMessage = await gmail.getMessage(message.id, null)
 
-        if (!fullMessage) return
+        if (!fullMessage) continue
 
         fullMessages.push(fullMessage)
     }

@@ -37,7 +37,7 @@
                 </div>
             <%})%>
         <%- template.scripts %>
-            <script>
+            <script nonce="<%= cspNonce %>">
                 // Function to get the current month and year
                 function getCurrentMonth() {
                     const now = new Date();

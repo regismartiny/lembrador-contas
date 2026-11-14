@@ -72,14 +72,28 @@ describe('cpflEmailParser.parseHTML', () => {
 
 describe('cpflEmailParser.parseEmailData', () => {
     test('parses a message object using its body data', () => {
-        const msg = { payload: { body: { data: encodeBodyData(CPFL_HTML_FIXTURE) } } };
+        const msg = { payload: { mimeType: 'text/html', body: { data: encodeBodyData(CPFL_HTML_FIXTURE) } } };
         const result = parseEmailData(msg);
         expect(result.valor).toBe(150);
         expect(result.vencimento).toBeInstanceOf(Date);
     });
 
+    test('parses a multipart message with HTML part', () => {
+        const msg = {
+            payload: {
+                mimeType: 'multipart/mixed',
+                parts: [
+                    { mimeType: 'text/plain', body: { data: encodeBodyData('plain text') } },
+                    { mimeType: 'text/html', body: { data: encodeBodyData(CPFL_HTML_FIXTURE) } },
+                ],
+            },
+        };
+        const result = parseEmailData(msg);
+        expect(result.valor).toBe(150);
+    });
+
     test('returns undefined when body data is missing', () => {
-        const msg = { payload: { body: { data: null } } };
+        const msg = { payload: { mimeType: 'text/html', body: { data: null } } };
         const result = parseEmailData(msg);
         expect(result).toBeUndefined();
     });
