@@ -152,10 +152,6 @@ function resetParser() {
     _parsedPdfBuffer = null;
 }
 
-// Helper to create a fake PDF response for global fetch (no longer used, kept for compatibility)
-function mockFetchSuccess() {
-    // No-op - puppeteer is mocked instead
-}
 
 function mockAegeaJsonResponse(pdfBuffer) {
     const body = JSON.stringify({ content: { bytes: pdfBuffer.toString('base64') } });

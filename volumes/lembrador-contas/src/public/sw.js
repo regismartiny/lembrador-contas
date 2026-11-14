@@ -1,7 +1,7 @@
 function urlB64ToUint8Array(base64String) {
    const padding = '='.repeat((4 - base64String.length % 4) % 4);
    const base64 = (base64String + padding)
-     .replace(/\-/g, '+')
+     .replace(/-/g, '+')
      .replace(/_/g, '/');
  
    const rawData = window.atob(base64);
@@ -18,8 +18,6 @@ function checkNotificationsPermission() {
       return false;
    }
 
-   if (Notification.permission == 'default') {
-   }
 
    return true;
 }
@@ -37,7 +35,6 @@ self.addEventListener('push', event => {
    if (event.data) {
       const msg = event.data.json()
       showLocalNotification(msg.title, msg.body, event);
-   } else {
     }
 })
 
@@ -55,7 +52,7 @@ self.addEventListener('notificationclick', function(event) {
    )
 })
 
-self.addEventListener('pushsubscriptionchange', async function(event) {
+self.addEventListener('pushsubscriptionchange', async function(_event) {
    
    try {
       const resp = await fetch('/notifications/push/public_key')

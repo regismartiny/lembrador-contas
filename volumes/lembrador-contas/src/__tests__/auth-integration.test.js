@@ -10,7 +10,7 @@ mock.module('jose', () => ({
     createRemoteJWKSet: () => ({
         // Mock JWKS that will be used by jwtVerify
     }),
-    jwtVerify: async (token, jwks, options) => {
+    jwtVerify: async (token, _jwks, _options) => {
         // Mock JWT verification - return different payloads based on token
         if (token === 'admin-token') {
             return {
@@ -108,6 +108,8 @@ describe('Authentication Logic Tests', () => {
             loginMethod: 'cloudflare',
             someOtherData: 'should be cleared'
         };
+        // Verify the previous data is present before regeneration
+        expect(session.someOtherData).toBe('should be cleared');
 
         // Simulate regeneration
         session = {}; // Clear all data

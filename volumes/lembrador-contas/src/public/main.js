@@ -15,7 +15,6 @@ async function requestNotificationPermission() {
    if (result === "granted") {
       await subscribePushManager()
       showNotification()
-   } else {
    }
 }
 
@@ -31,7 +30,7 @@ async function requestNotificationPermission() {
  function urlB64ToUint8Array(base64String) {
      const padding = '='.repeat((4 - base64String.length % 4) % 4);
      const base64 = (base64String + padding)
-       .replace(/\-/g, '+')
+       .replace(/-/g, '+')
        .replace(/_/g, '/');
    
      const rawData = window.atob(base64);
@@ -53,7 +52,7 @@ async function subscribePushManager() {
 
    await navigator.serviceWorker.ready
 
-   const subscription = await swRegistration.pushManager.getSubscription()
+   let subscription = await swRegistration.pushManager.getSubscription()
    const isSubscribed = !(subscription === null)
    if (!isSubscribed) {
       const publicKeyResponse = await send('GET', '/notifications/push/public_key')
@@ -79,6 +78,7 @@ async function subscribePushManager() {
    await updateSubscriptionOnServer(subscription)
  }
 
+ // eslint-disable-next-line no-unused-vars
  function unsubscribeUser() {
      swRegistration.pushManager.getSubscription()
      .then(function(subscription) {
@@ -155,6 +155,7 @@ $(document).ready(function () {
  })
 
 // Function to toggle between dark and light themes
+// eslint-disable-next-line no-unused-vars
 function toggleTheme() {
    const root = document.documentElement;
    if (root.classList.contains('dark-theme')) {
@@ -282,7 +283,6 @@ document.addEventListener('pointermove', function(event) {
       activeSwipeDelete.row.classList.add('is-swiping');
    }
 
-   const width = getSwipeDeleteWidth(activeSwipeDelete.row);
    const openOffset = getSwipeOpenOffset(activeSwipeDelete.row);
    const nextOffset = activeSwipeDelete.startOffset + deltaX;
    const offset = openOffset < 0

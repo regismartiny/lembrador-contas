@@ -8,7 +8,7 @@ process.env.APP_PASSWORD = undefined;
 
 // Mock CSRF middleware to allow POST requests in tests
 mock.module('../middleware/csrf.js', () => ({
-    generateToken: (req, res) => 'test-csrf-token',
+    generateToken: (_req, _res) => 'test-csrf-token',
     doubleCsrfProtection: (req, res, next) => next(),
     doubleCsrfProtectionWithSkip: (req, res, next) => next(),
 }));

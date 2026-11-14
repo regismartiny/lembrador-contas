@@ -30,7 +30,6 @@ function getMessage(auth, query) {
             if (res && res.data) {
                 resolve(res.data);
             } else {
-                let msg = 'getMessage: No message found.'
                 logger.debug('Gmail message lookup returned no result');
                 resolve(false);
             }
@@ -52,7 +51,7 @@ function getAttachmentsSync(auth, query, message) {
             const part = parts[i];
             if (part.filename && part.filename.length > 0 && part.body.attachmentId) {
                 const attachId = part.body.attachmentId;
-                const request = gmail.users.messages.attachments.get({
+                gmail.users.messages.attachments.get({
                     'id': attachId,
                     'messageId': message.id,
                     'userId': query.userId,
@@ -74,66 +73,46 @@ function getAttachmentsSync(auth, query, message) {
 
 export default {
     listUnreadMessages: async function () {
-        try {
-            const query = {
-                userId: 'me',
-                q: 'is:unread'
-            }
-            let auth = await googleAuth.authenticate();
-            return await listMessages(auth, query);
-        } catch(e) {
-            throw e;
+        const query = {
+            userId: 'me',
+            q: 'is:unread'
         }
+        let auth = await googleAuth.authenticate();
+        return await listMessages(auth, query);
     },
     getMessage: async function (id, headers) {
-        try {
-            const query = {
-                userId: 'me',
-                id
-            }
-            if (headers) {
-                query.format = 'metadata';
-                query.metadataHeaders = headers;
-            }
-            let auth = await googleAuth.authenticate();
-            return await getMessage(auth, query);
-        } catch(e) {
-            throw e;
+        const query = {
+            userId: 'me',
+            id
         }
+        if (headers) {
+            query.format = 'metadata';
+            query.metadataHeaders = headers;
+        }
+        let auth = await googleAuth.authenticate();
+        return await getMessage(auth, query);
     },
     findMessages: async function (q) {
-        try {
-            const query = {
-                userId: 'me',
-                q
-            }
-            let auth = await googleAuth.authenticate(); 
-            return await listMessages(auth, query);
-        } catch(e) {
-            throw e;
+        const query = {
+            userId: 'me',
+            q
         }
+        let auth = await googleAuth.authenticate(); 
+        return await listMessages(auth, query);
     },
     listMessagesFrom: async function (sender) {
-        try {
-            const query = {
-                userId: 'me',
-                q: 'from:' + sender
-            }
-            let auth = await googleAuth.authenticate();
-            return await listMessages(auth, query);
-        } catch(e) {
-            throw e;
+        const query = {
+            userId: 'me',
+            q: 'from:' + sender
         }
+        let auth = await googleAuth.authenticate();
+        return await listMessages(auth, query);
     },
     getAttachments: async function (message) {
-        try {
-            const query = {
-                userId: 'me'
-            }
-            let auth = await googleAuth.authenticate();
-            return await getAttachmentsSync(auth, query, message);
-        } catch(e) {
-            throw e;
+        const query = {
+            userId: 'me'
         }
+        let auth = await googleAuth.authenticate();
+        return await getAttachmentsSync(auth, query, message);
     }
 }
