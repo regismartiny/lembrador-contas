@@ -96,7 +96,7 @@ async function getPDFFromAttachment(attData) {
 
         logger.debug('Parsing email PDF attachment');
         pdfParser.parseBuffer(binArray);
-        let pdfData = await new Promise(function (resolve, reject) {
+        let pdfData = await new Promise(function (resolve) {
             pdfParser.on("pdfParser_dataReady", (pdfData) => {
                 resolve(pdfData);
             });

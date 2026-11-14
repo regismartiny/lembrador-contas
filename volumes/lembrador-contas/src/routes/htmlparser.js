@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res) => {
     const html = req.body.html || '';
-    let result = null;
+    let result;
     try {
         result = parseHTML(html);
     } catch (e) {

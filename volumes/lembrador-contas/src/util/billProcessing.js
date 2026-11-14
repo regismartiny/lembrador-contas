@@ -3,7 +3,7 @@ import logger from './logger.js';
 
 async function processBills(bills, selectedPeriods) {
     let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
-    const periods = !!selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
+    const periods = selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
     logger.info({ periods, billCount: bills.length }, 'Processing bills')
 
     //delete previously processed bills of current periods

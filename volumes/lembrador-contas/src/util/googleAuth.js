@@ -57,51 +57,53 @@ function getAuthenticatedClient(keys) {
 }
 
 function getNewToken(oAuth2Client) {
-    return new Promise(async function (resolve, reject) {
-        // Generate the url that will be used for the consent dialog.
-        const authorizeUrl = oAuth2Client.generateAuthUrl({
-            access_type: 'offline',
-            prompt: 'consent',
-            scope: SCOPES,
-        });
-    
-        // Open an http server to accept the oauth callback. In this simple example, the
-        // only request to our webserver is to /oauth2callback?code=<code>
-        let keys = await getKeysFile()
-        const redirectUrl = new URL(REDIRECT_URL);
-        const server = http.createServer(async (req, res) => {
-            try {
-                if (req.url.indexOf('/oauth2callback') > -1) {
-                    // acquire the code from the querystring, and close the web server.
-                    const qs = new url.URL(req.url, redirectUrl.href).searchParams;
-                    const code = qs.get('code');
-                    res.end('Authentication successful! Please return to the console.');
-                    server.destroy();
-        
-                    // Now that we have the code, use that to acquire tokens.
-                    const r = await oAuth2Client.getToken(code);
-                    // Make sure to set the credentials on the OAuth2 client.
-                    oAuth2Client.setCredentials(r.tokens);
-                    // Store the token to disk for later program executions
-                    storeTokens(r.tokens)
-                    logger.info('Google OAuth authorization completed');
-                    resolve(oAuth2Client);
-                }
-            } catch (e) {
-                reject(e);
-            }
-        }).listen(redirectUrl.port, () => {
-            logger.info({ authorizationUrl: authorizeUrl }, 'Open this URL to authorize Google account');
-            // open the browser to the authorize url to start the workflow
-            // open(authorizeUrl, {wait: false}).then(cp => cp.unref());
-        });
+    return new Promise((resolve, reject) => {
+        (async () => {
+            // Generate the url that will be used for the consent dialog.
+            const authorizeUrl = oAuth2Client.generateAuthUrl({
+                access_type: 'offline',
+                prompt: 'consent',
+                scope: SCOPES,
+            });
 
-        server.on('error', (err) => {
-            if (String(err).includes('EADDRINUSE')) {
-                reject(err)
-            }
-        })
-        destroyer(server);
+            // Open an http server to accept the oauth callback. In this simple example, the
+            // only request to our webserver is to /oauth2callback?code=<code>
+            await getKeysFile()
+            const redirectUrl = new URL(REDIRECT_URL);
+            const server = http.createServer(async (req, res) => {
+                try {
+                    if (req.url.indexOf('/oauth2callback') > -1) {
+                        // acquire the code from the querystring, and close the web server.
+                        const qs = new url.URL(req.url, redirectUrl.href).searchParams;
+                        const code = qs.get('code');
+                        res.end('Authentication successful! Please return to the console.');
+                        server.destroy();
+
+                        // Now that we have the code, use that to acquire tokens.
+                        const r = await oAuth2Client.getToken(code);
+                        // Make sure to set the credentials on the OAuth2 client.
+                        oAuth2Client.setCredentials(r.tokens);
+                        // Store the token to disk for later program executions
+                        storeTokens(r.tokens)
+                        logger.info('Google OAuth authorization completed');
+                        resolve(oAuth2Client);
+                    }
+                } catch (e) {
+                    reject(e);
+                }
+            }).listen(redirectUrl.port, () => {
+                logger.info({ authorizationUrl: authorizeUrl }, 'Open this URL to authorize Google account');
+                // open the browser to the authorize url to start the workflow
+                // open(authorizeUrl, {wait: false}).then(cp => cp.unref());
+            });
+
+            server.on('error', (err) => {
+                if (String(err).includes('EADDRINUSE')) {
+                    reject(err)
+                }
+            })
+            destroyer(server);
+        })().catch(reject);
     })
 }
 

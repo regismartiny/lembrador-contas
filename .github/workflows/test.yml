@@ -11,4 +11,6 @@ jobs:
       - working-directory: volumes/lembrador-contas
         run: bun install --frozen-lockfile
       - working-directory: volumes/lembrador-contas
+        run: bun run lint
+      - working-directory: volumes/lembrador-contas
         run: SESSION_SECRET=test-secret bun test
