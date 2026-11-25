@@ -1,3 +1,8 @@
+let swRegistration = null;
+let applicationServerPublicKey = null;
+// eslint-disable-next-line no-unused-vars
+let isSubscribed = false;
+
 function hideNotificationsToast() {
    $('#notifications-toast-container').remove()
 }
@@ -22,7 +27,9 @@ async function requestNotificationPermission() {
     const options = {
        body: 'Notificações ativadas'
     }
-    self.swRegistration.showNotification('Lembrador de Contas', options)
+    if (swRegistration) {
+       swRegistration.showNotification('Lembrador de Contas', options)
+    }
  }
 
  // urlB64ToUint8Array is a magic function that will encode the base64 public key
@@ -145,6 +152,13 @@ $(document).ready(function () {
         $('#navbar-user-email').text(userEmail);
     }
 
+    // Populate CSRF token in navbar logout form
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]')?.content;
+    const logoutCsrfInput = document.getElementById('logout-csrf-token');
+    if (csrfTokenMeta && logoutCsrfInput) {
+        logoutCsrfInput.value = csrfTokenMeta;
+    }
+
     // Highlight active nav link based on current path
     const path = window.location.pathname.split('/')[1];
     $('.navbar-nav .nav-link').each(function() {
@@ -179,16 +193,8 @@ window.updateEditModeUI = function() {
        toggleBtn.textContent = isEditMode ? 'Desabilitar edição' : 'Habilitar edição';
    }
    
-   // Show/hide edit action buttons and add button using class toggle
-   const hiddenElements = document.querySelectorAll('.hidden-edit-mode');
-   
-   hiddenElements.forEach(element => {
-       if (isEditMode) {
-           element.classList.remove('hidden-edit-mode');
-       } else {
-           element.classList.add('hidden-edit-mode');
-       }
-   });
+   // Toggle edit-mode-active on body so CSS controls .hidden-edit-mode visibility
+   document.body.classList.toggle('edit-mode-active', isEditMode);
 };
 
 // Function to toggle edit mode for active bills
@@ -211,8 +217,11 @@ $(document).ready(function() {
    }
 });
 
-const swipeDeleteRows = document.querySelectorAll('.swipe-delete-row');
 let activeSwipeDelete = null;
+
+function getSwipeDeleteRows() {
+   return document.querySelectorAll('.swipe-delete-row');
+}
 
 function getSwipeDeleteWidth(row) {
    return parseFloat(getComputedStyle(row).getPropertyValue('--swipe-delete-width')) || 72;
@@ -235,6 +244,7 @@ document.addEventListener('pointerdown', function(event) {
    }
 
    const row = event.target.closest('.swipe-delete-row');
+   const swipeDeleteRows = getSwipeDeleteRows();
    if (!row) {
       swipeDeleteRows.forEach(function(swipeRow) {
          setSwipeDeleteOpen(swipeRow, false);
@@ -327,19 +337,21 @@ document.addEventListener('focusin', function(event) {
    }
 });
 
-swipeDeleteRows.forEach(function(row) {
-   row.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function(event) {
+   const row = event.target.closest('.swipe-delete-row');
+   if (!row) {
+      return;
+   }
    const openKey = getComputedStyle(row).direction === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
    if (event.key === openKey && event.target === row) {
-         setSwipeDeleteOpen(row, true);
-         row.querySelector('.swipe-delete-form button').focus();
-         event.preventDefault();
-      } else if (event.key === 'Escape' && row.classList.contains('is-delete-revealed')) {
-         setSwipeDeleteOpen(row, false);
-         row.focus();
-         event.preventDefault();
-      }
-   });
+      setSwipeDeleteOpen(row, true);
+      row.querySelector('.swipe-delete-form button')?.focus();
+      event.preventDefault();
+   } else if (event.key === 'Escape' && row.classList.contains('is-delete-revealed')) {
+      setSwipeDeleteOpen(row, false);
+      row.focus();
+      event.preventDefault();
+   }
 });
 
 // Delegated confirm handler for buttons with data-confirm attribute

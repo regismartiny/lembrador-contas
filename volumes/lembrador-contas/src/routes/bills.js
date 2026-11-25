@@ -23,6 +23,15 @@ router.get('/new', requireAdmin, asyncHandler(async function (req, res) {
     res.render('bill/newBill', { template, title: 'Cadastro de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, paymentTypeEnum: db.PaymentTypeEnum, activeUsers });
 }));
 
+function resolveValueSourceId(body) {
+    switch (body.valueSourceType) {
+        case 'EMAIL': return body.email;
+        case 'TABLE': return body.table;
+        case 'API': return body.api;
+        default: return undefined;
+    }
+}
+
 /* POST to Add Bill */
 router.post('/add', requireAdmin, validateBody({
     name: { required: true, trim: true, message: 'Nome é obrigatório.' },
@@ -35,11 +44,12 @@ router.post('/add', requireAdmin, validateBody({
     const company = req.body.company;
     const dueDay = parseInt(req.body.dueDay, 10);
     const icon = req.body.icon;
+    const type = req.body.type;
     const valueSourceType = req.body.valueSourceType;
-    const valueSourceId = valueSourceType === 'EMAIL' ? req.body.email : req.body.table;
+    const valueSourceId = resolveValueSourceId(req.body);
     const paymentType = req.body.paymentType;
 
-    const bill = new db.Bill({ users, name, company, dueDay, icon, valueSourceType, valueSourceId, paymentType });
+    const bill = new db.Bill({ users, name, company, dueDay, icon, type, valueSourceType, valueSourceId, paymentType });
     await bill.save();
     logger.info("Bill saved")
     res.redirect("/bills/list")
@@ -51,6 +61,9 @@ router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async
         db.Bill.findById(req.params.id),
         db.User.find({ status: 'ACTIVE' }).lean()
     ])
+    if (!bill) {
+        return res.status(404).render('error', { message: 'Conta não encontrada.', error: { status: 404 } });
+    }
     res.render('bill/editBill', { template, title: 'Edição de Conta', billTypeEnum: db.BillTypeEnum, valueSourceTypeEnum: db.ValueSourceTypeEnum, statusEnum: db.StatusEnum, paymentTypeEnum: db.PaymentTypeEnum, bill, activeUsers });
 }));
 
@@ -69,7 +82,7 @@ router.post('/update', requireAdmin, validateBody({
     const icon = req.body.icon
     const type = req.body.type
     const valueSourceType = req.body.valueSourceType
-    const valueSourceId = valueSourceType == 'EMAIL' ? req.body.email : req.body.table
+    const valueSourceId = resolveValueSourceId(req.body)
     const status = req.body.status
     const paymentType = req.body.paymentType
 

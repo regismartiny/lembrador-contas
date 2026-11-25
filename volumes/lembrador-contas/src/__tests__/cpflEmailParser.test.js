@@ -1,8 +1,10 @@
 import { mock, describe, test, expect, afterAll } from 'bun:test';
 
+const mockGetMessages = mock(() => Promise.resolve(null));
+
 // Mock Gmail-dependent modules — db.js and logger.js are handled by setup.js preload
 mock.module('../util/emailUtils.js', () => ({
-    default: { getMessagesByDateInterval: mock(() => Promise.resolve(null)) }
+    default: { getMessagesByDateInterval: mockGetMessages }
 }));
 
 afterAll(() => {
@@ -11,7 +13,7 @@ afterAll(() => {
 
 const encodeBodyData = (text) => Buffer.from(text, 'utf8').toString('base64');
 
-import { parseHTML, parseEmailData } from '../parser/cpflEmailParser.js';
+import { fetch as cpflFetch, parseHTML, parseEmailData } from '../parser/cpflEmailParser.js';
 
 // ---------------------------------------------------------------------------
 // HTML fixture
@@ -68,6 +70,12 @@ describe('cpflEmailParser.parseHTML', () => {
         const badHtml = '<table><tr><td><span>No price here</span></td></tr></table>';
         expect(() => parseHTML(badHtml)).toThrow();
     });
+
+    test('parses values >= R$ 1.000,00 with Brazilian thousands separator', () => {
+        const highValueHtml = CPFL_HTML_FIXTURE.replace('R$ 150,00 ', 'R$ 1.234,56 ');
+        const result = parseHTML(highValueHtml);
+        expect(result.valor).toBe(1234.56);
+    });
 });
 
 describe('cpflEmailParser.parseEmailData', () => {
@@ -96,5 +104,19 @@ describe('cpflEmailParser.parseEmailData', () => {
         const msg = { payload: { mimeType: 'text/html', body: { data: null } } };
         const result = parseEmailData(msg);
         expect(result).toBeUndefined();
+    });
+});
+
+describe('cpflEmailParser.fetch', () => {
+    test('returns empty array when messages array is empty and uses last day of month', async () => {
+        mockGetMessages.mockReset();
+        mockGetMessages.mockImplementationOnce(() => Promise.resolve([]));
+        const result = await cpflFetch('cpfl@example.com', 'Conta', { month: 1, year: 2024 });
+        expect(result).toEqual([]);
+        const [, , startDate, endDate] = mockGetMessages.mock.calls[0];
+        expect(startDate.getMonth()).toBe(1);
+        expect(startDate.getDate()).toBe(1);
+        expect(endDate.getMonth()).toBe(1);
+        expect(endDate.getDate()).toBe(29);
     });
 });

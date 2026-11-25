@@ -48,6 +48,9 @@ router.post('/add', requireAdmin, validateBody({
 /* GET Edit Email page. */
 router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
     const email = await db.Email.findById(req.params.id)
+    if (!email) {
+        return res.status(404).render('error', { message: 'Email não encontrado.', error: { status: 404 } });
+    }
     res.render('email/editEmail', { template, title: 'Edição de Email', statusEnum: db.StatusEnum, dataParserEnum: db.DataParserEnum, email })
 }));
 
@@ -75,7 +78,7 @@ router.post('/remove/:id', requireAdmin, validateObjectId('id'), asyncHandler(as
 }));
 
 /* GET unread db.Email page. */
-router.get('/unread', asyncHandler(async function (req, res) {
+router.get('/unread', requireAdmin, asyncHandler(async function (req, res) {
     const { default: gmail } = await import('../util/gmail.js');
     const messages = await gmail.listUnreadMessages();
     logger.info('MENSAGENS BUSCADAS');
@@ -83,14 +86,18 @@ router.get('/unread', asyncHandler(async function (req, res) {
 }));
 
 /* GET email page. */
-router.get('/get/:id', asyncHandler(async function (req, res) {
+router.get('/get/:id', requireAdmin, asyncHandler(async function (req, res) {
     const id = req.params.id;
     const { default: gmail } = await import('../util/gmail.js');
     const message = await gmail.getMessage(id, ['From', 'Date', 'Subject']);
 
+    if (!message) {
+        return res.status(404).json({ error: 'Mensagem não encontrada.' });
+    }
+
     logger.info('MENSAGEM ENCONTRADA');
 
-    const headers = message.payload.headers;
+    const headers = message.payload?.headers || [];
 
     for (let i = 0; i < headers.length; i++) {
         if (headers[i].name === 'To') {
@@ -98,12 +105,14 @@ router.get('/get/:id', asyncHandler(async function (req, res) {
         }
     }
 
-    message.payload.headers = headers;
+    if (message.payload) {
+        message.payload.headers = headers;
+    }
 
-    res.render('email/email', { title: 'Email', message: message });
+    res.json(message);
 }));
 
-router.get('/test/:id', asyncHandler(async function (req, res) {
+router.get('/test/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
     let emailId = req.params.id;
 
     const email = await db.Email.findById(emailId);

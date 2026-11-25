@@ -6,6 +6,7 @@ import db from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
 import { validateBody } from '../middleware/validate.js';
+import { validateExternalApiUrl } from '../util/urlValidator.js';
 
 const router = express.Router();
 
@@ -36,6 +37,10 @@ router.post('/add', requireAdmin, validateBody({
 }), asyncHandler(async function (req, res) {
     const name = req.body.name
     const url = req.body.url
+    const urlCheck = validateExternalApiUrl(url);
+    if (!urlCheck.valid) {
+        return res.status(400).json({ error: urlCheck.error });
+    }
     const method = req.body.method
     const body = req.body.body
     const value = req.body.value
@@ -49,6 +54,9 @@ router.post('/add', requireAdmin, validateBody({
 /* GET Edit API page. */
 router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
     const api = await db.API.findById(req.params.id)
+    if (!api) {
+        return res.status(404).render('error', { message: 'API não encontrada.', error: { status: 404 } });
+    }
     res.render('api/editApi', { template, title: 'Edição de API', httpMethodEnum: db.HttpMethodEnum, statusEnum: db.StatusEnum, api })
 }));
 
@@ -61,6 +69,10 @@ router.post('/update', requireAdmin, validateBody({
     const apiId = req.body.id;
     const name = req.body.name;
     const url = req.body.url;
+    const urlCheck = validateExternalApiUrl(url);
+    if (!urlCheck.valid) {
+        return res.status(400).json({ error: urlCheck.error });
+    }
     const method = req.body.method;
     const body = req.body.body;
     const value = req.body.value;

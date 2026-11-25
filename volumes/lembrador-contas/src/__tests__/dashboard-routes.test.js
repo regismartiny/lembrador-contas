@@ -4,6 +4,7 @@ import ejs from 'ejs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import app from '../app.js';
+import db from '../db.js';
 
 const dashboardViewsPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../views/dashboard');
 
@@ -116,6 +117,17 @@ describe('GET /dashboard/user-bill-list', () => {
     });
 });
 
+describe('GET /dashboard/active-bills/new', () => {
+    test('renders default referencePeriod in MM/YYYY format', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/new`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        const now = new Date();
+        const expected = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+        expect(html).toContain(`value="${expected}"`);
+    });
+});
+
 describe('POST /dashboard/processBills', () => {
     test('returns JSON success response', async () => {
         const res = await fetch(`${baseUrl}/dashboard/processBills`, {
@@ -124,6 +136,22 @@ describe('POST /dashboard/processBills', () => {
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json.success).toBe(true);
+    });
+
+    test('returns 409 when a concurrent processing run is already in progress', async () => {
+        const { default: billProcessing } = await import('../util/billProcessing.js');
+        const originalProcessBills = billProcessing.processBills;
+        billProcessing.processBills = async () => ({ skipped: true });
+        try {
+            const res = await fetch(`${baseUrl}/dashboard/processBills`, {
+                method: 'POST',
+            });
+            expect(res.status).toBe(409);
+            const json = await res.json();
+            expect(json.error).toContain('andamento');
+        } finally {
+            billProcessing.processBills = originalProcessBills;
+        }
     });
 });
 
@@ -135,6 +163,80 @@ describe('POST /dashboard/deleteProcessed', () => {
         });
         expect(res.status).toBe(302);
         expect(res.headers.get('location')).toBe('/dashboard');
+    });
+
+    test('returns 400 when periods query param is invalid JSON', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/deleteProcessed?periods=not-json`, {
+            method: 'POST',
+        });
+        expect(res.status).toBe(400);
+    });
+
+    test('returns 400 when periods query param is not an array', async () => {
+        const res = await fetch(`${baseUrl}/dashboard/deleteProcessed?periods=%7B%7D`, {
+            method: 'POST',
+        });
+        expect(res.status).toBe(400);
+    });
+});
+
+describe('POST /dashboard/active-bills/add validation', () => {
+    test('returns 400 when name is missing', async () => {
+        const body = new URLSearchParams({ value: '100,50' });
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        expect(res.status).toBe(400);
+    });
+
+    test('returns 400 when value is NaN', async () => {
+        const body = new URLSearchParams({ name: 'Conta', value: 'abc' });
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        expect(res.status).toBe(400);
+    });
+
+    test('accepts Brazilian decimal comma in value', async () => {
+        const body = new URLSearchParams({ name: 'Conta BR', value: '1.234,56' });
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+            redirect: 'manual',
+        });
+        expect(res.status).toBe(302);
+        expect(res.headers.get('location')).toBe('/dashboard');
+    });
+});
+
+describe('POST /dashboard/active-bills/update validation', () => {
+    test('returns 400 for invalid ObjectId', async () => {
+        const body = new URLSearchParams({ id: 'invalid-id', name: 'Conta', value: '10' });
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        expect(res.status).toBe(400);
+    });
+
+    test('returns 400 when value is NaN', async () => {
+        const body = new URLSearchParams({
+            id: '507f1f77bcf86cd799439011',
+            name: 'Conta',
+            value: 'nao-numero',
+        });
+        const res = await fetch(`${baseUrl}/dashboard/active-bills/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        expect(res.status).toBe(400);
     });
 });
 
@@ -153,5 +255,20 @@ describe('POST /dashboard/paybill/:id', () => {
             method: 'POST',
         });
         expect(res.status).toBe(400);
+    });
+});
+
+describe('GET /health', () => {
+    test('returns 503 when MongoDB connection is disconnected', async () => {
+        const originalState = db.Mongoose.connection.readyState;
+        db.Mongoose.connection.readyState = 0;
+        try {
+            const res = await fetch(`${baseUrl}/health`);
+            expect(res.status).toBe(503);
+            const body = await res.json();
+            expect(body.status).toBe('error');
+        } finally {
+            db.Mongoose.connection.readyState = originalState;
+        }
     });
 });

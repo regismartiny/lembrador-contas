@@ -41,7 +41,19 @@ export function validateBody(schema) {
         }
 
         if (errors.length > 0) {
-            return res.status(400).json({ error: errors.join(' ') });
+            const errorMessage = errors.join(' ');
+            const wantsHtml = typeof req.accepts === 'function' &&
+                !req.xhr &&
+                typeof req.headers?.accept === 'string' &&
+                req.headers.accept.includes('text/html') &&
+                req.accepts(['html', 'json']) === 'html';
+            if (wantsHtml && typeof res.render === 'function') {
+                return res.status(400).render('error', {
+                    message: errorMessage,
+                    error: { status: 400 },
+                });
+            }
+            return res.status(400).json({ error: errorMessage });
         }
 
         next();

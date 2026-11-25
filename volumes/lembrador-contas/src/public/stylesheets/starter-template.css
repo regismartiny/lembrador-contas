@@ -736,3 +736,7 @@ html.light-theme .navbar-toggler-icon {
 .hidden-edit-mode {
   display: none !important;
 }
+
+body.edit-mode-active .hidden-edit-mode {
+  display: revert !important;
+}

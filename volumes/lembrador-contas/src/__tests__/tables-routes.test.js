@@ -75,9 +75,9 @@ describe('POST /tables/add', () => {
 });
 
 describe('GET /tables/edit/:id', () => {
-    test('returns 200 for valid ObjectId', async () => {
+    test('returns 404 for valid ObjectId when table not found', async () => {
         const res = await fetch(`${baseUrl}/tables/edit/507f1f77bcf86cd799439011`);
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(404);
     });
 
     test('returns 400 for invalid ObjectId', async () => {

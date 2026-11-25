@@ -82,10 +82,9 @@ describe('POST /users/add', () => {
 });
 
 describe('GET /users/edit/:id', () => {
-    test('returns 500 for valid ObjectId when user not found (mock returns null)', async () => {
+    test('returns 404 for valid ObjectId when user not found', async () => {
         const res = await fetch(`${baseUrl}/users/edit/507f1f77bcf86cd799439011`);
-        // Mock findById returns null, template fails rendering without user data
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(404);
     });
 
     test('returns 400 for invalid ObjectId', async () => {

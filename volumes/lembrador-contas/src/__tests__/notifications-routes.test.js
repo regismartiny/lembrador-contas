@@ -27,6 +27,19 @@ describe('GET /notifications/push/public_key', () => {
         const body = await res.json();
         expect(body.error).toContain('VAPID_PUBLIC_KEY');
     });
+
+    test('returns publicKey and csrfToken when VAPID_PUBLIC_KEY is set', async () => {
+        process.env.VAPID_PUBLIC_KEY = 'test-vapid-key';
+        try {
+            const res = await fetch(`${baseUrl}/notifications/push/public_key`);
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.publicKey).toBe('test-vapid-key');
+            expect(body.csrfToken).toBe('test-csrf-token');
+        } finally {
+            delete process.env.VAPID_PUBLIC_KEY;
+        }
+    });
 });
 
 describe('POST /notifications/push/register', () => {

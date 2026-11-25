@@ -39,6 +39,9 @@ router.post('/add', requireAdmin, validateBody({
 /* GET Edit User page. */
 router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
     const user = await db.User.findById(req.params.id)
+    if (!user) {
+        return res.status(404).render('error', { message: 'Usuário não encontrado.', error: { status: 404 } });
+    }
     res.render('user/editUser', { template, title: 'Edição de Usuário', statusEnum: db.StatusEnum, user })
 }));
 

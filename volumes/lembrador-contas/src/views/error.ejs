@@ -4,7 +4,7 @@
 <body>
     <h1 class="text-center title-1"> Erro! </h1>
     <p><b><%= message %></b></p>
-    <p><%= error.status%></p>
-    <p><%= error.stack%></p>
+    <p><%= typeof error !== 'undefined' && error.status ? error.status : '' %></p>
+    <p><%= typeof error !== 'undefined' && error.stack ? error.stack : '' %></p>
 </body>
 </html>

@@ -84,12 +84,26 @@ describe('POST /apis/add', () => {
         });
         expect(res.status).toBe(400);
     });
+
+    test('returns 400 when url targets internal/private address (SSRF)', async () => {
+        const body = new URLSearchParams({
+            name: 'Internal Metadata',
+            url: 'http://169.254.169.254/latest/meta-data/',
+            method: 'GET',
+        });
+        const res = await fetch(`${baseUrl}/apis/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        expect(res.status).toBe(400);
+    });
 });
 
 describe('GET /apis/edit/:id', () => {
-    test('returns 200 for valid ObjectId', async () => {
+    test('returns 404 for valid ObjectId when api not found', async () => {
         const res = await fetch(`${baseUrl}/apis/edit/507f1f77bcf86cd799439011`);
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(404);
     });
 
     test('returns 400 for invalid ObjectId', async () => {
@@ -119,6 +133,20 @@ describe('POST /apis/update', () => {
         const body = new URLSearchParams({
             name: 'API',
             url: 'https://api.example.com',
+        });
+        const res = await fetch(`${baseUrl}/apis/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        expect(res.status).toBe(400);
+    });
+
+    test('returns 400 when url targets internal/private address (SSRF)', async () => {
+        const body = new URLSearchParams({
+            id: '507f1f77bcf86cd799439011',
+            name: 'Internal API',
+            url: 'http://127.0.0.1:8080/admin',
         });
         const res = await fetch(`${baseUrl}/apis/update`, {
             method: 'POST',

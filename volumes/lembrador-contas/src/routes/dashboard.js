@@ -7,8 +7,22 @@ import mongoose from 'mongoose';
 import billProcessing from '../util/billProcessing.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
+import { validateBody } from '../middleware/validate.js';
 
 const router = express.Router();
+
+function parseBillValue(raw) {
+    if (raw === undefined || raw === null || String(raw).trim() === '') {
+        return { valid: true, value: undefined };
+    }
+    const str = String(raw).trim();
+    const normalized = str.includes(',') ? str.replace(/\./g, '').replace(',', '.') : str;
+    const num = Number(normalized);
+    if (!Number.isFinite(num)) {
+        return { valid: false, value: undefined };
+    }
+    return { valid: true, value: num };
+}
 
 /* GET Dashboard page. */
 router.get('/', asyncHandler(async function (req, res) {
@@ -149,13 +163,18 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
 /* Process bills. */
 router.post('/processBills', requireAdmin, asyncHandler(async function (req, res) {
     const bills = await db.Bill.find()
-    await billProcessing.processBills(bills, req.query.periods)
+    const result = await billProcessing.processBills(bills, req.query.periods)
+    if (result?.skipped) {
+        return res.status(409).json({ error: 'Processamento já em andamento.' })
+    }
     res.json({ success: true })
 }));
 
 /* GET New ActiveBill page. */
 router.get('/active-bills/new', requireAdmin, asyncHandler(async function (req, res) {
     const activeUsers = await db.User.find({ status: 'ACTIVE' }).lean()
+    const now = new Date()
+    const defaultReferencePeriod = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
 
     res.render('dashboard/active-bill-edit', {
         template,
@@ -168,7 +187,7 @@ router.get('/active-bills/new', requireAdmin, asyncHandler(async function (req, 
             icon: '',
             status: 'UNPAID',
             paymentType: 'PIX',
-            referencePeriod: new Date().toISOString().slice(0, 7).replace('-', '/'),
+            referencePeriod: defaultReferencePeriod,
         },
         activeUsers,
         activeBillStatusEnum: db.ActiveBillStatusEnum,
@@ -178,19 +197,27 @@ router.get('/active-bills/new', requireAdmin, asyncHandler(async function (req, 
 }));
 
 /* POST Add ActiveBill. */
-router.post('/active-bills/add', requireAdmin, asyncHandler(async function (req, res) {
+router.post('/active-bills/add', requireAdmin, validateBody({
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+}), asyncHandler(async function (req, res) {
     const { name, dueDate, value, status, paymentType, referencePeriod, icon } = req.body
+    const parsedValue = parseBillValue(value)
+    if (!parsedValue.valid) {
+        return res.status(400).json({ error: 'Valor inválido.' })
+    }
     const users = Array.isArray(req.body.users) ? req.body.users : req.body.users ? [req.body.users] : []
+    const now = new Date()
+    const defaultReferencePeriod = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
 
     const activeBill = new db.ActiveBill({
         users,
         name,
         dueDate: dueDate ? new Date(dueDate) : undefined,
-        value: value !== '' ? Number(value) : undefined,
+        value: parsedValue.value,
         icon,
         status: status || 'UNPAID',
         paymentType: paymentType || 'PIX',
-        referencePeriod: referencePeriod || `${new Date().getMonth() + 1}/${new Date().getFullYear()}`,
+        referencePeriod: referencePeriod || defaultReferencePeriod,
     })
     await activeBill.save()
 
@@ -220,8 +247,15 @@ router.get('/active-bills/edit/:id', requireAdmin, validateObjectId('id'), async
 }));
 
 /* POST update ActiveBill. */
-router.post('/active-bills/update', requireAdmin, asyncHandler(async function (req, res) {
+router.post('/active-bills/update', requireAdmin, validateBody({
+    id: { required: true, message: 'ID é obrigatório.' },
+    name: { required: true, trim: true, message: 'Nome é obrigatório.' },
+}), validateObjectId('id'), asyncHandler(async function (req, res) {
     const { id, name, dueDate, value, status, paymentType, referencePeriod, icon } = req.body
+    const parsedValue = parseBillValue(value)
+    if (!parsedValue.valid) {
+        return res.status(400).json({ error: 'Valor inválido.' })
+    }
     const users = Array.isArray(req.body.users) ? req.body.users : req.body.users ? [req.body.users] : []
 
     await db.ActiveBill.findOneAndUpdate(
@@ -230,7 +264,7 @@ router.post('/active-bills/update', requireAdmin, asyncHandler(async function (r
             users,
             name,
             dueDate: dueDate ? new Date(dueDate) : undefined,
-            value: value !== '' ? Number(value) : undefined,
+            value: parsedValue.value,
             icon,
             status,
             paymentType,
@@ -251,7 +285,17 @@ router.post('/active-bills/remove/:id', requireAdmin, validateObjectId('id'), as
 
 /* Delete processed bills. */
 router.post('/deleteProcessed', requireAdmin, asyncHandler(async function (req, res) {
-    const periods = req.query.periods ? JSON.parse(req.query.periods) : []
+    let periods = []
+    if (req.query.periods) {
+        try {
+            periods = JSON.parse(req.query.periods)
+        } catch {
+            return res.status(400).json({ error: 'Parâmetro periods inválido.' })
+        }
+        if (!Array.isArray(periods)) {
+            return res.status(400).json({ error: 'Parâmetro periods deve ser um array.' })
+        }
+    }
     const referencePeriods = periods.map(p => String(p.month + 1).padStart(2, '0') + '/' + p.year)
     if (referencePeriods.length > 0) {
         await db.ActiveBill.deleteMany({ referencePeriod: { $in: referencePeriods } })

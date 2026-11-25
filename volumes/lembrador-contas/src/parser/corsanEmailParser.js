@@ -71,7 +71,7 @@ function setParsePDFBuffer(fn) {
 
 async function fetch(address, subject, period) {
     const startDate = new Date(period.year, period.month, 1);
-    const endDate = new Date(period.year, period.month, 31);
+    const endDate = new Date(period.year, period.month + 1, 0);
 
     const messages = await emailUtils.getMessagesByDateInterval(address, subject, startDate, endDate);
     if (!messages || messages.length === 0) {
@@ -197,10 +197,11 @@ async function downloadPDF(url) {
         }
     }
 
+    let page = null;
     try {
         const browser = await getBrowser();
         
-        const page = await browser.newPage();
+        page = await browser.newPage();
         await page.setRequestInterception(true);
         page.on('request', request => {
             const requestAction = isAllowedBillUrl(request.url())
@@ -386,6 +387,10 @@ async function downloadPDF(url) {
     } catch (e) {
         logger.error({ err: e }, 'Failed to download PDF via browser');
         throw e;
+    } finally {
+        if (page) {
+            await page.close().catch(() => {});
+        }
     }
 }
 
@@ -631,7 +636,7 @@ function extractReferencePeriodFromPDF(pdfData) {
         jun: '06', junio: '06', junho: '06',
         jul: '07', julio: '07', julho: '07',
         ago: '08', agos: '08', agosto: '08',
-        set: '09', sept: '09', out: '10', outubro: '10',
+        set: '09', sept: '09', setembro: '09', out: '10', outubro: '10',
         nov: '11', noviembre: '11', novembro: '11',
         dez: '12', dec: '12', diciembre: '12', dezembro: '12'
     };
@@ -678,5 +683,5 @@ function parseDDMMYYYY(str) {
     return new Date(year, month - 1, day);
 }
 
-export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, setParsePDFBuffer, findHTMLPart };
+export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, parseBrazilianCurrency, setParsePDFBuffer, findHTMLPart };
 export default { fetch };

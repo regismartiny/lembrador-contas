@@ -166,4 +166,27 @@ describe('validateBody', () => {
         expect(res.body.error).toContain('Name required.');
         expect(res.body.error).toContain('Email required.');
     });
+
+    test('renders error view for HTML form submissions', () => {
+        const middleware = validateBody({
+            name: { required: true, message: 'Nome é obrigatório.' },
+        });
+        const req = {
+            body: {},
+            headers: { accept: 'text/html,application/xhtml+xml' },
+            accepts: () => 'html',
+        };
+        let renderedView = null;
+        let renderedLocals = null;
+        const res = {
+            statusCode: 200,
+            status(code) { this.statusCode = code; return this; },
+            render(view, locals) { renderedView = view; renderedLocals = locals; return this; },
+            json() { throw new Error('Should not send JSON for HTML request'); },
+        };
+        middleware(req, res, () => {});
+        expect(res.statusCode).toBe(400);
+        expect(renderedView).toBe('error');
+        expect(renderedLocals.message).toContain('Nome é obrigatório.');
+    });
 });

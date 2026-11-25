@@ -78,8 +78,13 @@ mock.module('../db.js', () => {
         static find()                   { return makeQuery(mockData.activeBills); }
         static findById(id)             { const bill = mockData.activeBills.find(x => x._id === id || x._id?.toString?.() === id.toString?.()); return makeQuery(bill || null); }
         static findOneAndUpdate(query, update) {
-            const existing = mockData.activeBills.find(x => x._id?.toString?.() === query?._id?.toString?.() || x.name === query?.name);
-            const next = { ...(existing || {}), ...(update?.$set || {}), _id: existing?._id || query?._id || 'mock-active-bill-id' };
+            const existing = mockData.activeBills.find(x =>
+                (query?._id && x._id?.toString?.() === query._id.toString?.()) ||
+                (query?.name && x.name === query.name && (!query.dueDate || x.dueDate?.getTime?.() === query.dueDate?.getTime?.()))
+            );
+            const setFields = update?.$set || (update?.$setOnInsert ? {} : update || {});
+            const insertFields = !existing ? (update?.$setOnInsert || {}) : {};
+            const next = { ...(existing || {}), ...insertFields, ...setFields, _id: existing?._id || query?._id || 'mock-active-bill-id' };
             if (existing) Object.assign(existing, next);
             else mockData.activeBills.push(next);
             return makeQuery(next);
@@ -98,10 +103,14 @@ mock.module('../db.js', () => {
 
     class MockBill {
         constructor(data) { Object.assign(this, data); }
-        save() { return Promise.resolve(this); }
+        save() { mockData.bills.push(this); return Promise.resolve(this); }
         static find()                   { return makeQuery(mockData.bills); }
-        static findById()               { return makeQuery(null); }
-        static findOneAndUpdate()       { return makeQuery(null); }
+        static findById(id)             { const b = mockData.bills.find(x => x._id === id || x._id?.toString?.() === id?.toString?.()); return makeQuery(b || null); }
+        static findOneAndUpdate(query, update) {
+            const existing = mockData.bills.find(x => x._id === query?._id || x._id?.toString?.() === query?._id?.toString?.());
+            if (existing && update?.$set) Object.assign(existing, update.$set);
+            return makeQuery(existing || null);
+        }
         static findOneAndDelete()       { return makeQuery(null); }
     }
 
@@ -146,7 +155,7 @@ mock.module('../db.js', () => {
         constructor(data) { Object.assign(this, data); }
         save() { return Promise.resolve(this); }
         static find()                   { return makeQuery(mockData.apis); }
-        static findById()               { return makeQuery(null); }
+        static findById(id)             { const a = mockData.apis.find(x => x._id === id || x._id?.toString?.() === id?.toString?.()); return makeQuery(a || null); }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
     }
@@ -176,8 +185,10 @@ mock.module('../db.js', () => {
 
     // Return the default export object that db.js provides
     return {
+        connectDB: () => Promise.resolve(),
         default: {
-            Mongoose: null,
+            Mongoose: { connection: { readyState: 1 } },
+            connectDB: () => Promise.resolve(),
             User: MockUser,
             Bill: MockBill,
             ActiveBill: MockActiveBill,

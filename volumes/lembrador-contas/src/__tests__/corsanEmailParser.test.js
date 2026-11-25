@@ -8,13 +8,16 @@ let _mockResponse = null;
 let _parsedPdfBuffer = null;
 let _mockEvaluateResult = null;
 let _evaluatedEndpoint = null;
+let _pageCloseMock = null;
 
 mock.module('puppeteer', () => ({
     default: {
         launch: mock(() => Promise.resolve({
             close: mock(() => Promise.resolve()),
             newPage: mock(() => {
+                _pageCloseMock = mock(() => Promise.resolve());
                 const mockPage = {
+                    close: _pageCloseMock,
                     setUserAgent: mock(() => Promise.resolve()),
                     setRequestInterception: mock(() => Promise.resolve()),
                     evaluate: mock((_, endpoint) => {
@@ -341,6 +344,14 @@ describe('corsanEmailParser.extractReferencePeriodFromPDF', () => {
         expect(extractReferencePeriodFromPDF(pdfData)).toBe('10/2024');
     });
 
+    test('handles September full name Setembro/2026', () => {
+        const pdfData = makePDFData([
+            [1, 10, 'REFERÊNCIA'],
+            [5, 10, 'Setembro/2026'],
+        ]);
+        expect(extractReferencePeriodFromPDF(pdfData)).toBe('09/2026');
+    });
+
     test('extracts numeric reference period from the current Aegea layout', () => {
         expect(extractReferencePeriodFromPDF(PDF_FIXTURE_AEGEA_LAYOUT)).toBe('08/2026');
     });
@@ -386,6 +397,32 @@ describe('corsanEmailParser.fetch', () => {
         expect(result[0].dueDate).toBeInstanceOf(Date);
         expect(result[0].dueDate.getDate()).toBe(15);
         expect(result[0].referencePeriod).toBeNull();
+        expect(_pageCloseMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('uses last day of month for endDate in February', async () => {
+        mockGetMessages.mockImplementationOnce(() => Promise.resolve([]));
+        await corsanFetch('corsan@corsan.com.br', 'Conta', { month: 1, year: 2024 });
+        const [, , startDate, endDate] = mockGetMessages.mock.calls[0];
+        expect(startDate.getMonth()).toBe(1);
+        expect(startDate.getDate()).toBe(1);
+        expect(endDate.getMonth()).toBe(1);
+        expect(endDate.getDate()).toBe(29);
+    });
+
+    test('closes Puppeteer page even when browser download fails to return a PDF', async () => {
+        mockGetMessages.mockImplementationOnce(() =>
+            Promise.resolve([makeMessage(CORSAN_HTML_FIXTURE)])
+        );
+        _mockResponse = {
+            url: () => 'https://corsan.rs.gov.br/fatura/12345',
+            status: () => 500,
+            headers: () => ({ 'content-type': 'text/html' }),
+            buffer: mock(() => Promise.resolve(Buffer.from('<html>error</html>'))),
+        };
+        const result = await corsanFetch('corsan@corsan.com.br', 'Conta', period);
+        expect(result).toEqual([]);
+        expect(_pageCloseMock).toHaveBeenCalledTimes(1);
     });
 
     test('returns parsed data with reference period from PDF', async () => {

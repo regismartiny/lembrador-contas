@@ -14,7 +14,10 @@ services:
     container_name: lembrador-contas_mongodb
     image: mongo:8
     ports:
-      - 27017:27017
+      - 127.0.0.1:27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
     volumes:
       - ./volumes/mongodb/data:/data/db
     healthcheck:
@@ -28,17 +31,20 @@ services:
     build:
       context: ./volumes/lembrador-contas
       dockerfile: Dockerfile
-    command: sh -c 'bun install --frozen-lockfile --production && exec sh ./scripts/start-container.sh bun ./src/bin/www'
-    working_dir: /root/lembrador-contas
+    command: sh ./scripts/start-container.sh bun ./src/bin/www
+    working_dir: /home/bun/lembrador-contas
     restart: unless-stopped
     depends_on:
       mongodb:
         condition: service_healthy
     environment:
       - MONGODB_IP=lembrador-contas_mongodb
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lembrador-contas}
       - SESSION_SECRET=${SESSION_SECRET}
       - APP_PASSWORD=${APP_PASSWORD}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
       - VAPID_MAILTO=${VAPID_MAILTO}
@@ -46,10 +52,9 @@ services:
       - CF_ACCESS_AUD=${CF_ACCESS_AUD}
     ports:
       - 9090:9090
-      - 9091:9091
     volumes:
-      - ./volumes/lembrador-contas:/root/lembrador-contas
-      - lembrador_node_modules:/root/lembrador-contas/node_modules
+      - ./volumes/lembrador-contas:/home/bun/lembrador-contas
+      - lembrador_node_modules:/home/bun/lembrador-contas/node_modules
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
       interval: 15s

@@ -54,7 +54,10 @@
         <span class="nav-link small" id="navbar-user-email" style="opacity:0.6"></span>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/logout">Sair</a>
+        <form action="/logout" method="post" id="logout-form" class="d-inline">
+          <input type="hidden" name="_csrf" id="logout-csrf-token" value="">
+          <button type="submit" class="nav-link btn btn-link border-0 bg-transparent">Sair</button>
+        </form>
       </li>
     </ul>
   </div>

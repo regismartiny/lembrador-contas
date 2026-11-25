@@ -42,16 +42,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /root/lembrador-contas
+WORKDIR /home/bun/lembrador-contas
 
 # Install the locked production dependencies and matching browser at build time
 ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV PUPPETEER_CACHE_DIR=/root/.cache/puppeteer
-COPY package.json bun.lock ./
+ENV PUPPETEER_CACHE_DIR=/home/bun/.cache/puppeteer
+COPY --chown=bun:bun package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 RUN bunx puppeteer browsers install chrome
 
 # Copy source (overridden by volume mount in development, baked-in for production)
-COPY . .
+COPY --chown=bun:bun . .
+RUN chown -R bun:bun /home/bun
+
+USER bun
 
 CMD ["sh", "./scripts/start-container.sh", "bun", "run", "start"]
