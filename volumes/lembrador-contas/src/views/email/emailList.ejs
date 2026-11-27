@@ -8,24 +8,24 @@
                         <h1 class="title-1"><%= title %></h1>
                         <a href='/emails/new' class="btn btn-outline-success btn-sm">Novo</a>
                     </div>
-                    <div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Remetente</th>
-                                    <th>Situação</th>
-                                    <th></th>
+                                    <th class="text-left">Remetente</th>
+                                    <th class="d-none d-sm-table-cell">Situação</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% emailList.forEach(function(email){ %>
                                     <tr class="swipe-delete-row" tabindex="0" aria-label="E-mail <%= email.address %>">
-                                        <td style="word-break:break-all;text-align:left"><%= email.address %></td>
-                                        <td><%= statusEnum[email.status] %></td>
+                                        <td class="text-left" style="overflow-wrap:anywhere"><%= email.address %></td>
+                                        <td class="d-none d-sm-table-cell"><%= statusEnum[email.status] %></td>
                                         <td class="text-nowrap">
-                                            <a href='/emails/edit/<%= email._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                            <form action="/emails/remove/<%= email._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir e-mail <%= email.address %>" data-confirm="Excluir?"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></form>
-                                            <a href='/emails/test/<%= email._id %>'>Testar</a>
+                                            <a href='/emails/edit/<%= email._id %>' aria-label="Editar e-mail <%= email.address %>"><span class="material-symbols-outlined">edit</span></a>
+                                            <form action="/emails/remove/<%= email._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir e-mail <%= email.address %>" data-confirm="Excluir?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                            <a href='/emails/test/<%= email._id %>' class="btn btn-outline-secondary btn-sm py-1 px-2 ml-1">Testar</a>
                                         </td>
                                     </tr>
                                 <%})%>

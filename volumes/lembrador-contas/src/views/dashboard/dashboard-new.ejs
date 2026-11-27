@@ -2,40 +2,47 @@
 
     <body class="dark-theme">
         <%- template.navbar %>
-        <div class="starter-template">
-            <div class="float-right small">
-                Último processamento:
-                <span data-mask="00/00/0000 00:00:00"><%= lastUpdate?.toLocaleDateString('pt-br') %></span>
-            </div>
-            <% activeBillData.forEach(function(data){ %>
-                <div class="header">
-                    <h1 class="title-1">
-                        <%= data.month %>
-                    </h1>
+        <div class="container">
+            <div class="starter-template">
+                <div class="d-flex justify-content-end small mb-2" style="color:var(--text-secondary)">
+                    <span>Último processamento: <strong data-mask="00/00/0000 00:00:00"><%= lastUpdate ? lastUpdate.toLocaleDateString('pt-br') : 'Nunca processado' %></strong></span>
                 </div>
-                <br>
-                <div class="container-cards">
-                    <div class="dashboard">
-                        <% data.billList?.forEach(function(bill){ %>
-                            <div class="card">
-                                <i class="fas <%= bill.icon %>"></i>
-                                <div>
-                                    <h2><%= bill.name %></h2>
-                                    <p class="money"><%= bill.value != null ? Number(bill.value).toFixed(2) : '' %></p>
-                                    <p class="date" data-mask="00/00"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></p>
+                <% if (!activeBillData || activeBillData.length === 0) { %>
+                    <div class="dashboard-empty-state">
+                        <h2 class="dashboard-empty-title">Nenhuma conta para o mês atual</h2>
+                        <p class="dashboard-empty-text mb-0">Não há contas processadas com vencimento no mês atual.</p>
+                    </div>
+                <% } %>
+                <% activeBillData.forEach(function(data){ %>
+                    <div class="header mb-3">
+                        <h1 class="title-1">
+                            <%= data.month %>
+                        </h1>
+                    </div>
+                    <div class="container-cards px-0">
+                        <div class="dashboard">
+                            <% data.billList?.forEach(function(bill){ %>
+                                <div class="card">
+                                    <i class="fas <%= bill.icon %>"></i>
+                                    <div>
+                                        <h2><%= bill.name %></h2>
+                                        <p class="money"><%= bill.value != null ? Number(bill.value).toFixed(2) : '' %></p>
+                                        <p class="date" data-mask="00/00"><%= bill?.dueDate?.toLocaleDateString('pt-br') %></p>
+                                    </div>
                                 </div>
-                            </div>
-                        <%})%>
+                            <%})%>
+                        </div>
+                        <div class="summary">
+                            <h2>Resumo Mensal</h2>
+                            <p>Total Contas: <span class="total"><%= Number(data.totalValue).toFixed(2) %></span></p>
+                            <% data.paymentTypeSummaries.forEach(function(summary){ %>
+                                <p><%= summary.type %>: <span class="total"><%= Number(summary.total).toFixed(2) %></span></p>
+                            <% }) %>
+                        </div>
                     </div>
-                    <div class="summary">
-                        <h2>Resumo Mensal</h2>
-                        <p>Total Contas: <span class="total"><%= Number(data.totalValue).toFixed(2) %></span></p>
-                        <% data.paymentTypeSummaries.forEach(function(summary){ %>
-                            <p><%= summary.type %>: <span class="total"><%= Number(summary.total).toFixed(2) %></span></p>
-                        <% }) %>
-                    </div>
-                </div>
-            <%})%>
+                <%})%>
+            </div>
+        </div>
         <%- include('../templates/scripts.html') %>
             <script nonce="<%= cspNonce %>">
                 // Function to get the current month and year
@@ -48,6 +55,5 @@
                 // Set the current month in the header
                 //document.getElementById('month-header').textContent = `Bills for: ${getCurrentMonth()}`;
             </script>
-        </body>
-    </div>
+    </body>
 </html>

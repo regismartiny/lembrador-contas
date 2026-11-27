@@ -7,7 +7,6 @@
                     <h1 class="title-1">
                         <%= title %>
                     </h1>
-                    <br>
                     <form action="/bills/update" method="post">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="id" value="<%= bill._id %>">

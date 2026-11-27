@@ -106,10 +106,61 @@ a:hover { color: var(--link-hover); text-decoration: none; }
 
 th, td { text-align: center; }
 input.money { text-align: right; }
-select.form-control {
-  text-align-last: center;
-  padding-right: 2rem;
-  appearance: auto;
+
+/* Flex gap utilities (Bootstrap 4 polyfill) */
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 1rem; }
+
+select.form-control:not([multiple]):not([size]) {
+  display: flex;
+  align-items: center;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  text-align: left;
+  text-align-last: left;
+  white-space: nowrap;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 16px;
+}
+
+select.form-control:not([multiple]):not([size])::picker-icon {
+  display: none !important;
+}
+
+select.form-control:not([multiple]):not([size])::-ms-expand {
+  display: none;
+}
+
+html.light-theme select.form-control:not([multiple]):not([size]) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+}
+
+select.form-control option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+select.form-control[multiple] {
+  text-align: left;
+  text-align-last: left;
+  padding: 0.4rem;
+  min-height: 7.5rem;
+}
+
+select.form-control[multiple] option {
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+select.form-control[multiple] option:checked {
+  background: var(--accent) linear-gradient(0deg, var(--accent) 0%, var(--accent) 100%);
+  color: #fff;
 }
 
 /* ===== Typography ===== */
@@ -333,6 +384,27 @@ label {
 .alert {
   border-color: var(--border);
   border-radius: var(--radius);
+}
+
+.alert-danger {
+  background-color: rgba(242, 92, 92, 0.1);
+  border-color: rgba(242, 92, 92, 0.3);
+  color: var(--text-primary);
+}
+
+.alert-danger .material-icons {
+  color: var(--danger);
+}
+
+.alert-danger .close {
+  color: var(--text-secondary);
+  text-shadow: none;
+  opacity: 0.8;
+}
+
+.alert-danger .close:hover {
+  color: var(--text-primary);
+  opacity: 1;
 }
 
 /* ===== Bootstrap 4 Toast ===== */
@@ -567,6 +639,32 @@ html.light-theme .navbar-toggler-icon {
   padding: 0.65rem 0.75rem;
 }
 
+.bill-table td:first-child,
+.bill-table th:first-child {
+  text-align: left;
+}
+
+.bill-table td.hidden-edit-mode {
+  white-space: nowrap;
+}
+
+/* Action icon touch targets in list tables */
+.table td.text-nowrap > a:not(.btn),
+.table td.text-nowrap .swipe-delete-form > .btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+}
+
+.table td.text-nowrap > a:not(.btn):hover,
+.table td.text-nowrap .swipe-delete-form > .btn-link:hover {
+  background-color: var(--accent-bg);
+}
+
 /* ===== Month status styles ===== */
 .month-closed {
   opacity: 0.45;
@@ -624,9 +722,27 @@ html.light-theme .navbar-toggler-icon {
   .card { flex: 1 1 calc(50% - 20px); }
 }
 
+@media (max-width: 767.98px) {
+  .navbar-collapse {
+    max-height: calc(100vh - 3.75rem);
+    overflow-y: auto;
+    padding-bottom: 0.5rem;
+  }
+  .navbar-collapse .dropdown-menu {
+    min-width: 0;
+    width: 100%;
+    white-space: normal;
+    box-shadow: none;
+    margin-bottom: 0.35rem;
+  }
+  .navbar-collapse .dropdown-item {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 768px) {
   .starter-template {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.5rem;
   }
   .card         { flex: 1 1 calc(100% - 20px); }
   .header h1    { font-size: 1.5em; }
@@ -650,82 +766,19 @@ html.light-theme .navbar-toggler-icon {
   body {
     padding-top: 3.5rem;
   }
-  .swipe-delete-row {
-    --swipe-delete-width: 72px;
-    --swipe-open-offset: -72px;
-    --swipe-offset: 0px;
-    --swipe-reveal-width: 0px;
-    touch-action: pan-y;
-    transform: translateX(var(--swipe-offset));
-    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .swipe-delete-row:dir(rtl) {
-    --swipe-open-offset: 72px;
-  }
-  .swipe-delete-row.is-delete-revealed {
-    --swipe-offset: var(--swipe-open-offset);
-    --swipe-reveal-width: var(--swipe-delete-width);
-  }
-  .swipe-delete-row.is-swiping {
-    transition: none;
-  }
-  .swipe-delete-row > td:last-child {
-    position: relative;
-    z-index: 1;
-  }
-  .swipe-delete-form {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-end: 0;
-    display: flex;
-    width: var(--swipe-delete-width);
-    padding: 0;
-    margin: 0;
-    transform: translateX(calc(0px - var(--swipe-offset)));
-    clip-path: inset(0 0 0 calc(var(--swipe-delete-width) - var(--swipe-reveal-width)));
-    background: var(--danger);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 160ms ease, clip-path 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .swipe-delete-form:dir(rtl) {
-    clip-path: inset(0 calc(var(--swipe-delete-width) - var(--swipe-reveal-width)) 0 0);
-  }
-  .swipe-delete-form .btn-link {
-    display: grid;
-    width: 100%;
-    height: 100%;
-    place-items: center;
-    color: #fff;
-  }
-  .swipe-delete-form .material-symbols-outlined {
-    color: #fff;
-  }
-  .swipe-delete-row.is-delete-revealed .swipe-delete-form,
-  .swipe-delete-row.is-swiping .swipe-delete-form,
-  .swipe-delete-form:focus-within {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .swipe-delete-row.is-swiping .swipe-delete-form {
-    transition: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .swipe-delete-row,
-  .swipe-delete-form {
-    transition: none;
-  }
 }
 
 @media (max-width: 480px) {
   .header h1    { font-size: 1.2em; }
   .month-header { font-size: 0.9em; }
+  .month-block  { padding: 0.85rem 0.75rem; }
   .bill-table td,
   .bill-table th {
-    font-size: 1rem;
-    padding: 0.5rem 0.4rem;
+    font-size: 0.95rem;
+    padding: 0.5rem 0.35rem;
+  }
+  .bill-table td.hidden-edit-mode {
+    font-size: 0.8rem;
   }
   .navbar-brand {
     font-size: 1rem;
@@ -739,4 +792,48 @@ html.light-theme .navbar-toggler-icon {
 
 body.edit-mode-active .hidden-edit-mode {
   display: revert !important;
+}
+
+/* ===== Dashboard Empty State ===== */
+.dashboard-empty-state {
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.dashboard-empty-icon {
+  font-size: 2.5rem;
+  color: var(--accent);
+  background-color: var(--accent-bg);
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.dashboard-empty-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-empty-text {
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin: 0 auto 1.25rem;
+  font-size: 0.95rem;
+}
+
+.dashboard-empty-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }

@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head></head>
+<html lang="pt-br" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/stylesheets/starter-template.css">
+    <title>Erro - Lembrador de Contas</title>
+</head>
 <body>
-    <h1 class="text-center title-1"> Erro! </h1>
-    <p><b><%= message %></b></p>
-    <p><%= typeof error !== 'undefined' && error.status ? error.status : '' %></p>
-    <p><%= typeof error !== 'undefined' && error.stack ? error.stack : '' %></p>
+    <div class="container">
+        <div class="starter-template text-center">
+            <h1 class="title-1">Erro <%= typeof error !== 'undefined' && error.status ? error.status : '' %></h1>
+            <p class="mb-4"><b><%= message %></b></p>
+            <% if (typeof error !== 'undefined' && error.stack) { %>
+                <pre class="text-left p-3" style="white-space:pre-wrap;word-break:break-word;background:var(--bg-surface);color:var(--text-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.8rem"><%= error.stack %></pre>
+            <% } %>
+            <a href="/" class="btn btn-primary btn-sm mt-2">Voltar ao início</a>
+        </div>
+    </div>
 </body>
 </html>

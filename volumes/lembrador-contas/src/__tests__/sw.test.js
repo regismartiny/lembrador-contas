@@ -121,8 +121,8 @@ describe('Service Worker (sw.js)', () => {
         let installPromise;
         listeners.install({ waitUntil: (p) => { installPromise = p; } });
         await installPromise;
-        expect(cacheStore.has('lembrador-contas-v1')).toBe(true);
-        expect(cacheStore.get('lembrador-contas-v1').has('/main.js')).toBe(true);
+        expect(cacheStore.has('lembrador-contas-v4')).toBe(true);
+        expect(cacheStore.get('lembrador-contas-v4').has('/main.js')).toBe(true);
 
         let activatePromise;
         listeners.activate({ waitUntil: (p) => { activatePromise = p; } });

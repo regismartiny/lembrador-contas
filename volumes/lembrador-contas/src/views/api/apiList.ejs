@@ -8,27 +8,29 @@
                         <h1 class="title-1"><%= title %></h1>
                         <a href='/apis/new' class="btn btn-outline-success btn-sm">Novo</a>
                     </div>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Situação</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% apiList.forEach(function(api){ %>
-                                <tr class="swipe-delete-row" tabindex="0" aria-label="API <%= api.name %>">
-                                    <td><%= api.name %></td>
-                                    <td><%= statusEnum[api.status] %></td>
-                                    <td class="text-nowrap">
-                                        <a href='/apis/edit/<%= api._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/apis/remove/<%= api._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir API <%= api.name %>" data-confirm="Excluir?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
-                                    </td>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Nome</th>
+                                    <th>Situação</th>
+                                    <th>Ações</th>
                                 </tr>
-                            <%})%>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <% apiList.forEach(function(api){ %>
+                                    <tr class="swipe-delete-row" tabindex="0" aria-label="API <%= api.name %>">
+                                        <td class="text-left"><%= api.name %></td>
+                                        <td><%= statusEnum[api.status] %></td>
+                                        <td class="text-nowrap">
+                                            <a href='/apis/edit/<%= api._id %>' aria-label="Editar API <%= api.name %>"><span class="material-symbols-outlined">edit</span></a>
+                                            <form action="/apis/remove/<%= api._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir API <%= api.name %>" data-confirm="Excluir?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                        </td>
+                                    </tr>
+                                <%})%>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <%- include('../templates/scripts.html') %>
