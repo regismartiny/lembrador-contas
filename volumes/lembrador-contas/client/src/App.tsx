@@ -326,7 +326,12 @@ export const App: React.FC = () => {
   const activeBills = data?.activeBills || [];
   const users = data?.users || [];
   const bills = data?.bills || [];
-  const isAdmin = Boolean(data?.session?.isAdmin ?? session?.isAdmin);
+  const isAdmin = Boolean(
+    session?.authDisabled ||
+    data?.session?.authDisabled ||
+    data?.session?.isAdmin ||
+    session?.isAdmin
+  );
   const selectedBill = selectedBillId
     ? activeBills.find(b => b._id === selectedBillId) || null
     : null;
@@ -353,7 +358,7 @@ export const App: React.FC = () => {
               </div>
               <div className="text-[11px] text-[var(--wallet-muted)] mt-0.5">
                 {session?.authDisabled
-                  ? 'Modo local · Acesso liberado'
+                  ? 'Modo local · Administrador'
                   : session?.user?.name || session?.user?.email}
               </div>
             </div>

@@ -117,7 +117,8 @@ function isValidObjectId(id) {
 }
 
 async function resolveSessionContext(req) {
-    const authRequired = Boolean(process.env.APP_PASSWORD);
+    const rawPass = process.env.APP_PASSWORD;
+    const authRequired = Boolean(rawPass && rawPass !== 'undefined' && rawPass.trim() !== '');
     const sessionAuth = Boolean(req.session?.authenticated);
     const authenticated = !authRequired || sessionAuth;
     const sessionEmail = req.session?.email || '';

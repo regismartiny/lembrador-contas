@@ -47,6 +47,27 @@ describe('Household Wallet API v1 & SPA', () => {
         expect(typeof json.csrfToken).toBe('string');
     });
 
+    test('GET /api/session grants admin permission in local mode when APP_PASSWORD is empty or whitespace', async () => {
+        const prev = process.env.APP_PASSWORD;
+        try {
+            process.env.APP_PASSWORD = '   ';
+            const res = await fetch(`${baseUrl}/api/session`);
+            expect(res.status).toBe(200);
+            const json = await res.json();
+            expect(json.authenticated).toBe(true);
+            expect(json.authDisabled).toBe(true);
+            expect(json.isAdmin).toBe(true);
+
+            const statsRes = await fetch(`${baseUrl}/api/backup/stats`);
+            expect(statsRes.status).toBe(200);
+            const statsJson = await statsRes.json();
+            expect(statsJson.stats).toBeDefined();
+        } finally {
+            if (prev === undefined) delete process.env.APP_PASSWORD;
+            else process.env.APP_PASSWORD = prev;
+        }
+    });
+
     test('GET /api/bootstrap hydrates active bills, prevValue delta, and residents', async () => {
         const userId = '507f1f77bcf86cd799439001';
         mockData.users.push({
