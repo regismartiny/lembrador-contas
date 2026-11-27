@@ -43,7 +43,7 @@ router.get('/', asyncHandler(async function (req, res) {
         .filter(user => !user.status || user.status === 'ACTIVE' || billUserIds.has(user._id.toString()))
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
 
-    const lastUpdate = activeBills.sort((a,b)=>b.updated_at.getTime()-a.updated_at.getTime())[0]?.updated_at;
+    const lastUpdate = activeBills.sort((a,b)=>(b.updated_at?.getTime?.() || 0)-(a.updated_at?.getTime?.() || 0))[0]?.updated_at;
 
     const sessionEmail = req.session.email || ''
     const loggedUser = sessionEmail ? users.find(u => u.email === sessionEmail) : null

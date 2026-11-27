@@ -9,6 +9,7 @@ A personal bill-tracking web application. Keeps track of recurring bills, fetche
 - Web Push notifications (PWA-ready, requires VAPID keys)
 - Multi-layer authentication: Cloudflare Access JWT auto-login, email + shared password login, admin role for write operations
 - Bill processing: computes active bills for previous / current / next month
+- Bill reports: consolidated or per-user monthly bill reports with split summary, print/PDF view, and CSV export
 - Database backup & restore: export all collections as a `.zip` archive and import `.zip` backups (full replace or merge by ID, admin only)
 
 ## Tech stack
@@ -150,6 +151,8 @@ Each bill has a **Value Source Type** that determines how the amount is fetched 
 | `GET` | `/notifications/push/public_key` | Get VAPID public key |
 | `POST` | `/notifications/push/register` | Register push subscription |
 | `POST` | `/notifications/push/send` | Send push notification to all subscribers (admin only) |
+| `GET` | `/reports` | Bill report page with filters, user split summary, and print/PDF layout |
+| `GET` | `/reports/export.csv` | Export filtered bill report as `.csv` |
 | `GET` | `/backup` | Database backup & restore management page (admin only) |
 | `GET` | `/backup/download` | Download full database backup as `.zip` (admin only) |
 | `POST` | `/backup/import` | Import database backup from `.zip` (`replace` or `merge`, admin only) |
