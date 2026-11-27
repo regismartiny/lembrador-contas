@@ -77,7 +77,7 @@ self.addEventListener('fetch', event => {
 
    const url = new URL(request.url);
    if (url.origin !== self.location.origin) return;
-   if (url.pathname.startsWith('/notifications/') || url.pathname.startsWith('/backup') || url.pathname === '/logout') return;
+   if (url.pathname.startsWith('/notifications/') || url.pathname.startsWith('/backup') || url.pathname.startsWith('/reports/export.csv') || url.pathname === '/logout') return;
 
    if (isVendorStaticAsset(url.pathname)) {
       event.respondWith(

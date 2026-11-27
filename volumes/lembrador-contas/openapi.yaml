@@ -9,7 +9,7 @@ info:
     **Authentication:** All routes (except `/health`, `/login`, `/logout`) require
     an active session. Set the `APP_PASSWORD` environment variable to enable the
     passphrase gate; leave it unset to disable auth entirely (dev mode).
-  version: "0.5.0"
+  version: "0.6.0"
 
 servers:
   - url: http://localhost:9090
@@ -36,6 +36,8 @@ tags:
     description: Web Push notifications
   - name: backup
     description: Database backup and restore
+  - name: reports
+    description: Bill reports and CSV export
 
 # ---------------------------------------------------------------------------
 # Shared schemas
@@ -891,3 +893,65 @@ paths:
           description: Invalid ZIP archive, manifest, or document payload
         "413":
           description: Uploaded archive exceeds size limit
+
+  # ── Reports ───────────────────────────────────────────────────────────────
+
+  /reports:
+    get:
+      tags: [reports]
+      summary: Bill report page with print/PDF layout and filters
+      description: Renders processed monthly bills with totals, payment breakdown, and per-user split summary.
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+            default: ALL
+          description: User ObjectId or `ALL` for consolidated report
+        - in: query
+          name: startPeriod
+          schema:
+            type: string
+            example: "2026-01"
+          description: Inclusive start period (`YYYY-MM` or `MM/YYYY`)
+        - in: query
+          name: endPeriod
+          schema:
+            type: string
+            example: "2026-12"
+          description: Inclusive end period (`YYYY-MM` or `MM/YYYY`)
+      responses:
+        "200":
+          description: HTML report page
+          content:
+            text/html:
+              schema: { type: string }
+
+  /reports/export.csv:
+    get:
+      tags: [reports]
+      summary: Export filtered bill report as CSV
+      description: Downloads a UTF-8 BOM CSV file (semicolon-delimited) containing monthly bills, per-user split summary, and grand totals.
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+            default: ALL
+        - in: query
+          name: startPeriod
+          schema:
+            type: string
+            example: "2026-01"
+        - in: query
+          name: endPeriod
+          schema:
+            type: string
+            example: "2026-12"
+      responses:
+        "200":
+          description: CSV report file
+          content:
+            text/csv:
+              schema:
+                type: string

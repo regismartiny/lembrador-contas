@@ -1,0 +1,324 @@
+<%- include ('../partials/header.ejs') %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container report-container">
+                <div class="starter-template report-page">
+                    <div class="list-page-header flex-wrap gap-2">
+                        <div>
+                            <h1 class="title-1 mb-0"><%= title %></h1>
+                        </div>
+                        <div class="d-flex align-items-center flex-wrap gap-2 no-print">
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-print-report">
+                                <span class="material-icons align-middle mr-1" style="font-size:1.05rem" aria-hidden="true">print</span>
+                                Imprimir / Salvar PDF
+                            </button>
+                            <a href="<%= exportUrl %>" class="btn btn-outline-success btn-sm" id="btn-export-csv">
+                                <span class="material-icons align-middle mr-1" style="font-size:1.05rem" aria-hidden="true">download</span>
+                                Exportar CSV
+                            </a>
+                            <a href="/dashboard" class="btn btn-secondary btn-sm">Demonstrativo</a>
+                        </div>
+                    </div>
+
+                    <div class="report-filter-panel no-print">
+                        <form method="get" action="/reports" id="report-filter-form">
+                            <div class="dashboard-filters mb-2">
+                                <div class="filter-group">
+                                    <label for="report-user">Usuário</label>
+                                    <select class="form-control" id="report-user" name="userId">
+                                        <option value="ALL" <%= report.filters.userId === 'ALL' ? 'selected' : '' %>>Todos os usuários (Consolidado)</option>
+                                        <% users.forEach(function(user) { %>
+                                            <option value="<%= user._id %>" <%= String(user._id) === report.filters.userId ? 'selected' : '' %>><%= user.name %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="report-start-period">Mês inicial</label>
+                                    <input type="month" class="form-control" id="report-start-period" name="startPeriod" value="<%= report.filters.startPeriod %>">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="report-end-period">Mês final</label>
+                                    <input type="month" class="form-control" id="report-end-period" name="endPeriod" value="<%= report.filters.endPeriod %>">
+                                </div>
+                                <div class="filter-group report-filter-submit">
+                                    <label class="d-none d-md-block">&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary" id="btn-apply-filters">Gerar relatório</button>
+                                </div>
+                            </div>
+                            <div class="report-quick-ranges">
+                                <span class="small text-muted mr-1">Atalhos de período:</span>
+                                <button type="button" class="btn btn-secondary btn-sm report-preset-btn" data-preset="current-month">Mês atual</button>
+                                <button type="button" class="btn btn-secondary btn-sm report-preset-btn" data-preset="last-3-months">Últimos 3 meses</button>
+                                <button type="button" class="btn btn-secondary btn-sm report-preset-btn" data-preset="last-6-months">Últimos 6 meses</button>
+                                <button type="button" class="btn btn-secondary btn-sm report-preset-btn" data-preset="current-year">Este ano</button>
+                                <button type="button" class="btn btn-secondary btn-sm report-preset-btn" data-preset="all">Todo o período</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <%
+                        var periodDescription = 'Todo o período disponível';
+                        if (report.filters.startLabel && report.filters.endLabel) {
+                            periodDescription = report.filters.startLabel === report.filters.endLabel
+                                ? report.filters.startLabel
+                                : (report.filters.startLabel + ' a ' + report.filters.endLabel);
+                        } else if (report.filters.startLabel) {
+                            periodDescription = 'A partir de ' + report.filters.startLabel;
+                        } else if (report.filters.endLabel) {
+                            periodDescription = 'Até ' + report.filters.endLabel;
+                        }
+                        var isConsolidated = report.filters.userId === 'ALL';
+                    %>
+
+                    <div class="report-meta-banner">
+                        <div class="report-print-brand">Lembrador de Contas — Relatório Financeiro</div>
+                        <div class="report-meta-items">
+                            <span><strong>Escopo:</strong> <%= report.filters.userName %></span>
+                            <span><strong>Período:</strong> <%= periodDescription %></span>
+                            <span><strong>Emitido em:</strong> <%= generatedAt.toLocaleString('pt-BR') %></span>
+                        </div>
+                    </div>
+
+                    <% if (report.summary.totalBills === 0) { %>
+                        <div class="dashboard-empty-state">
+                            <span class="material-icons dashboard-empty-icon">assessment</span>
+                            <h2 class="dashboard-empty-title">Nenhuma fatura encontrada para este relatório</h2>
+                            <p class="dashboard-empty-text">
+                                Não há contas processadas correspondentes aos filtros de usuário e período selecionados. Ajuste o intervalo de meses ou processe as faturas no demonstrativo.
+                            </p>
+                            <div class="dashboard-empty-actions no-print">
+                                <a href="/reports" class="btn btn-primary btn-sm">Limpar filtros</a>
+                                <a href="/dashboard" class="btn btn-secondary btn-sm">Ir ao Demonstrativo</a>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="report-kpi-grid">
+                            <div class="report-kpi-card">
+                                <span class="report-kpi-label"><%= isConsolidated ? 'Total Geral' : 'Total da Cota' %></span>
+                                <strong class="report-kpi-value">R$ <%= formatCurrencyBR(report.summary.totalValue) %></strong>
+                                <span class="report-kpi-sub"><%= report.summary.totalBills %> fatura(s) em <%= report.summary.monthsCount %> mês(es)</span>
+                            </div>
+                            <div class="report-kpi-card">
+                                <span class="report-kpi-label">Total Pago</span>
+                                <strong class="report-kpi-value report-val-paid">R$ <%= formatCurrencyBR(report.summary.paidValue) %></strong>
+                                <span class="report-kpi-sub"><%= report.summary.paidCount %> fatura(s) quitada(s)</span>
+                            </div>
+                            <div class="report-kpi-card">
+                                <span class="report-kpi-label">Total Pendente</span>
+                                <strong class="report-kpi-value report-val-unpaid">R$ <%= formatCurrencyBR(report.summary.unpaidValue) %></strong>
+                                <span class="report-kpi-sub">
+                                    <%= report.summary.unpaidCount %> não paga(s)<%= report.summary.errorCount ? ' · ' + report.summary.errorCount + ' com erro' : '' %>
+                                </span>
+                            </div>
+                            <div class="report-kpi-card">
+                                <span class="report-kpi-label">Formas de Pagamento</span>
+                                <div class="report-kpi-payments">
+                                    <% report.summary.byPaymentType.forEach(function(pt) { %>
+                                        <div class="d-flex justify-content-between small">
+                                            <span><%= pt.label %> (<%= pt.count %>)</span>
+                                            <strong>R$ <%= formatCurrencyBR(pt.total) %></strong>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="month-block report-section">
+                            <div class="month-header-row mb-3">
+                                <h2 class="month-title">Resumo de Rateio por Usuário</h2>
+                                <span class="month-total">
+                                    <%= report.userBreakdown.length %> participante(s)
+                                </span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table bill-table report-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuário</th>
+                                            <th>Contas</th>
+                                            <th class="d-none d-md-table-cell">Por Pagamento</th>
+                                            <th class="text-right">Pago</th>
+                                            <th class="text-right">Pendente</th>
+                                            <th class="text-right">Total Rateado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% report.userBreakdown.forEach(function(row) { %>
+                                            <tr>
+                                                <td><strong><%= row.userName %></strong></td>
+                                                <td>
+                                                    <%= row.billCount %>
+                                                    <% if (row.sharedBillCount > 0) { %>
+                                                        <span class="small text-muted">(<%= row.sharedBillCount %> rateada<%= row.sharedBillCount > 1 ? 's' : '' %>)</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="d-none d-md-table-cell">
+                                                    <% row.byPaymentType.forEach(function(pt) { %>
+                                                        <span class="badge badge-secondary mr-1">
+                                                            <%= pt.label %>: R$ <%= formatCurrencyBR(pt.total) %>
+                                                        </span>
+                                                    <% }) %>
+                                                </td>
+                                                <td class="text-right report-val-paid">R$ <%= formatCurrencyBR(row.paidShare) %></td>
+                                                <td class="text-right report-val-unpaid">R$ <%= formatCurrencyBR(row.unpaidShare) %></td>
+                                                <td class="text-right"><strong>R$ <%= formatCurrencyBR(row.totalShare) %></strong></td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <% report.months.forEach(function(monthGroup) { %>
+                            <div class="month-block report-month-section">
+                                <div class="month-header-row">
+                                    <h2 class="month-title"><%= monthGroup.formattedMonth %></h2>
+                                    <div class="d-flex flex-wrap align-items-baseline gap-3">
+                                        <span class="small text-muted">
+                                            Pago: <strong class="report-val-paid">R$ <%= formatCurrencyBR(monthGroup.paidValue) %></strong>
+                                        </span>
+                                        <span class="small text-muted">
+                                            Pendente: <strong class="report-val-unpaid">R$ <%= formatCurrencyBR(monthGroup.unpaidValue) %></strong>
+                                        </span>
+                                        <span class="month-total">
+                                            Total: <strong>R$ <%= formatCurrencyBR(monthGroup.totalValue) %></strong>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="payment-badges">
+                                    <% monthGroup.paymentTypeSummaries.forEach(function(summary) { %>
+                                        <span class="badge badge-secondary">
+                                            <%= summary.label %>: R$ <%= formatCurrencyBR(summary.total) %>
+                                        </span>
+                                    <% }) %>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table bill-table report-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Conta</th>
+                                                <th>Venc.</th>
+                                                <th class="d-none d-sm-table-cell">Pagamento</th>
+                                                <th>Situação</th>
+                                                <th class="d-none d-md-table-cell"><%= isConsolidated ? 'Usuários' : 'Rateio' %></th>
+                                                <% if (!isConsolidated) { %>
+                                                    <th class="text-right d-none d-sm-table-cell">Valor Integral</th>
+                                                <% } %>
+                                                <th class="text-right"><%= isConsolidated ? 'Valor' : 'Sua Cota' %></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% monthGroup.bills.forEach(function(bill) { %>
+                                                <%
+                                                    var statusBadgeClass = bill.status === 'PAID'
+                                                        ? 'report-badge-paid'
+                                                        : (bill.status === 'ERROR' ? 'report-badge-error' : 'report-badge-unpaid');
+                                                %>
+                                                <tr>
+                                                    <td><%= bill.name %></td>
+                                                    <td><%= bill.formattedDueDate %></td>
+                                                    <td class="d-none d-sm-table-cell"><%= bill.paymentTypeLabel %></td>
+                                                    <td>
+                                                        <span class="badge <%= statusBadgeClass %>"><%= bill.statusLabel %></span>
+                                                    </td>
+                                                    <td class="d-none d-md-table-cell small">
+                                                        <% if (isConsolidated) { %>
+                                                            <%= bill.userNames.length > 0 ? bill.userNames.join(', ') : 'Sem usuário' %>
+                                                        <% } else { %>
+                                                            <%= bill.isShared ? ('1/' + bill.userCount + ' (' + bill.userNames.join(', ') + ')') : 'Integral' %>
+                                                        <% } %>
+                                                    </td>
+                                                    <% if (!isConsolidated) { %>
+                                                        <td class="text-right d-none d-sm-table-cell text-muted">
+                                                            <%= bill.fullValue !== null ? ('R$ ' + formatCurrencyBR(bill.fullValue)) : '—' %>
+                                                        </td>
+                                                    <% } %>
+                                                    <td class="text-right">
+                                                        <strong><%= bill.effectiveValue !== null ? ('R$ ' + formatCurrencyBR(bill.effectiveValue)) : '—' %></strong>
+                                                        <% if (isConsolidated && bill.isShared && bill.fullValue !== null) { %>
+                                                            <div class="small text-muted">R$ <%= formatCurrencyBR(bill.fullValue / bill.userCount) %> / pessoa</div>
+                                                        <% } %>
+                                                    </td>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        <% }) %>
+                    <% } %>
+                </div>
+            </div>
+
+            <%- include('../templates/scripts.html') %>
+            <script nonce="<%= cspNonce %>">
+                (function () {
+                    const printBtn = document.getElementById('btn-print-report');
+                    const form = document.getElementById('report-filter-form');
+                    const userSelect = document.getElementById('report-user');
+                    const startInput = document.getElementById('report-start-period');
+                    const endInput = document.getElementById('report-end-period');
+                    const exportLink = document.getElementById('btn-export-csv');
+
+                    function toMonthValue(date) {
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        return y + '-' + m;
+                    }
+
+                    function updateExportHref() {
+                        if (!exportLink) return;
+                        const params = new URLSearchParams();
+                        if (userSelect && userSelect.value) params.set('userId', userSelect.value);
+                        if (startInput && startInput.value) params.set('startPeriod', startInput.value);
+                        if (endInput && endInput.value) params.set('endPeriod', endInput.value);
+                        const qs = params.toString();
+                        exportLink.setAttribute('href', '/reports/export.csv' + (qs ? '?' + qs : ''));
+                    }
+
+                    if (printBtn) {
+                        printBtn.addEventListener('click', function () {
+                            window.print();
+                        });
+                    }
+
+                    if (userSelect) userSelect.addEventListener('change', updateExportHref);
+                    if (startInput) startInput.addEventListener('change', updateExportHref);
+                    if (endInput) endInput.addEventListener('change', updateExportHref);
+
+                    document.querySelectorAll('[data-preset]').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const now = new Date();
+                            const preset = btn.getAttribute('data-preset');
+                            if (preset === 'current-month') {
+                                const val = toMonthValue(now);
+                                startInput.value = val;
+                                endInput.value = val;
+                            } else if (preset === 'last-3-months') {
+                                const start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                                startInput.value = toMonthValue(start);
+                                endInput.value = toMonthValue(now);
+                            } else if (preset === 'last-6-months') {
+                                const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+                                startInput.value = toMonthValue(start);
+                                endInput.value = toMonthValue(now);
+                            } else if (preset === 'current-year') {
+                                const y = now.getFullYear();
+                                startInput.value = y + '-01';
+                                endInput.value = y + '-12';
+                            } else if (preset === 'all') {
+                                startInput.value = '';
+                                endInput.value = '';
+                            }
+                            updateExportHref();
+                            if (form) form.submit();
+                        });
+                    });
+                })();
+            </script>
+    </body>
+
+    </html>
