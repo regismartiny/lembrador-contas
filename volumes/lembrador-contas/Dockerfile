@@ -48,7 +48,8 @@ WORKDIR /home/bun/lembrador-contas
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_CACHE_DIR=/home/bun/.cache/puppeteer
 COPY --chown=bun:bun package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile --production \
+    && sha256sum package.json bun.lock > node_modules/.lock-hash
 RUN bunx puppeteer browsers install chrome
 
 # Copy source (overridden by volume mount in development, baked-in for production)

@@ -9,7 +9,7 @@ info:
     **Authentication:** All routes (except `/health`, `/login`, `/logout`) require
     an active session. Set the `APP_PASSWORD` environment variable to enable the
     passphrase gate; leave it unset to disable auth entirely (dev mode).
-  version: "0.6.0"
+  version: "0.6.1"
 
 servers:
   - url: http://localhost:9090
