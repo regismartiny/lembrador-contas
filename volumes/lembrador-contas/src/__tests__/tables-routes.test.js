@@ -37,9 +37,11 @@ describe('GET /tables/listJSON', () => {
 });
 
 describe('GET /tables/new', () => {
-    test('returns 200', async () => {
+    test('returns 200 and initializes data array in inline script', async () => {
         const res = await fetch(`${baseUrl}/tables/new`);
         expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('var data = [];');
     });
 });
 

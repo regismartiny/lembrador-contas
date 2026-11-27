@@ -85,12 +85,13 @@
             <%- include('../templates/scripts.html') %>
                 <script nonce="<%= cspNonce %>">
                     var rowCount = 0;
+                    var data = [];
 
                     <% if (locals.table) { %>
                         var dataJSON = '<%- JSON.stringify(table.data) %>';
-                        var data = JSON.parse(dataJSON);
+                        data = JSON.parse(dataJSON);
 
-                        for (line of data) {
+                        for (var line of data) {
                             createRow(line.period, line.value);
                         }
                     <% } else { %>
@@ -135,11 +136,11 @@
                     }
 
                     $( document ).ready(function() {
-                        if (data) {
-                            var i=0
-                            for (line of data) {
-                                $(`#value-${i}`).val(line.value)
-                                i++
+                        if (Array.isArray(data) && data.length > 0) {
+                            var i = 0;
+                            for (var line of data) {
+                                $(`#value-${i}`).val(line.value);
+                                i++;
                             }
                         }
 
