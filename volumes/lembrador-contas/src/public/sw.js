@@ -4,7 +4,7 @@ function urlB64ToUint8Array(base64String) {
      .replace(/-/g, '+')
      .replace(/_/g, '/');
  
-   const rawData = window.atob(base64);
+   const rawData = self.atob(base64);
    const outputArray = new Uint8Array(rawData.length);
  
    for (let i = 0; i < rawData.length; ++i) {
@@ -22,9 +22,86 @@ function checkNotificationsPermission() {
    return true;
 }
 
-self.addEventListener('activate', async () => {
-   // This will be called only once when the service worker is activated.
-})
+const CACHE_NAME = 'lembrador-contas-v1';
+const STATIC_ASSETS = [
+   '/stylesheets/starter-template.css',
+   '/main.js',
+   '/bootstrap/css/bootstrap.min.css',
+   '/bootstrap/js/bootstrap.min.js',
+   '/jquery/jquery.min.js',
+   '/popperjs/popper.min.js',
+   '/favicon.ico',
+   '/app.webmanifest',
+];
+
+function isStaticAsset(pathname) {
+   return (
+      pathname.startsWith('/stylesheets/') ||
+      pathname.startsWith('/bootstrap/') ||
+      pathname.startsWith('/jquery/') ||
+      pathname.startsWith('/jquery-mask/') ||
+      pathname.startsWith('/popperjs/') ||
+      pathname.startsWith('/images/') ||
+      pathname === '/main.js' ||
+      pathname === '/favicon.ico' ||
+      pathname === '/app.webmanifest'
+   );
+}
+
+self.addEventListener('install', event => {
+   event.waitUntil(
+      caches.open(CACHE_NAME)
+         .then(cache => cache.addAll(STATIC_ASSETS))
+         .then(() => self.skipWaiting())
+   );
+});
+
+self.addEventListener('activate', event => {
+   event.waitUntil(
+      caches.keys()
+         .then(keys => Promise.all(
+            keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+         ))
+         .then(() => self.clients.claim())
+   );
+});
+
+self.addEventListener('fetch', event => {
+   const request = event.request;
+   if (request.method !== 'GET') return;
+
+   const url = new URL(request.url);
+   if (url.origin !== self.location.origin) return;
+   if (url.pathname.startsWith('/notifications/') || url.pathname === '/logout') return;
+
+   if (isStaticAsset(url.pathname)) {
+      event.respondWith(
+         caches.match(request).then(cached => {
+            if (cached) return cached;
+            return fetch(request).then(response => {
+               if (response && response.ok) {
+                  const clone = response.clone();
+                  caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+               }
+               return response;
+            });
+         })
+      );
+      return;
+   }
+
+   event.respondWith(
+      fetch(request)
+         .then(response => {
+            if (response && response.ok && request.mode === 'navigate') {
+               const clone = response.clone();
+               caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+            }
+            return response;
+         })
+         .catch(() => caches.match(request))
+   );
+});
 
 self.addEventListener('push', event => {
 
@@ -52,32 +129,42 @@ self.addEventListener('notificationclick', function(event) {
    )
 })
 
-self.addEventListener('pushsubscriptionchange', async function(_event) {
-   
-   try {
-      const resp = await fetch('/notifications/push/public_key')
-      const data = await resp.json()
-      if (!data.publicKey) {
-         console.error('No public key available for re-subscription')
-         return
+self.addEventListener('pushsubscriptionchange', function(event) {
+   event.waitUntil((async () => {
+      try {
+         const resp = await fetch('/notifications/push/public_key', { credentials: 'same-origin' });
+         if (!resp.ok) {
+            console.error('Failed to fetch public key for re-subscription:', resp.status);
+            return;
+         }
+         const data = await resp.json();
+         if (!data.publicKey) {
+            console.error('No public key available for re-subscription');
+            return;
+         }
+         const applicationServerKey = urlB64ToUint8Array(data.publicKey);
+
+         const newSubscription = await self.registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: applicationServerKey
+         });
+
+         const headers = { 'Content-Type': 'application/json' };
+         if (data.csrfToken) {
+            headers['x-csrf-token'] = data.csrfToken;
+         }
+
+         // Send the new subscription to the register endpoint
+         await fetch('/notifications/push/register', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers,
+            body: JSON.stringify({ subscription: newSubscription })
+         });
+      } catch (err) {
+         console.error('[Service Worker] Subscription refresh failed:', err.name);
       }
-      const applicationServerKey = urlB64ToUint8Array(data.publicKey)
-      
-      const newSubscription = await self.registration.pushManager.subscribe({
-         userVisibleOnly: true,
-         applicationServerKey: applicationServerKey
-      })
-      
-      
-      // Send the new subscription to the register endpoint
-      await fetch('/notifications/push/register', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ subscription: newSubscription })
-      })
-   } catch (err) {
-      console.error('[Service Worker] Subscription refresh failed:', err.name)
-   }
+   })());
 });
 
 const showLocalNotification = (title, body, event) => {

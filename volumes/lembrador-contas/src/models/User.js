@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('validate', function (next) {
     const self = this
 
-    User.findOne({ email: this.email }, 'email').then(function (results) {
+    User.findOne({ email: self.email, _id: { $ne: self._id } }, 'email').then(function (results) {
         if (results) {
             logger.warn('Duplicate user email rejected during validation')
             self.invalidate("email", "Email deve ser único")
@@ -25,11 +25,11 @@ userSchema.pre('validate', function (next) {
             const currentDate = new Date()
 
             // change the updated_at field to current date
-            this.updated_at = currentDate
+            self.updated_at = currentDate
 
             // if created_at doesn't exist, add to that field
-            if (!this.created_at)
-                this.created_at = currentDate
+            if (!self.created_at)
+                self.created_at = currentDate
             next()
         }
     }).catch(err => {

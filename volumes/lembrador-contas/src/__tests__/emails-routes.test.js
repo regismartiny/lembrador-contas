@@ -81,9 +81,9 @@ describe('POST /emails/add', () => {
 });
 
 describe('GET /emails/edit/:id', () => {
-    test('returns 200 for valid ObjectId (template handles null email via locals)', async () => {
+    test('returns 404 for valid ObjectId when email not found', async () => {
         const res = await fetch(`${baseUrl}/emails/edit/507f1f77bcf86cd799439011`);
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(404);
     });
 
     test('returns 400 for invalid ObjectId', async () => {
@@ -124,6 +124,13 @@ describe('POST /emails/remove/:id', () => {
         const res = await fetch(`${baseUrl}/emails/remove/invalid-id`, {
             method: 'POST',
         });
+        expect(res.status).toBe(400);
+    });
+});
+
+describe('GET /emails/test/:id', () => {
+    test('returns 400 for invalid ObjectId', async () => {
+        const res = await fetch(`${baseUrl}/emails/test/invalid-id`);
         expect(res.status).toBe(400);
     });
 });

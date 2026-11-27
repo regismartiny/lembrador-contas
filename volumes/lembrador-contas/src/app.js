@@ -6,6 +6,8 @@ import favicon from 'serve-favicon';
 import logger from './util/logger.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
+import db from './db.js';
 import index from './routes/index.js';
 import dashboard from './routes/dashboard.js';
 import users from './routes/users.js';
@@ -26,11 +28,11 @@ import { dirname } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me') {
-      logger.fatal('SESSION_SECRET is missing or uses the default value; refusing to start');
-}
-
 const app = express();
+
+if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
+    app.set('trust proxy', 1);
+}
 
 // CSP nonce middleware — must run before helmet
 app.use(cspNonceMiddleware);
@@ -95,20 +97,32 @@ app.use('/popperjs', express.static(__dirname + './../node_modules/popper.js/dis
 app.use('/bootstrap', express.static(__dirname + './../node_modules/bootstrap/dist/'));
 
 // Session — must come after static assets but before any authenticated routes
-app.use(session({
+const sessionOptions = {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
         sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     }
-}))
+};
+
+if (process.env.NODE_ENV !== 'test' && typeof db.Mongoose?.connection?.asPromise === 'function' && process.env.MONGODB_IP) {
+    sessionOptions.store = MongoStore.create({
+        clientPromise: db.Mongoose.connection.asPromise().then(conn => conn.getClient()),
+    });
+}
+
+app.use(session(sessionOptions))
 
 // Health check — public, used by Docker and load balancers
 app.get('/health', function (req, res) {
-    res.status(200).json({ status: 'ok' });
+    if (db.Mongoose?.connection?.readyState !== 1) {
+        return res.status(503).json({ status: 'error', db: 'disconnected' });
+    }
+    return res.status(200).json({ status: 'ok' });
 });
 
 // Cloudflare Access — verify JWT and auto-authenticate if present

@@ -19,34 +19,39 @@ export function startScheduler() {
 
     // Lazy-load db module and wait for connection before first run
     getDb().then((db) => {
+        const runCheck = async () => {
+            try {
+                await checkAndNotify(db, reminderDays);
+                await cleanupExpiredSubscriptions(db);
+            } catch (err) {
+                logger.error({ err }, 'Notification scheduler run failed');
+            }
+        };
+
         const waitForConnection = () => {
             return new Promise((resolve) => {
                 if (db.Mongoose?.connection?.readyState === 1) {
-                    resolve();
+                    runCheck().then(resolve);
                     return;
                 }
+                let settled = false;
                 let timer;
                 const handler = async () => {
+                    if (settled) return;
+                    settled = true;
                     if (timer) clearTimeout(timer);
-                    await checkAndNotify(db, reminderDays);
-                    await cleanupExpiredSubscriptions(db);
+                    db.Mongoose?.connection?.off?.('open', handler);
+                    await runCheck();
                     resolve();
                 };
-                db.Mongoose?.connection?.once('open', handler);
+                db.Mongoose?.connection?.once?.('open', handler);
                 // Fallback: after 10 seconds, run anyway
                 timer = setTimeout(handler, 10000);
             });
         };
 
         waitForConnection().then(() => {
-            schedulerInterval = setInterval(async () => {
-                try {
-                    await checkAndNotify(db, reminderDays);
-                    await cleanupExpiredSubscriptions(db);
-                } catch (err) {
-                    logger.error({ err }, 'Notification scheduler run failed');
-                }
-            }, intervalMs);
+            schedulerInterval = setInterval(runCheck, intervalMs);
         });
     }).catch((err) => {
         logger.error({ err }, 'Notification scheduler failed to load database module');
@@ -62,6 +67,23 @@ export function stopScheduler() {
         schedulerInterval = null;
         logger.info('Notification scheduler stopped');
     }
+}
+
+export function getDaysUntilDue(dueDate, now = new Date()) {
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const due = new Date(dueDate);
+    const dueStart = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    return Math.round((dueStart.getTime() - todayStart.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+export function formatDueMessage(billName, daysUntilDue) {
+    if (daysUntilDue <= 0) {
+        return `A conta "${billName}" vence hoje.`;
+    }
+    if (daysUntilDue === 1) {
+        return `A conta "${billName}" vence amanhã.`;
+    }
+    return `A conta "${billName}" vence em ${daysUntilDue} dias.`;
 }
 
 /**
@@ -80,14 +102,15 @@ export async function checkAndNotify(db, reminderDays) {
 
     try {
         const now = new Date();
-        const dueDateLimit = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const dueDateLimit = new Date(now);
         dueDateLimit.setDate(now.getDate() + reminderDays);
         dueDateLimit.setHours(23, 59, 59, 999);
 
         // Find UNPAID active bills within the reminder window
         const unpaidBills = await db.ActiveBill.find({
             status: 'UNPAID',
-            dueDate: { $gte: now, $lte: dueDateLimit }
+            dueDate: { $gte: todayStart, $lte: dueDateLimit }
         }).lean();
 
         if (!unpaidBills.length) {
@@ -97,8 +120,12 @@ export async function checkAndNotify(db, reminderDays) {
 
         logger.info({ unpaidBillCount: unpaidBills.length }, 'Found bills within notification window');
 
-        // Get existing reminders to avoid duplicates
-        const existingReminders = await db.BillReminder.find({}).lean();
+        // Get existing reminders only for candidate bills to avoid loading full history
+        const unpaidBillIds = unpaidBills.map(b => b._id).filter(Boolean);
+        const existingReminders = await db.BillReminder.find({
+            activeBill: { $in: unpaidBillIds },
+            notifiedAt: { $ne: null }
+        }).lean();
         const notifiedBillIds = new Set(
             existingReminders
                 .filter(r => r.notifiedAt !== null && r.activeBill != null)
@@ -114,25 +141,26 @@ export async function checkAndNotify(db, reminderDays) {
                 continue;
             }
 
+            const daysUntilDue = getDaysUntilDue(bill.dueDate, now);
             const title = 'Lembrador de Contas: Conta próxima do vencimento!';
-            const body = `A conta "${bill.name}" vence em ${reminderDays} dia(s).`;
+            const body = formatDueMessage(bill.name, daysUntilDue);
 
             // Send push to all subscriptions
-            await sendPushToAll(db, { title, body });
+            const deliveredCount = await sendPushToAll(db, { title, body });
 
-            // Create a BillReminder record with notifiedAt to prevent duplicates
-            if (billIdStr) {
+            // Create a BillReminder record only if at least one notification was delivered
+            if (deliveredCount > 0 && billIdStr) {
                 const reminder = new db.BillReminder({
                     title,
                     body,
                     status: 'CREATED',
                     dueDate: bill.dueDate,
-                    daysBeforeDue: reminderDays,
+                    daysBeforeDue: daysUntilDue,
                     activeBill: bill._id,
                     notifiedAt: new Date()
                 });
                 await reminder.save();
-                logger.info({ billId: billIdStr }, 'Created bill reminder');
+                logger.info({ billId: billIdStr, deliveredCount }, 'Created bill reminder');
             }
         }
     } catch (err) {
@@ -142,18 +170,20 @@ export async function checkAndNotify(db, reminderDays) {
 
 /**
  * Send a push notification to all active subscriptions.
+ * Returns the number of notifications delivered successfully.
  */
 async function sendPushToAll(db, { title, body }) {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
     const vapidMailto = process.env.VAPID_MAILTO;
+    let deliveredCount = 0;
 
     try {
         const subscriptions = await db.PushNotificationSubscription.find({}).lean();
 
         if (!subscriptions.length) {
             logger.debug('No active push subscriptions');
-            return;
+            return 0;
         }
 
         const payload = JSON.stringify({ title, body });
@@ -171,6 +201,7 @@ async function sendPushToAll(db, { title, body }) {
                     payload,
                     { vapidDetails: { subject: `mailto:${vapidMailto}`, publicKey: vapidPublicKey, privateKey: vapidPrivateKey } }
                 );
+                deliveredCount++;
                 logger.debug('Push notification delivered');
             } catch (err) {
                 if (err.statusCode === 410 || err.statusCode === 404) {
@@ -184,6 +215,8 @@ async function sendPushToAll(db, { title, body }) {
     } catch (err) {
         logger.error({ err }, 'Failed to send push notifications');
     }
+
+    return deliveredCount;
 }
 
 /**

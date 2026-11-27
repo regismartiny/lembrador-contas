@@ -4,6 +4,7 @@ import asyncHandler from '../util/asyncHandler.js';
 import db from '../db.js';
 import { checkAndNotify } from '../util/notificationScheduler.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { generateToken } from '../middleware/csrf.js';
 
 const router = express.Router();
 
@@ -12,7 +13,8 @@ router.get('/push/public_key', function (req, res) {
    if (!vapidPublicKey) {
       return res.status(503).json({ error: 'Push notifications not configured (VAPID_PUBLIC_KEY missing)' })
    }
-   return res.status(200).json({ publicKey: vapidPublicKey })
+   const csrfToken = res.locals.csrfToken || generateToken(req, res);
+   return res.status(200).json({ publicKey: vapidPublicKey, csrfToken })
 });
 
 router.post('/push/register', asyncHandler(async function (req, res) {

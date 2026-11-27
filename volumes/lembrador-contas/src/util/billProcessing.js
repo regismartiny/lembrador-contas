@@ -1,12 +1,13 @@
 import db from '../db.js';
 import logger from './logger.js';
+import { validateExternalApiUrl } from './urlValidator.js';
 
 let _processingLock = false;
 
 async function processBills(bills, selectedPeriods) {
     if (_processingLock) {
         logger.warn('processBills is already running; skipping concurrent invocation');
-        return;
+        return { skipped: true };
     }
     _processingLock = true;
     try {
@@ -25,9 +26,25 @@ async function processBills(bills, selectedPeriods) {
         const activeBills = await runParallel(promises)
 
         for (const activeBill of activeBills) {
+            const now = new Date();
             await db.ActiveBill.findOneAndUpdate(
                 { name: activeBill.name, dueDate: activeBill.dueDate },
-                { users: activeBill.users, name: activeBill.name, dueDate: activeBill.dueDate, value: activeBill.value, icon: activeBill.icon, status: activeBill.status || 'UNPAID', paymentType: activeBill.paymentType, referencePeriod: activeBill.referencePeriod },
+                {
+                    $set: {
+                        users: activeBill.users,
+                        name: activeBill.name,
+                        dueDate: activeBill.dueDate,
+                        value: activeBill.value,
+                        icon: activeBill.icon,
+                        paymentType: activeBill.paymentType,
+                        referencePeriod: activeBill.referencePeriod,
+                        updated_at: now,
+                    },
+                    $setOnInsert: {
+                        status: activeBill.status || 'UNPAID',
+                        created_at: now,
+                    },
+                },
                 { upsert: true }
             ).catch((err) => {
                 logger.error({ err }, 'Failed to save processed bill')
@@ -35,6 +52,7 @@ async function processBills(bills, selectedPeriods) {
         }
 
         logger.info({ periods, processedBillCount: activeBills.length }, 'Finished processing bills')
+        return { skipped: false, processedCount: activeBills.length };
     } finally {
         _processingLock = false;
     }
@@ -132,7 +150,7 @@ async function findTableBills(bill, period) {
     let referencePeriod = String(currentPeriodData.period.month).padStart(2, '0') + '/' + currentPeriodData.period.year
     let name = getBillName(bill, currentPeriodDataIndex, table.data.length)
     let users = bill.users
-    let dueDate = getDateFromPeriod(currentPeriodData.period, bill.dueDay)
+    let dueDate = getDateFromPeriod({ month: currentPeriodData.period.month - 1, year: currentPeriodData.period.year }, bill.dueDay)
     let value = currentPeriodData.value
     let icon = bill.icon
     let paymentType = bill.paymentType
@@ -175,6 +193,10 @@ async function findActiveEmailBills(billsSourceEmail, periods) {
 async function findEmailBills(bill, period) {
     let bills = []
     let email = await db.Email.findById(bill.valueSourceId).lean()
+    if (!email) {
+        logger.warn({ billId: bill._id?.toString() }, 'Email configuration for bill was not found')
+        return bills
+    }
     const parsedDataList = await parseEmailData(email, period)
 
     for (const parsedData of parsedDataList) {
@@ -222,8 +244,18 @@ async function findApiBills(bill, period) {
     const dueDate = getDateFromPeriod(period, bill.dueDay)
     const referencePeriod = String(period.month + 1).padStart(2, '0') + '/' + period.year
 
+    const urlCheck = validateExternalApiUrl(api.url)
+    if (!urlCheck.valid) {
+        logger.warn({ billId: bill._id?.toString(), reason: urlCheck.error }, 'Blocked unsafe API URL')
+        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))
+        return bills
+    }
+
     try {
-        const fetchOptions = { method: api.method }
+        const fetchOptions = {
+            method: api.method,
+            signal: AbortSignal.timeout(10000),
+        }
         if (api.body && ['POST', 'PUT'].includes(api.method)) {
             fetchOptions.body = api.body
             fetchOptions.headers = { 'Content-Type': 'application/json' }

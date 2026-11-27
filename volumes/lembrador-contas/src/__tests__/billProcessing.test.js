@@ -120,18 +120,129 @@ describe('findActiveTableBills', () => {
         const result = await billProcessing.findActiveTableBills([], periods);
         expect(result).toEqual([]);
     });
+
+    test('sets dueDate month using 0-based month for 1-based table period', async () => {
+        mockData.tables.length = 0;
+        mockData.tables.push({
+            _id: 'table-march',
+            data: [{ period: { month: 3, year: 2026 }, value: 250 }],
+        });
+        const bill = {
+            name: 'Condomínio', valueSourceId: 'table-march',
+            dueDay: 10, type: 'RECURRENT_SERVICE',
+            users: [], icon: null, paymentType: 'PIX',
+        };
+        const result = await billProcessing.findActiveTableBills([bill], [{ month: 2, year: 2026 }]);
+        expect(result).toHaveLength(1);
+        expect(result[0].dueDate.getFullYear()).toBe(2026);
+        expect(result[0].dueDate.getMonth()).toBe(2); // March (0-based)
+        expect(result[0].dueDate.getDate()).toBe(10);
+        expect(result[0].referencePeriod).toBe('03/2026');
+        mockData.tables.length = 0;
+    });
+});
+
+describe('processBills', () => {
+    test('preserves status PAID and updates updated_at on reprocess', async () => {
+        mockData.tables.length = 0;
+        mockData.activeBills.length = 0;
+        const dueDate = new Date(2026, 2, 10);
+        const oldUpdatedAt = new Date(2026, 0, 1);
+        mockData.activeBills.push({
+            _id: 'paid-bill-1',
+            name: 'Internet',
+            dueDate,
+            value: 100,
+            status: 'PAID',
+            updated_at: oldUpdatedAt,
+        });
+        mockData.tables.push({
+            _id: 'table-paid',
+            data: [{ period: { month: 3, year: 2026 }, value: 120 }],
+        });
+
+        const bills = [{
+            name: 'Internet',
+            valueSourceType: 'TABLE',
+            valueSourceId: 'table-paid',
+            dueDay: 10,
+            type: 'RECURRENT_SERVICE',
+            users: [],
+            icon: null,
+            paymentType: 'PIX',
+        }];
+
+        await billProcessing.processBills(bills, JSON.stringify([{ month: 2, year: 2026 }]));
+
+        const updated = mockData.activeBills.find(b => b._id === 'paid-bill-1');
+        expect(updated.status).toBe('PAID');
+        expect(updated.value).toBe(120);
+        expect(updated.updated_at.getTime()).toBeGreaterThan(oldUpdatedAt.getTime());
+
+        mockData.tables.length = 0;
+        mockData.activeBills.length = 0;
+    });
+
+    test('sets status UNPAID and created_at when inserting a new bill', async () => {
+        mockData.tables.length = 0;
+        mockData.activeBills.length = 0;
+        mockData.tables.push({
+            _id: 'table-new',
+            data: [{ period: { month: 4, year: 2026 }, value: 85 }],
+        });
+        const bills = [{
+            name: 'Nova Conta',
+            valueSourceType: 'TABLE',
+            valueSourceId: 'table-new',
+            dueDay: 15,
+            type: 'RECURRENT_SERVICE',
+            users: [],
+            icon: null,
+            paymentType: 'PIX',
+        }];
+
+        const result = await billProcessing.processBills(bills, JSON.stringify([{ month: 3, year: 2026 }]));
+        expect(result.skipped).toBe(false);
+        const inserted = mockData.activeBills.find(b => b.name === 'Nova Conta');
+        expect(inserted).toBeDefined();
+        expect(inserted.status).toBe('UNPAID');
+        expect(inserted.created_at).toBeInstanceOf(Date);
+        expect(inserted.updated_at).toBeInstanceOf(Date);
+
+        mockData.tables.length = 0;
+        mockData.activeBills.length = 0;
+    });
+
+    test('returns { skipped: true } on concurrent invocation', async () => {
+        mockData.tables.length = 0;
+        mockData.activeBills.length = 0;
+        const slowBill = {
+            name: 'Slow',
+            valueSourceType: 'TABLE',
+            valueSourceId: 'table-slow',
+            dueDay: 10,
+            type: 'RECURRENT_SERVICE',
+            users: [],
+            icon: null,
+            paymentType: 'PIX',
+        };
+        const p1 = billProcessing.processBills([slowBill], JSON.stringify([{ month: 3, year: 2026 }]));
+        const p2 = billProcessing.processBills([slowBill], JSON.stringify([{ month: 3, year: 2026 }]));
+        const [r1, r2] = await Promise.all([p1, p2]);
+        expect(r1.skipped).toBe(false);
+        expect(r2.skipped).toBe(true);
+    });
 });
 
 describe('findActiveEmailBills', () => {
-    test('rejects when email configuration cannot be loaded', async () => {
+    test('returns empty array when email configuration cannot be loaded', async () => {
         const bill = {
             name: 'Electricity', valueSourceId: 'missing-email-config',
             dueDay: 15, users: [], icon: null, paymentType: 'PIX'
         };
 
-        await expect(
-            billProcessing.findActiveEmailBills([bill], [{ month: 0, year: 2024 }])
-        ).rejects.toThrow();
+        const result = await billProcessing.findActiveEmailBills([bill], [{ month: 0, year: 2024 }]);
+        expect(result).toEqual([]);
     });
 });
 
@@ -155,6 +266,67 @@ describe('findActiveApiBills', () => {
     test('returns empty array when bill list is empty', async () => {
         const result = await billProcessing.findActiveApiBills([], periods);
         expect(result).toEqual([]);
+    });
+
+    test('blocks SSRF internal API URLs without calling fetch', async () => {
+        mockData.apis.length = 0;
+        mockData.apis.push({
+            _id: 'ssrf-api',
+            url: 'http://169.254.169.254/latest/meta-data/',
+            method: 'GET',
+            value: 'price',
+        });
+        const originalFetch = globalThis.fetch;
+        let fetchCalled = false;
+        globalThis.fetch = () => { fetchCalled = true; return Promise.reject(new Error('should not be called')); };
+        try {
+            const bill = {
+                name: 'Blocked API', valueSourceId: 'ssrf-api',
+                dueDay: 5, type: 'RECURRENT_SERVICE',
+                users: [], icon: null, paymentType: 'PIX',
+            };
+            const result = await billProcessing.findActiveApiBills([bill], periods);
+            expect(fetchCalled).toBe(false);
+            expect(result).toHaveLength(1);
+            expect(result[0].status).toBe('ERROR');
+        } finally {
+            globalThis.fetch = originalFetch;
+            mockData.apis.length = 0;
+        }
+    });
+
+    test('passes AbortSignal timeout to fetch for valid external API URL', async () => {
+        mockData.apis.length = 0;
+        mockData.apis.push({
+            _id: 'public-api',
+            url: 'https://api.example.com/price',
+            method: 'GET',
+            value: 'data.amount',
+        });
+        const originalFetch = globalThis.fetch;
+        let capturedOptions = null;
+        globalThis.fetch = (_url, opts) => {
+            capturedOptions = opts;
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ data: { amount: 42.5 } }),
+            });
+        };
+        try {
+            const bill = {
+                name: 'Public API', valueSourceId: 'public-api',
+                dueDay: 5, type: 'RECURRENT_SERVICE',
+                users: [], icon: null, paymentType: 'PIX',
+            };
+            const result = await billProcessing.findActiveApiBills([bill], periods);
+            expect(capturedOptions.signal).toBeInstanceOf(AbortSignal);
+            expect(result).toHaveLength(1);
+            expect(result[0].status).toBe('UNPAID');
+            expect(result[0].value).toBe(42.5);
+        } finally {
+            globalThis.fetch = originalFetch;
+            mockData.apis.length = 0;
+        }
     });
 });
 

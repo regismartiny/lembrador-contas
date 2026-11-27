@@ -2,15 +2,15 @@ import base64Util from '../util/base64Util.js';
 import emailUtils from '../util/emailUtils.js';
 import logger from '../util/logger.js';
 import jsdom from 'jsdom';
-import { findHTMLPart } from './corsanEmailParser.js';
+import { findHTMLPart, parseBrazilianCurrency } from './corsanEmailParser.js';
 
 export async function fetch(address, subject, period) {
     let startDate = new Date(period.year, period.month, 1)
-    let endDate = new Date(period.year, period.month, 31)
+    let endDate = new Date(period.year, period.month + 1, 0)
 
     const messages = 
         await emailUtils.getMessagesByDateInterval(address, subject, startDate, endDate);
-    if (!messages) {
+    if (!messages || messages.length === 0) {
         logger.warn({ year: period.year, month: period.month + 1 }, 'No CPFL email found for period');
         return []
     }
@@ -59,7 +59,7 @@ export function parseHTML(text) {
         instalacao, 
         vencimento : parseDDMMYYYY(vencimento),
         mesReferencia, 
-        valor : Number.parseFloat(valor.replace(",",".").substring(3, valor.length-1)) 
+        valor : parseBrazilianCurrency(valor.replace(/&nbsp;/gi, ' ').replace(/^R\$\s*/i, '').trim())
     }
 }
 

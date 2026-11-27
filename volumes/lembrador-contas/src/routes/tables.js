@@ -44,6 +44,9 @@ router.post('/add', requireAdmin, validateBody({
 /* GET Edit Table page. */
 router.get('/edit/:id', requireAdmin, validateObjectId('id'), asyncHandler(async function (req, res) {
     const table = await db.Table.findById(req.params.id)
+    if (!table) {
+        return res.status(404).render('error', { message: 'Tabela não encontrada.', error: { status: 404 } });
+    }
     res.render('table/editTable', { template, title: 'Edição de Tabela', statusEnum: db.StatusEnum, table })
 }));
 

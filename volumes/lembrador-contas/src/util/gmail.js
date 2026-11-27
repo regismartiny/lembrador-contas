@@ -38,37 +38,29 @@ function getMessage(auth, query) {
 }
 
 function getAttachmentsSync(auth, query, message) {
-    return new Promise(function (resolve, reject) {
-        const gmail = google.gmail({version: 'v1', auth});
-        const parts = message.payload.parts;
-        const attachments = [];
-        if (parts.length === 0) {
-            let msg = 'Message has no attachment';
-            logger.warn({ operation: 'getAttachments' }, msg);
-            reject(msg);
-        }
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (part.filename && part.filename.length > 0 && part.body.attachmentId) {
-                const attachId = part.body.attachmentId;
-                gmail.users.messages.attachments.get({
-                    'id': attachId,
-                    'messageId': message.id,
-                    'userId': query.userId,
-                    'auth': auth
-                }, function (err, res) {
-                    if (err) {
-                        return reject(err);
-                    }
-                    const att = { filename: part.filename, mimeType: part.mimeType, attachment: res.data };
-                    attachments.push(att);
-                    if (i === parts.length - 1) { //only last attachment
-                        resolve(attachments);
-                    }
-                });
+    const gmail = google.gmail({ version: 'v1', auth });
+    const parts = message?.payload?.parts || [];
+    const attachmentParts = parts.filter(
+        part => part.filename && part.filename.length > 0 && part.body?.attachmentId
+    );
+    if (attachmentParts.length === 0) {
+        const msg = 'Message has no attachment';
+        logger.warn({ operation: 'getAttachments' }, msg);
+        return Promise.reject(new Error(msg));
+    }
+    return Promise.all(attachmentParts.map(part => new Promise((resolve, reject) => {
+        gmail.users.messages.attachments.get({
+            id: part.body.attachmentId,
+            messageId: message.id,
+            userId: query.userId,
+            auth,
+        }, function (err, res) {
+            if (err) {
+                return reject(err);
             }
-        }
-    });
+            resolve({ filename: part.filename, mimeType: part.mimeType, attachment: res.data });
+        });
+    })));
 }
 
 export default {

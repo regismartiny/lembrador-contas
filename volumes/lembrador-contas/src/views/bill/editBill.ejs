@@ -69,6 +69,11 @@
                             <select name='table' class="form-control" id="tableOptions">
                                 </select>
                         </div>
+                        <div class="form-group" id="apiGroup" style="display:none">
+                            <label for="api">API</label>
+                            <select name='api' class="form-control" id="apiOptions">
+                            </select>
+                        </div>
                         <br>
                         <div class="form-group">
                             <label for="paymentType">Tipo de Pagamento</label>
@@ -101,11 +106,14 @@
                     $(document).ready(() => {
                         const EMAIL_REST = '/emails/listJSON';
                         const TABLE_REST = '/tables/listJSON';
+                        const API_REST = '/apis/listJSON';
                         const VALUE_SOURCE_TYPE = '<%= bill.valueSourceType %>';
                         const DATA_ID = '<%= bill.valueSourceId %>';
 
                         if (VALUE_SOURCE_TYPE === 'EMAIL') {
                             getList(EMAIL_REST, loadEmailList);
+                        } else if (VALUE_SOURCE_TYPE === 'API') {
+                            getList(API_REST, loadApiList);
                         } else {
                             getList(TABLE_REST, loadTableList);
                         }
@@ -113,9 +121,15 @@
                         $('#valueSourceType').change(function (value) {
                             if (value.target.value === 'EMAIL') {
                                 $('#tableGroup').hide();
+                                $('#apiGroup').hide();
                                 getList(EMAIL_REST, loadEmailList);
+                            } else if (value.target.value === 'API') {
+                                $('#emailGroup').hide();
+                                $('#tableGroup').hide();
+                                getList(API_REST, loadApiList);
                             } else {
                                 $('#emailGroup').hide();
+                                $('#apiGroup').hide();
                                 getList(TABLE_REST, loadTableList);
                             }
                         });
@@ -144,6 +158,16 @@
                             $('#tableOptions').val(DATA_ID);
 
                             $('#tableGroup').show();
+                        }
+
+                        function loadApiList(list) {
+                            var optionsAsString = createSelectOptions(list);
+                            
+                            $('#apiOptions').html(optionsAsString);
+
+                            $('#apiOptions').val(DATA_ID);
+
+                            $('#apiGroup').show();
                         }
 
                         function createSelectOptions(list) {
