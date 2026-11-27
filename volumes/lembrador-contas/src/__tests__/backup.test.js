@@ -216,14 +216,15 @@ describe('backupService export & import', () => {
         expect(manifest.collections.bills.count).toBe(1);
         expect(manifest.collections.activeBills.count).toBe(1);
 
-        // Mutate current database to simulate divergent/wiped state before restore
+        // Mutate and reassign mockData arrays (mirrors routes.test.js behavior across test files)
         resetMockData();
-        mockData.users.push({
+        mockData.users = [{
             _id: new mongoose.Types.ObjectId('607f1f77bcf86cd799439099'),
             name: 'Usuário Temporário',
             email: 'temp@example.com',
             status: 'ACTIVE',
-        });
+        }];
+        mockData.activeBills = [];
 
         const result = await importBackupZip(buffer, { mode: 'replace' });
         expect(result.mode).toBe('replace');
@@ -362,6 +363,31 @@ describe('backupService export & import', () => {
         expect(stats.totalDocuments).toBe(2);
         expect(stats.collections.find(c => c.key === 'users').count).toBe(1);
         expect(stats.collections.find(c => c.key === 'apis').count).toBe(1);
+    });
+
+    test('works reliably even after mockData collection arrays are reassigned by other test suites', async () => {
+        const uid = new mongoose.Types.ObjectId('507f1f77bcf86cd799439099');
+        mockData.users = [{ _id: uid, name: 'Reassigned Array User', email: 'reassigned@example.com', status: 'ACTIVE' }];
+        mockData.activeBills = [{
+            _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439098'),
+            users: [uid],
+            name: 'Água',
+            value: 75.4,
+            status: 'UNPAID',
+            paymentType: 'PIX',
+            referencePeriod: '11/2026',
+        }];
+
+        const { buffer } = await createBackupZip();
+
+        mockData.users = [{ _id: new mongoose.Types.ObjectId('607f1f77bcf86cd799439000'), name: 'Outro', email: 'outro@example.com', status: 'ACTIVE' }];
+        mockData.activeBills = [];
+
+        await importBackupZip(buffer, { mode: 'replace' });
+        expect(mockData.users).toHaveLength(1);
+        expect(mockData.users[0].email).toBe('reassigned@example.com');
+        expect(mockData.activeBills).toHaveLength(1);
+        expect(mockData.activeBills[0].name).toBe('Água');
     });
 });
 
