@@ -1,0 +1,250 @@
+<%- include ('../partials/header.ejs') %>
+
+    <body>
+        <%- template.navbar %>
+            <div class="container">
+                <div class="starter-template">
+                    <div class="list-page-header">
+                        <h1 class="title-1"><%= title %></h1>
+                        <a href="/dashboard" class="btn btn-secondary btn-sm">Voltar ao Demonstrativo</a>
+                    </div>
+
+                    <div id="backup-feedback">
+                        <% if (typeof successMessage !== 'undefined' && successMessage) { %>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <div class="d-flex align-items-start" style="gap:0.5rem">
+                                    <span class="material-icons" style="font-size:1.25rem;margin-top:2px" aria-hidden="true">check_circle</span>
+                                    <div><%= successMessage %></div>
+                                </div>
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        <% } %>
+
+                        <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <div class="d-flex align-items-start" style="gap:0.5rem">
+                                    <span class="material-icons" style="font-size:1.25rem;margin-top:2px" aria-hidden="true">error_outline</span>
+                                    <div><%= errorMessage %></div>
+                                </div>
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <div class="backup-grid">
+                        <div class="backup-panel">
+                            <div>
+                                <div class="backup-panel-header">
+                                    <span class="material-icons" aria-hidden="true">cloud_download</span>
+                                    <h2 class="backup-panel-title">Exportar Backup (.zip)</h2>
+                                </div>
+                                <p class="backup-panel-desc">
+                                    Gera e faz o download de um arquivo compactado <code>.zip</code> contendo todas as coleções do banco de dados (usuários, contas, demonstrativo mensal, tabelas, e-mails, APIs, lembretes e inscrições push), preservando IDs e datas.
+                                </p>
+                            </div>
+                            <div>
+                                <a href="/backup/download" class="btn btn-primary btn-block" id="btn-download-backup">
+                                    <span class="material-icons align-middle mr-1" style="font-size:1.15rem" aria-hidden="true">download</span>
+                                    Baixar arquivo de backup
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="backup-panel">
+                            <form id="backup-import-form" action="/backup/import" method="post" enctype="multipart/form-data">
+                                <div class="backup-panel-header">
+                                    <span class="material-icons" aria-hidden="true">cloud_upload</span>
+                                    <h2 class="backup-panel-title">Importar Backup (.zip)</h2>
+                                </div>
+                                <p class="backup-panel-desc">
+                                    Restaura os dados a partir de um arquivo <code>.zip</code> gerado pelo Lembrador de Contas. O pacote é validado integralmente antes de aplicar qualquer alteração.
+                                </p>
+
+                                <div class="form-group">
+                                    <label for="backupFile">Arquivo ZIP</label>
+                                    <input
+                                        type="file"
+                                        class="form-control"
+                                        id="backupFile"
+                                        name="backupFile"
+                                        accept=".zip,application/zip,application/x-zip-compressed"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="importMode">Modo de importação</label>
+                                    <select class="form-control" id="importMode" name="mode">
+                                        <option value="replace" selected>Substituir dados atuais (restauração completa)</option>
+                                        <option value="merge">Mesclar com dados existentes (atualizar pelo ID)</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-outline-success btn-block" id="btn-import-backup">
+                                    <span class="material-icons align-middle mr-1" style="font-size:1.15rem" aria-hidden="true">upload_file</span>
+                                    Importar backup
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="month-block">
+                        <div class="month-header-row">
+                            <h2 class="month-title" style="font-size:1.15rem">Resumo atual do banco de dados</h2>
+                            <span class="month-total">Total: <strong id="backup-total-count"><%= stats.totalDocuments %></strong> registro(s)</span>
+                        </div>
+                        <div class="table-responsive mt-3">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left">Coleção</th>
+                                        <th class="text-right">Registros</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% stats.collections.forEach(function(item) { %>
+                                        <tr>
+                                            <td class="text-left"><%= item.label %></td>
+                                            <td class="text-right" data-collection-count="<%= item.key %>"><%= item.count %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <%- include('../templates/scripts.html') %>
+            <script nonce="<%= cspNonce %>">
+                (function () {
+                    const form = document.getElementById('backup-import-form');
+                    const fileInput = document.getElementById('backupFile');
+                    const modeSelect = document.getElementById('importMode');
+                    const submitBtn = document.getElementById('btn-import-backup');
+                    const feedbackContainer = document.getElementById('backup-feedback');
+
+                    function renderAlert(type, message) {
+                        const isSuccess = type === 'success';
+                        const icon = isSuccess ? 'check_circle' : 'error_outline';
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-' + (isSuccess ? 'success' : 'danger') + ' alert-dismissible fade show';
+                        alertDiv.setAttribute('role', 'alert');
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-start';
+                        row.style.gap = '0.5rem';
+
+                        const iconSpan = document.createElement('span');
+                        iconSpan.className = 'material-icons';
+                        iconSpan.style.fontSize = '1.25rem';
+                        iconSpan.style.marginTop = '2px';
+                        iconSpan.setAttribute('aria-hidden', 'true');
+                        iconSpan.textContent = icon;
+
+                        const textDiv = document.createElement('div');
+                        textDiv.textContent = message;
+
+                        row.appendChild(iconSpan);
+                        row.appendChild(textDiv);
+
+                        const closeBtn = document.createElement('button');
+                        closeBtn.type = 'button';
+                        closeBtn.className = 'close';
+                        closeBtn.setAttribute('data-dismiss', 'alert');
+                        closeBtn.setAttribute('aria-label', 'Fechar');
+                        closeBtn.innerHTML = '<span aria-hidden="true">&times;</span>';
+
+                        alertDiv.appendChild(row);
+                        alertDiv.appendChild(closeBtn);
+
+                        feedbackContainer.innerHTML = '';
+                        feedbackContainer.appendChild(alertDiv);
+                    }
+
+                    function updateStatsTable(stats) {
+                        if (!stats || !Array.isArray(stats.collections)) return;
+                        const totalEl = document.getElementById('backup-total-count');
+                        if (totalEl && typeof stats.totalDocuments === 'number') {
+                            totalEl.textContent = String(stats.totalDocuments);
+                        }
+                        stats.collections.forEach(function (item) {
+                            const cell = document.querySelector('[data-collection-count="' + item.key + '"]');
+                            if (cell) {
+                                cell.textContent = String(item.count);
+                            }
+                        });
+                    }
+
+                    if (!form) return;
+
+                    form.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+
+                        const selectedFile = fileInput.files && fileInput.files[0];
+                        if (!selectedFile) {
+                            renderAlert('error', 'Selecione um arquivo .zip de backup para importar.');
+                            return;
+                        }
+
+                        const mode = modeSelect.value;
+                        const confirmMessage = mode === 'replace'
+                            ? 'ATENÇÃO: Todos os registros atuais do banco de dados serão substituídos pelo conteúdo do arquivo "' + selectedFile.name + '". Deseja continuar?'
+                            : 'Deseja importar e mesclar os registros do arquivo "' + selectedFile.name + '" no banco de dados atual?';
+
+                        if (!window.confirm(confirmMessage)) {
+                            return;
+                        }
+
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const formData = new FormData();
+                        formData.append('backupFile', selectedFile);
+                        formData.append('mode', mode);
+
+                        const originalHtml = submitBtn.innerHTML;
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Importando backup...';
+
+                        try {
+                            const response = await fetch('/backup/import', {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'x-csrf-token': csrfToken,
+                                },
+                                body: formData,
+                            });
+
+                            let payload = null;
+                            try {
+                                payload = await response.json();
+                            } catch {
+                                payload = null;
+                            }
+
+                            if (!response.ok) {
+                                renderAlert('error', payload?.error || 'Não foi possível importar o arquivo de backup.');
+                                return;
+                            }
+
+                            renderAlert('success', payload?.message || 'Backup importado com sucesso.');
+                            if (payload?.stats) {
+                                updateStatsTable(payload.stats);
+                            }
+                            form.reset();
+                        } catch {
+                            renderAlert('error', 'Erro de conexão ao enviar o arquivo de backup.');
+                        } finally {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalHtml;
+                        }
+                    });
+                })();
+            </script>
+    </body>
+
+    </html>

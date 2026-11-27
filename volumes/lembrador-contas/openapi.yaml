@@ -9,7 +9,7 @@ info:
     **Authentication:** All routes (except `/health`, `/login`, `/logout`) require
     an active session. Set the `APP_PASSWORD` environment variable to enable the
     passphrase gate; leave it unset to disable auth entirely (dev mode).
-  version: "0.3"
+  version: "0.5.0"
 
 servers:
   - url: http://localhost:9090
@@ -34,6 +34,8 @@ tags:
     description: API data sources
   - name: notifications
     description: Web Push notifications
+  - name: backup
+    description: Database backup and restore
 
 # ---------------------------------------------------------------------------
 # Shared schemas
@@ -833,3 +835,59 @@ paths:
       responses:
         "201":
           description: Notifications dispatched
+
+  # ── Backup ────────────────────────────────────────────────────────────────
+
+  /backup:
+    get:
+      tags: [backup]
+      summary: Database backup and restore management page (admin only)
+      description: Renders the backup UI displaying current collection counts, download button, and ZIP import form.
+      responses:
+        "200":
+          description: HTML backup management page
+          content:
+            text/html:
+              schema: { type: string }
+
+  /backup/download:
+    get:
+      tags: [backup]
+      summary: Download full database backup as a ZIP archive (admin only)
+      description: Exports all application MongoDB collections in Extended JSON format packaged inside a `.zip` archive with `manifest.json`.
+      responses:
+        "200":
+          description: ZIP archive containing database collections
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /backup/import:
+    post:
+      tags: [backup]
+      summary: Import a database backup ZIP archive (admin only)
+      description: Validates and restores collections from a backup `.zip` archive in `replace` (full restore with rollback protection) or `merge` (upsert by `_id`) mode.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [backupFile]
+              properties:
+                backupFile:
+                  type: string
+                  format: binary
+                mode:
+                  type: string
+                  enum: [replace, merge]
+                  default: replace
+      responses:
+        "200":
+          description: Backup imported successfully
+        "400":
+          description: Invalid ZIP archive, manifest, or document payload
+        "413":
+          description: Uploaded archive exceeds size limit

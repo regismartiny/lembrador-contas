@@ -407,6 +407,71 @@ label {
   opacity: 1;
 }
 
+.alert-success {
+  background-color: rgba(76, 175, 136, 0.12);
+  border-color: rgba(76, 175, 136, 0.35);
+  color: var(--text-primary);
+}
+
+.alert-success .material-icons {
+  color: var(--success);
+}
+
+.alert-success .close {
+  color: var(--text-secondary);
+  text-shadow: none;
+  opacity: 0.8;
+}
+
+.alert-success .close:hover {
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+/* ===== Backup Page ===== */
+.backup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.backup-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+
+.backup-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.backup-panel-header .material-icons {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.backup-panel-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.backup-panel-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
 /* ===== Bootstrap 4 Toast ===== */
 .toast {
   background-color: var(--bg-surface);
