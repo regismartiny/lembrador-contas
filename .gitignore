@@ -71,3 +71,8 @@ bun.lock
 
 # NPM
 package-lock.json
+
+
+# Frontend build output
+dist/
+volumes/lembrador-contas/dist/

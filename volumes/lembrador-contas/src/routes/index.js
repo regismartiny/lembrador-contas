@@ -2,16 +2,13 @@ import express from 'express';
 
 const router = express.Router();
 
-
-/* GET home page. */
-router.get('/', function (req, res) {
-    // res.render('index', { template })
-    res.redirect("/dashboard");
+/* GET home page — opens the Household Wallet SPA. */
+router.get('/', function (_req, res) {
+    res.redirect('/carteira');
 });
 
-/* GET home page. */
-router.get('/login', function (req, res) {
-    res.redirect("/dashboard");
+router.get('/login', function (_req, res) {
+    res.redirect('/carteira');
 });
 
 export default router;

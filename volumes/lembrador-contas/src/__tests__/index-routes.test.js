@@ -21,18 +21,16 @@ afterAll(() => {
 });
 
 describe('GET /', () => {
-    test('redirects to /dashboard', async () => {
+    test('redirects to /carteira (Household Wallet SPA)', async () => {
         const res = await fetch(`${baseUrl}/`, { redirect: 'manual' });
         expect(res.status).toBe(302);
-        expect(res.headers.get('location')).toBe('/dashboard');
+        expect(res.headers.get('location')).toBe('/carteira');
     });
 });
 
 describe('GET /login', () => {
     test('is handled by auth router (returns 200 or redirect)', async () => {
         const res = await fetch(`${baseUrl}/login`, { redirect: 'manual' });
-        // /login is handled by the auth router which renders a login form
-        // or redirects depending on auth state
         expect([200, 302]).toContain(res.status);
     });
 });

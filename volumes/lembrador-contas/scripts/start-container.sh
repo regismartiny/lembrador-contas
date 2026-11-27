@@ -21,4 +21,8 @@ if [ -z "$browser_path" ] || [ ! -x "$browser_path" ]; then
     bunx puppeteer browsers install chrome
 fi
 
+if [ ! -f "dist/client/index.html" ]; then
+    bun run build:client
+fi
+
 exec "$@"

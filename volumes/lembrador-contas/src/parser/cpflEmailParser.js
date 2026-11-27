@@ -24,10 +24,22 @@ export async function fetch(address, subject, period) {
     
     let response = { 
         dueDate: parsedData.vencimento, 
-        value: parsedData.valor 
+        value: parsedData.valor,
+        referencePeriod: parsedData.mesReferencia || undefined,
+        pixCode: parsedData.pixCode || '',
+        barcode: parsedData.barcode || '',
     }
 
     return [response]
+}
+
+export function extractPaymentCodesFromHTML(text) {
+    if (!text) return { pixCode: '', barcode: '' };
+    const pixMatch = text.match(/(000201[0-9A-Za-z.@\-_:/\s]{30,300})/);
+    const cleanPix = pixMatch ? pixMatch[1].replace(/\s+/g, '').trim() : '';
+    const barcodeMatch = text.match(/\b(\d{11,12}[-\s.]?\d[\s.]+\d{11,12}[-\s.]?\d[\s.]+\d{11,12}[-\s.]?\d[\s.]+\d{11,12}[-\s.]?\d|\d{44,48})\b/);
+    const cleanBarcode = barcodeMatch ? barcodeMatch[1].replace(/\s+/g, ' ').trim() : '';
+    return { pixCode: cleanPix, barcode: cleanBarcode };
 }
 
 export function parseEmailData(msg) {
@@ -55,11 +67,14 @@ export function parseHTML(text) {
     const vencimento = elemVencimento.innerHTML.substring(4)
     const mesReferencia = elemMesReferencia.innerHTML.substring(4)
     const instalacao = elemInstalacao.innerHTML.substring(4)
+    const { pixCode, barcode } = extractPaymentCodesFromHTML(text)
     return { 
         instalacao, 
         vencimento : parseDDMMYYYY(vencimento),
         mesReferencia, 
-        valor : parseBrazilianCurrency(valor.replace(/&nbsp;/gi, ' ').replace(/^R\$\s*/i, '').trim())
+        valor : parseBrazilianCurrency(valor.replace(/&nbsp;/gi, ' ').replace(/^R\$\s*/i, '').trim()),
+        pixCode,
+        barcode,
     }
 }
 

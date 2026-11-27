@@ -10,6 +10,8 @@ const billSchema = new mongoose.Schema({
     valueSourceId: { type: String, required: [true, 'O id da Fonte Valor é obrigatório'] },
     dueDay: { type: Number, required: [true, 'O Dia do Vencimento é obrigatório'] },
     icon: { type: String },
+    pixKey: { type: String, default: '' },
+    category: { type: String, default: '' },
     paymentType: { type: String, enum: Object.keys(PaymentTypeEnum), default: 'PIX', required: [true, 'O tipo de pagamento é obrigatório'] },
     status: { type: String, enum: Object.keys(StatusEnum), default: 'ACTIVE', required: [true, 'A situação é obrigatória'] },
     created_at: { type: Date, default: Date.now },

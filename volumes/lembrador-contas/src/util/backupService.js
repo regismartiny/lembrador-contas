@@ -84,8 +84,8 @@ export const BACKUP_COLLECTIONS = [
 ];
 
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const DATE_FIELDS = new Set(['dueDate', 'notifiedAt', 'expirationTime', 'created_at', 'updated_at']);
-const OBJECT_ID_REF_FIELDS = new Set(['activeBill']);
+const DATE_FIELDS = new Set(['dueDate', 'paidAt', 'notifiedAt', 'expirationTime', 'created_at', 'updated_at']);
+const OBJECT_ID_REF_FIELDS = new Set(['activeBill', 'billId']);
 
 function sanitizeValue(value) {
     if (value === null || value === undefined) return value;
