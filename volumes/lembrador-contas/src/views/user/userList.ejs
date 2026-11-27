@@ -8,31 +8,55 @@
                         <h1 class="title-1"><%= title %></h1>
                         <a href='/users/new' class="btn btn-outline-success btn-sm">Novo</a>
                     </div>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th class="d-none d-md-table-cell">Email</th>
-                                <th>Situação</th>
-                                <th>Admin</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% userList.forEach(function(user){ %>
-                                <tr class="swipe-delete-row" tabindex="0" aria-label="Usuário <%= user.name %>">
-                                    <td><%= user.name %></td>
-                                    <td class="d-none d-md-table-cell" style="word-break:break-all"><%= user.email %></td>
-                                    <td><%= statusEnum[user.status] %></td>
-                                    <td><%= user.admin ? 'Sim' : 'Não' %></td>
-                                    <td class="text-nowrap">
-                                        <a href='/users/edit/<%= user._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/users/remove/<%= user._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir usuário <%= user.name %>" data-confirm="Excluir o usuário '<%= user.name %>'?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
-                                    </td>
+                    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <div class="d-flex align-items-start" style="gap:0.5rem">
+                                <span class="material-icons" style="font-size:1.25rem;margin-top:2px" aria-hidden="true">error_outline</span>
+                                <div>
+                                    <div><%= errorMessage %></div>
+                                    <div class="mt-2 d-flex flex-wrap" style="gap:0.5rem">
+                                        <a href="/bills/list" class="btn btn-secondary btn-sm">Gerenciar Contas</a>
+                                        <a href="/dashboard" class="btn btn-secondary btn-sm">Ver Demonstrativo</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    <% } %>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Nome</th>
+                                    <th class="d-none d-md-table-cell">Email</th>
+                                    <th>Situação</th>
+                                    <th class="d-none d-sm-table-cell">Admin</th>
+                                    <th>Ações</th>
                                 </tr>
-                            <%})%>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <% userList.forEach(function(user){ %>
+                                    <tr class="swipe-delete-row" tabindex="0" aria-label="Usuário <%= user.name %>">
+                                        <td class="text-left">
+                                            <%= user.name %>
+                                            <% if (user.admin) { %>
+                                                <span class="badge badge-secondary d-inline-block d-sm-none ml-1">Admin</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="d-none d-md-table-cell" style="word-break:break-all"><%= user.email %></td>
+                                        <td><%= statusEnum[user.status] %></td>
+                                        <td class="d-none d-sm-table-cell"><%= user.admin ? 'Sim' : 'Não' %></td>
+                                        <td class="text-nowrap">
+                                            <a href='/users/edit/<%= user._id %>' aria-label="Editar usuário <%= user.name %>"><span class="material-symbols-outlined">edit</span></a>
+                                            <form action="/users/remove/<%= user._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir usuário <%= user.name %>" <% if (!user.hasAssignedBills) { %>data-confirm="Excluir o usuário '<%= user.name %>'?"<% } %>><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                        </td>
+                                    </tr>
+                                <%})%>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <%- include('../templates/scripts.html') %>

@@ -26,21 +26,31 @@ function parseBillValue(raw) {
 
 /* GET Dashboard page. */
 router.get('/', asyncHandler(async function (req, res) {
-    const activeBills = await db.ActiveBill.find().lean()
+    const [activeBills, allUsers] = await Promise.all([
+        db.ActiveBill.find().lean(),
+        db.User.find({}).lean(),
+    ])
     logger.debug({ activeBillCount: activeBills.length }, 'Loaded dashboard bills')
 
-    let usersIds = activeBills.map(bill => bill.users).flat().map(user => user._id.toString())
-    usersIds = [...new Set(usersIds)]
+    const billUserIds = new Set(
+        activeBills
+            .flatMap(bill => bill.users || [])
+            .filter(Boolean)
+            .map(user => (user._id || user).toString())
+    )
 
-    const users = await db.User.find({ _id: { $in: usersIds } }).lean()
+    const users = allUsers
+        .filter(user => !user.status || user.status === 'ACTIVE' || billUserIds.has(user._id.toString()))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
 
     const lastUpdate = activeBills.sort((a,b)=>b.updated_at.getTime()-a.updated_at.getTime())[0]?.updated_at;
 
     const sessionEmail = req.session.email || ''
     const loggedUser = sessionEmail ? users.find(u => u.email === sessionEmail) : null
     const defaultUserId = loggedUser ? loggedUser._id.toString() : (users[0]?._id.toString() || '')
+    const authDisabled = !process.env.APP_PASSWORD
 
-    res.render('dashboard/dashboard', { template, title: 'Demonstrativo mensal', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum, defaultUserId })
+    res.render('dashboard/dashboard', { template, title: 'Demonstrativo mensal', users, lastUpdate, periodFilterEnum: db.PeriodFilterEnum, defaultUserId, authDisabled })
 }));
 
 router.get('/dashboard-new', asyncHandler(async function (req, res) {
@@ -69,22 +79,19 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     const isAdmin = !!currentUser?.admin
 
     if (!userId || userId == 'null') {
-        let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
-        res.render('dashboard/user-bill-list', {
-            template,
-            title: 'Demonstrativo mensal',
-            userBillsData: {},
-            activeBillStatusEnum: db.ActiveBillStatusEnum,
-            paymentTypeEnum: db.PaymentTypeEnum,
-            currentMonth: prev.getMonth() + 1,
-            currentYear: prev.getFullYear(),
+        const allUsers = await db.User.find({}).lean()
+        const hasActiveUsers = allUsers.some(u => !u.status || u.status === 'ACTIVE')
+        renderUserBillListPage(
+            res,
+            {},
             isAdmin,
-        })
+            { reason: hasActiveUsers ? 'no_user_selected' : 'no_users' }
+        )
         return
     }
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-        renderUserBillListPage(res, { user: userId, billListPerMonth: [] }, isAdmin)
+        renderUserBillListPage(res, { user: userId, billListPerMonth: [] }, isAdmin, { reason: 'invalid_user' })
         return
     }
 
@@ -122,9 +129,7 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
         return yearA - yearB || monthA - monthB
     })
 
-    if (periodFilter == 'ALL') {
-        renderUserBillListPage(res, userBillsData, isAdmin)
-    } else if (periodFilter == 'LAST_3_MONTHS' || periodFilter == 'LAST_6_MONTHS') {
+    if (periodFilter == 'LAST_3_MONTHS' || periodFilter == 'LAST_6_MONTHS') {
         const currentDate = new Date()
         const currentPeriod = currentDate.getFullYear() * 12 + currentDate.getMonth()
         const monthsToShow = periodFilter == 'LAST_3_MONTHS' ? 3 : 6
@@ -134,17 +139,13 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
             const billPeriod = year * 12 + month - 1
             return billPeriod >= currentPeriod - monthsToShow + 1 && billPeriod <= currentPeriod
         })
-
-        renderUserBillListPage(res, userBillsData, isAdmin)
     } else if (periodFilter == 'CURRENT_YEAR') {
         const currentYear = new Date().getFullYear()
         userBillsData.billListPerMonth = userBillsData.billListPerMonth.filter(billList => {
             const year = Number(billList.month.split('/')[1])
             return year === currentYear
         })
-
-        renderUserBillListPage(res, userBillsData, isAdmin)
-    } else {
+    } else if (periodFilter != 'ALL') {
         // Default: CURRENT_AND_FUTURE — show only previous month and future bills
         let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
         let activeYear = prev.getFullYear();
@@ -155,9 +156,29 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
             let year = Number(billList.month.split("/")[1])
             return year > activeYear || (year === activeYear && month >= activeMonth)
         })
-
-        renderUserBillListPage(res, userBillsData, isAdmin)
     }
+
+    let emptyState = null
+    if (userBillsData.billListPerMonth.length === 0) {
+        if (activeBills.length > 0) {
+            emptyState = { reason: 'filtered_out', totalUserActiveBills: activeBills.length }
+        } else {
+            const allBills = await db.Bill.find({}).lean()
+            const activeConfiguredBills = allBills.filter(b => !b.status || b.status === 'ACTIVE')
+            const userConfiguredBills = activeConfiguredBills.filter(b =>
+                (b.users || []).some(u => (u._id || u).toString() === userId)
+            )
+            if (activeConfiguredBills.length === 0) {
+                emptyState = { reason: 'no_bills_configured' }
+            } else if (userConfiguredBills.length === 0) {
+                emptyState = { reason: 'no_bills_for_user', configuredBillsCount: activeConfiguredBills.length }
+            } else {
+                emptyState = { reason: 'awaiting_processing', userConfiguredBillsCount: userConfiguredBills.length }
+            }
+        }
+    }
+
+    renderUserBillListPage(res, userBillsData, isAdmin, emptyState)
 }));
 
 /* Process bills. */
@@ -309,7 +330,7 @@ router.post('/paybill/:id', requireAdmin, validateObjectId('id'), asyncHandler(a
     res.redirect('/dashboard')
 }));
 
-function renderUserBillListPage(res, userBillsData, isAdmin = false) {
+function renderUserBillListPage(res, userBillsData, isAdmin = false, emptyState = null) {
     let prev = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
     logger.debug({ periodCount: userBillsData.billListPerMonth?.length || 0 }, 'Rendering user bill list')
     res.render('dashboard/user-bill-list', {
@@ -321,6 +342,7 @@ function renderUserBillListPage(res, userBillsData, isAdmin = false) {
         currentMonth: prev.getMonth() + 1,
         currentYear: prev.getFullYear(),
         isAdmin,
+        emptyState,
     })
 }
 

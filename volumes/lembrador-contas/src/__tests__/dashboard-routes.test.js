@@ -1,8 +1,9 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
 import http from 'http';
 import ejs from 'ejs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { mockData, resetMockData } from './setup.js';
 import app from '../app.js';
 import db from '../db.js';
 
@@ -39,6 +40,51 @@ describe('GET /dashboard/', () => {
         expect(html).toContain('Últimos 3 meses');
         expect(html).toContain('Últimos 6 meses');
         expect(html).toContain('Este ano');
+    });
+
+    describe('user selector and status feedback', () => {
+        let prevAppPassword;
+
+        beforeEach(() => {
+            resetMockData();
+            prevAppPassword = process.env.APP_PASSWORD;
+            delete process.env.APP_PASSWORD;
+        });
+
+        afterEach(() => {
+            resetMockData();
+            if (prevAppPassword === undefined) {
+                delete process.env.APP_PASSWORD;
+            } else {
+                process.env.APP_PASSWORD = prevAppPassword;
+            }
+        });
+
+        test('shows disabled placeholder, local mode badge, and Nunca processado when empty', async () => {
+            const res = await fetch(`${baseUrl}/dashboard/`);
+            expect(res.status).toBe(200);
+            const html = await res.text();
+
+            expect(html).toContain('Nenhum usuário cadastrado');
+            expect(html).toContain('Nunca processado');
+            expect(html).toContain('Modo local (sem login)');
+        });
+
+        test('lists active users even when ActiveBill is empty', async () => {
+            mockData.users.push(
+                { _id: '507f1f77bcf86cd799439021', name: 'Carlos', email: 'carlos@example.com', status: 'ACTIVE' },
+                { _id: '507f1f77bcf86cd799439022', name: 'Ana', email: 'ana@example.com', status: 'ACTIVE' },
+                { _id: '507f1f77bcf86cd799439023', name: 'Inativo Sem Conta', email: 'inativo@example.com', status: 'INACTIVE' },
+            );
+
+            const res = await fetch(`${baseUrl}/dashboard/`);
+            expect(res.status).toBe(200);
+            const html = await res.text();
+
+            expect(html).toContain('Ana');
+            expect(html).toContain('Carlos');
+            expect(html).not.toContain('Inativo Sem Conta');
+        });
     });
 });
 
@@ -114,6 +160,88 @@ describe('GET /dashboard/user-bill-list', () => {
     test('returns 200 with null userId', async () => {
         const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=null`);
         expect(res.status).toBe(200);
+    });
+
+    describe('actionable empty states', () => {
+        const userId = '507f1f77bcf86cd799439011';
+
+        beforeEach(() => {
+            resetMockData();
+        });
+
+        afterEach(() => {
+            resetMockData();
+        });
+
+        test('prompts to create a user when no active users exist', async () => {
+            const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=null`);
+            const html = await res.text();
+
+            expect(html).toContain('Nenhum usuário cadastrado');
+            expect(html).toContain('/users/new');
+        });
+
+        test('prompts to create bills when no bills are configured', async () => {
+            mockData.users.push({ _id: userId, name: 'Ana', email: 'ana@example.com', status: 'ACTIVE' });
+
+            const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${userId}&periodFilter=ALL`);
+            const html = await res.text();
+
+            expect(html).toContain('Ainda não há contas cadastradas no sistema');
+            expect(html).toContain('/bills/new');
+        });
+
+        test('prompts to link user when bills exist without this user', async () => {
+            mockData.users.push({ _id: userId, name: 'Ana', email: 'ana@example.com', status: 'ACTIVE' });
+            mockData.bills.push({
+                _id: '507f1f77bcf86cd799439099',
+                name: 'Energia',
+                status: 'ACTIVE',
+                users: ['507f1f77bcf86cd799439088'],
+            });
+
+            const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${userId}&periodFilter=ALL`);
+            const html = await res.text();
+
+            expect(html).toContain('Nenhuma conta encontrada para este usuário');
+            expect(html).toContain('Vincular em Contas');
+        });
+
+        test('prompts to process bills when user has configured bills awaiting processing', async () => {
+            mockData.users.push({ _id: userId, name: 'Ana', email: 'ana@example.com', status: 'ACTIVE' });
+            mockData.bills.push({
+                _id: '507f1f77bcf86cd799439099',
+                name: 'Internet',
+                status: 'ACTIVE',
+                users: [userId],
+            });
+
+            const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${userId}&periodFilter=ALL`);
+            const html = await res.text();
+
+            expect(html).toContain('aguardando processamento');
+            expect(html).toContain('data-action="process-bills"');
+        });
+
+        test('offers to show all periods when bills exist outside current period filter', async () => {
+            mockData.users.push({ _id: userId, name: 'Ana', email: 'ana@example.com', status: 'ACTIVE' });
+            mockData.activeBills.push({
+                _id: '507f1f77bcf86cd799439077',
+                users: [{ _id: userId, name: 'Ana' }],
+                name: 'Conta Antiga',
+                dueDate: new Date('2020-01-10T00:00:00Z'),
+                value: 90,
+                status: 'PAID',
+                paymentType: 'PIX',
+                referencePeriod: '01/2020',
+            });
+
+            const res = await fetch(`${baseUrl}/dashboard/user-bill-list?userId=${userId}&periodFilter=CURRENT_YEAR`);
+            const html = await res.text();
+
+            expect(html).toContain('Exibir todos os períodos');
+            expect(html).toContain('data-action="show-all-periods"');
+        });
     });
 });
 

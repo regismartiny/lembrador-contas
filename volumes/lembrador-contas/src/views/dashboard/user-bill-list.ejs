@@ -1,6 +1,76 @@
 
+ <% var empty = (typeof emptyState !== 'undefined' && emptyState) ? emptyState : null; %>
  <% if (!userBillsData?.billListPerMonth?.length) { %>
-     <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
+     <% if (empty && empty.reason === 'no_users') { %>
+         <div class="dashboard-empty-state">
+             <span class="material-icons dashboard-empty-icon">person_add</span>
+             <h2 class="dashboard-empty-title">Nenhum usuário cadastrado</h2>
+             <p class="dashboard-empty-text">
+                 Não há usuários ativos cadastrados no sistema. Cadastre um usuário e vincule-o às contas para visualizar o demonstrativo mensal.
+             </p>
+             <div class="dashboard-empty-actions">
+                 <a href="/users/new" class="btn btn-primary btn-sm">Cadastrar usuário</a>
+                 <a href="/users/list" class="btn btn-secondary btn-sm">Ver usuários</a>
+             </div>
+         </div>
+     <% } else if (empty && empty.reason === 'no_user_selected') { %>
+         <div class="dashboard-empty-state">
+             <span class="material-icons dashboard-empty-icon">person_search</span>
+             <h2 class="dashboard-empty-title">Nenhum usuário selecionado</h2>
+             <p class="dashboard-empty-text">
+                 Selecione um usuário no filtro acima para carregar o demonstrativo mensal.
+             </p>
+         </div>
+     <% } else if (empty && empty.reason === 'no_bills_configured') { %>
+         <div class="dashboard-empty-state">
+             <span class="material-icons dashboard-empty-icon">receipt_long</span>
+             <h2 class="dashboard-empty-title">Nenhuma conta encontrada</h2>
+             <p class="dashboard-empty-text">
+                 Ainda não há contas cadastradas no sistema. Cadastre suas contas, vincule este usuário no campo <strong>Usuários</strong> e depois processe o período.
+             </p>
+             <div class="dashboard-empty-actions">
+                 <a href="/bills/new" class="btn btn-primary btn-sm">Cadastrar conta</a>
+                 <a href="/bills/list" class="btn btn-secondary btn-sm">Ver contas</a>
+             </div>
+         </div>
+     <% } else if (empty && empty.reason === 'no_bills_for_user') { %>
+         <div class="dashboard-empty-state">
+             <span class="material-icons dashboard-empty-icon">link_off</span>
+             <h2 class="dashboard-empty-title">Nenhuma conta encontrada para este usuário</h2>
+             <p class="dashboard-empty-text">
+                 Existem <%= empty.configuredBillsCount %> conta(s) cadastrada(s) no sistema, mas nenhuma está vinculada a este usuário. Edite as contas desejadas e selecione este usuário no campo <strong>Usuários</strong>.
+             </p>
+             <div class="dashboard-empty-actions">
+                 <a href="/bills/list" class="btn btn-primary btn-sm">Vincular em Contas</a>
+             </div>
+         </div>
+     <% } else if (empty && empty.reason === 'awaiting_processing') { %>
+         <div class="dashboard-empty-state">
+             <span class="material-icons dashboard-empty-icon">sync</span>
+             <h2 class="dashboard-empty-title">Nenhuma conta encontrada — aguardando processamento</h2>
+             <p class="dashboard-empty-text">
+                 Este usuário possui <strong><%= empty.userConfiguredBillsCount %></strong> conta(s) cadastrada(s), mas as faturas ainda não foram processadas para gerar o demonstrativo.
+             </p>
+             <div class="dashboard-empty-actions">
+                 <button type="button" class="btn btn-primary btn-sm" data-action="process-bills">Processar contas mês atual e futuros</button>
+                 <a href="/bills/list" class="btn btn-secondary btn-sm">Ver contas</a>
+             </div>
+         </div>
+     <% } else if (empty && empty.reason === 'filtered_out') { %>
+         <div class="dashboard-empty-state">
+             <span class="material-icons dashboard-empty-icon">filter_alt_off</span>
+             <h2 class="dashboard-empty-title">Nenhuma conta encontrada para o período selecionado</h2>
+             <p class="dashboard-empty-text">
+                 Este usuário possui <%= empty.totalUserActiveBills %> fatura(s) processada(s) em outros meses, mas nenhuma corresponde ao filtro de período atual.
+             </p>
+             <div class="dashboard-empty-actions">
+                 <button type="button" class="btn btn-primary btn-sm" data-action="show-all-periods">Exibir todos os períodos</button>
+                 <button type="button" class="btn btn-secondary btn-sm" data-action="process-bills">Processar contas</button>
+             </div>
+         </div>
+     <% } else { %>
+         <p class="text-muted text-center py-4">Nenhuma conta encontrada para o período selecionado.</p>
+     <% } %>
  <% } %>
  <%
 var isAdminUser = !!isAdmin;

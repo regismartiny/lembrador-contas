@@ -7,14 +7,13 @@
                         <h1 class="title-1">
                             <%= title %>
                         </h1>
-                        <br>
                         <form action="/bills/add" method="post">
                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <div class="form-group">
                                 <label for="users">Usuários</label>
                                 <select class="form-control" name="users" id="users" multiple>
                                     <% activeUsers.forEach(function(user){ %>
-                                        <option value=<%= user._id %>><%= user.name %></option>
+                                        <option value="<%= user._id %>"><%= user.name %></option>
                                     <%})%>
                                 </select>
                             </div>
@@ -28,24 +27,21 @@
                                 <input type="text" class="form-control" id="company" name="company" placeholder="Empresa"
                                     aria-describedby="basic-addon1" required>
                             </div>
-                            <br>
                             <div class="form-group">
                                 <label for="dueDay">Dia vencimento</label>
-                                <input type="text" class="form-control" id="dueDay" name="dueDay" placeholder="Dia Vencimento"
+                                <input type="number" min="1" max="31" class="form-control" id="dueDay" name="dueDay" placeholder="Dia Vencimento"
                                     aria-describedby="basic-addon1" required>
                             </div>
-                            <br>
                             <div class="form-group">
                                 <label for="icon">Ícone (classe FontAwesome)</label>
                                 <input type="text" class="form-control" id="icon" name="icon" placeholder="Ícone (classe FontAwesome)"
                                     aria-describedby="basic-addon1">
                             </div>
-                            <br>
                             <div class="form-group">
                                 <label for="type">Tipo da Conta</label>
                                 <select name='type' class="form-control" id="type">
                                         <% var keys = Object.keys(billTypeEnum); keys.forEach(function(bt){ %>
-                                            <option value=<%= bt %>><%= billTypeEnum[bt] %></option>
+                                            <option value="<%= bt %>"><%= billTypeEnum[bt] %></option>
                                         <%})%>
                                 </select>
                             </div>
@@ -53,11 +49,10 @@
                                 <label for="valueSourceType">Tipo FonteValor</label>
                                 <select name='valueSourceType' class="form-control" id="valueSourceType">
                                         <% var keys = Object.keys(valueSourceTypeEnum); keys.forEach(function(vst){ %>
-                                            <option value=<%= vst %>><%= valueSourceTypeEnum[vst] %></option>
+                                            <option value="<%= vst %>"><%= valueSourceTypeEnum[vst] %></option>
                                         <%})%>
                                 </select>
                             </div>
-                            <br>
                             <div class="form-group" id="emailGroup" style="display:none">
                                 <label for="email">Email</label>
                                 <select name='email' class="form-control" id="emailOptions">
@@ -73,17 +68,15 @@
                                 <select name='api' class="form-control" id="apiOptions">
                                 </select>
                             </div>
-                            <br>
                             <div class="form-group">
                                 <label for="paymentType">Tipo de Pagamento</label>
                                 <select name='paymentType' class="form-control" id="paymentType">
                                         <% var keys = Object.keys(paymentTypeEnum); keys.forEach(function(pt){ %>
-                                            <option value=<%= pt %>><%= paymentTypeEnum[pt] %></option>
+                                            <option value="<%= pt %>"><%= paymentTypeEnum[pt] %></option>
                                         <%})%>
                                 </select>
                             </div>
-                            <br>
-                            <div class="form-group">
+                            <div class="form-group-btn">
                                 <input type="submit" class="btn btn-primary center-block" value="Salvar" />
                                 <a href="/bills/list" class="btn btn-secondary center-block">Cancelar</a>
                             </div>

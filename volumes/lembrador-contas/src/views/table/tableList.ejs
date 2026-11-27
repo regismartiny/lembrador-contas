@@ -8,27 +8,29 @@
                         <h1 class="title-1"><%= title %></h1>
                         <a href='/tables/new' class="btn btn-outline-success btn-sm">Novo</a>
                     </div>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Situação</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% tableList.forEach(function(table){ %>
-                                <tr class="swipe-delete-row" tabindex="0" aria-label="Tabela <%= table.name %>">
-                                    <td><%= table.name %></td>
-                                    <td><%= statusEnum[table.status] %></td>
-                                    <td class="text-nowrap">
-                                        <a href='/tables/edit/<%= table._id %>'><span class="material-symbols-outlined">edit</span></a>
-                                        <form action="/tables/remove/<%= table._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir tabela <%= table.name %>" data-confirm="Excluir?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
-                                    </td>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Nome</th>
+                                    <th>Situação</th>
+                                    <th>Ações</th>
                                 </tr>
-                            <%})%>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <% tableList.forEach(function(table){ %>
+                                    <tr class="swipe-delete-row" tabindex="0" aria-label="Tabela <%= table.name %>">
+                                        <td class="text-left"><%= table.name %></td>
+                                        <td><%= statusEnum[table.status] %></td>
+                                        <td class="text-nowrap">
+                                            <a href='/tables/edit/<%= table._id %>' aria-label="Editar tabela <%= table.name %>"><span class="material-symbols-outlined">edit</span></a>
+                                            <form action="/tables/remove/<%= table._id %>" method="post" class="swipe-delete-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn-link" aria-label="Excluir tabela <%= table.name %>" data-confirm="Excluir?"><span class="material-symbols-outlined symbol-red" aria-hidden="true">delete</span></button></form>
+                                        </td>
+                                    </tr>
+                                <%})%>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <%- include('../templates/scripts.html') %>

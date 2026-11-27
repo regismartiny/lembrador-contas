@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
 import http from 'http';
+import { mockData, resetMockData } from './setup.js';
 import app from '../app.js';
+import db from '../db.js';
 
 let server;
 let baseUrl;
@@ -125,8 +127,18 @@ describe('POST /users/update', () => {
 });
 
 describe('POST /users/remove/:id', () => {
-    test('redirects to /users/list for valid ObjectId', async () => {
-        const res = await fetch(`${baseUrl}/users/remove/507f1f77bcf86cd799439011`, {
+    const userId = '507f1f77bcf86cd799439011';
+
+    beforeEach(() => {
+        resetMockData();
+    });
+
+    afterEach(() => {
+        resetMockData();
+    });
+
+    test('redirects to /users/list for valid ObjectId when user has no assigned bills', async () => {
+        const res = await fetch(`${baseUrl}/users/remove/${userId}`, {
             method: 'POST',
             redirect: 'manual',
         });
@@ -139,5 +151,58 @@ describe('POST /users/remove/:id', () => {
             method: 'POST',
         });
         expect(res.status).toBe(400);
+    });
+
+    test('blocks deletion with 409 JSON and reason when user has configured Bill assigned', async () => {
+        let deleteCalled = false;
+        const originalDelete = db.User.findOneAndDelete;
+        db.User.findOneAndDelete = (...args) => {
+            deleteCalled = true;
+            return originalDelete(...args);
+        };
+
+        try {
+            mockData.users.push({ _id: userId, name: 'Maria', email: 'maria@example.com', status: 'ACTIVE' });
+            mockData.bills.push({
+                _id: '507f1f77bcf86cd799439051',
+                name: 'Internet Fibra',
+                users: [userId],
+                status: 'ACTIVE',
+            });
+
+            const res = await fetch(`${baseUrl}/users/remove/${userId}`, {
+                method: 'POST',
+                headers: { Accept: 'application/json' },
+            });
+            expect(res.status).toBe(409);
+            const payload = await res.json();
+            expect(payload.error).toContain('Maria');
+            expect(payload.error).toContain('1 conta(s) cadastrada(s)');
+            expect(payload.error).toContain('Internet Fibra');
+            expect(deleteCalled).toBe(false);
+        } finally {
+            db.User.findOneAndDelete = originalDelete;
+        }
+    });
+
+    test('blocks deletion with 409 HTML alert when browser attempts to delete user with ActiveBill assigned', async () => {
+        mockData.users.push({ _id: userId, name: 'João', email: 'joao@example.com', status: 'ACTIVE' });
+        mockData.activeBills.push({
+            _id: '507f1f77bcf86cd799439061',
+            name: 'Energia',
+            users: [{ _id: userId, name: 'João' }],
+            referencePeriod: '11/2026',
+        });
+
+        const res = await fetch(`${baseUrl}/users/remove/${userId}`, {
+            method: 'POST',
+            headers: { Accept: 'text/html,application/xhtml+xml' },
+        });
+        expect(res.status).toBe(409);
+        const html = await res.text();
+        expect(html).toContain('alert-danger');
+        expect(html).toContain('João');
+        expect(html).toContain('1 lançamento(s) no demonstrativo mensal');
+        expect(html).toContain('/bills/list');
     });
 });

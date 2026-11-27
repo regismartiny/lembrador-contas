@@ -22,7 +22,7 @@ function checkNotificationsPermission() {
    return true;
 }
 
-const CACHE_NAME = 'lembrador-contas-v1';
+const CACHE_NAME = 'lembrador-contas-v4';
 const STATIC_ASSETS = [
    '/stylesheets/starter-template.css',
    '/main.js',
@@ -34,16 +34,21 @@ const STATIC_ASSETS = [
    '/app.webmanifest',
 ];
 
-function isStaticAsset(pathname) {
+function isVendorStaticAsset(pathname) {
    return (
-      pathname.startsWith('/stylesheets/') ||
       pathname.startsWith('/bootstrap/') ||
       pathname.startsWith('/jquery/') ||
       pathname.startsWith('/jquery-mask/') ||
       pathname.startsWith('/popperjs/') ||
       pathname.startsWith('/images/') ||
+      pathname === '/favicon.ico'
+   );
+}
+
+function isAppStaticAsset(pathname) {
+   return (
+      pathname.startsWith('/stylesheets/') ||
       pathname === '/main.js' ||
-      pathname === '/favicon.ico' ||
       pathname === '/app.webmanifest'
    );
 }
@@ -74,7 +79,7 @@ self.addEventListener('fetch', event => {
    if (url.origin !== self.location.origin) return;
    if (url.pathname.startsWith('/notifications/') || url.pathname === '/logout') return;
 
-   if (isStaticAsset(url.pathname)) {
+   if (isVendorStaticAsset(url.pathname)) {
       event.respondWith(
          caches.match(request).then(cached => {
             if (cached) return cached;
@@ -86,6 +91,21 @@ self.addEventListener('fetch', event => {
                return response;
             });
          })
+      );
+      return;
+   }
+
+   if (isAppStaticAsset(url.pathname)) {
+      event.respondWith(
+         fetch(request)
+            .then(response => {
+               if (response && response.ok) {
+                  const clone = response.clone();
+                  caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+               }
+               return response;
+            })
+            .catch(() => caches.match(request))
       );
       return;
    }
