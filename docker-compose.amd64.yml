@@ -12,7 +12,7 @@ services:
 
   mongodb:
     container_name: lembrador-contas_mongodb
-    image: mongo:8
+    image: mongo:8.0
     ports:
       - 127.0.0.1:27017:27017
     environment:
