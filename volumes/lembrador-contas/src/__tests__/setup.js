@@ -72,6 +72,38 @@ export function resetMockData() {
 
 // Prevent db.js from connecting to MongoDB during tests
 mock.module('../db.js', () => {
+    function makeMockCollection(arr, extra = {}) {
+        return {
+            ...extra,
+            deleteMany: async () => {
+                const deletedCount = arr.length;
+                arr.length = 0;
+                return { deletedCount };
+            },
+            insertMany: async (docs) => {
+                const cloned = docs.map(d => ({ ...d }));
+                arr.push(...cloned);
+                return { insertedCount: cloned.length };
+            },
+            bulkWrite: async (ops) => {
+                for (const op of ops) {
+                    if (op.replaceOne) {
+                        const targetId = op.replaceOne.filter?._id?.toString?.();
+                        const idx = arr.findIndex(item => item._id?.toString?.() === targetId);
+                        if (idx >= 0) {
+                            arr[idx] = { ...op.replaceOne.replacement };
+                        } else if (op.replaceOne.upsert) {
+                            arr.push({ ...op.replaceOne.replacement });
+                        }
+                    } else if (op.insertOne) {
+                        arr.push({ ...op.insertOne.document });
+                    }
+                }
+                return { ok: 1 };
+            },
+        };
+    }
+
     class MockActiveBill {
         constructor(data) { Object.assign(this, data); }
         save() { return Promise.resolve(this); }
@@ -98,7 +130,7 @@ mock.module('../db.js', () => {
             return makeQuery(null);
         }
         static deleteMany()             { return makeQuery({ deletedCount: 0 }); }
-        static collection = { createIndex: () => Promise.resolve() };
+        static collection = makeMockCollection(mockData.activeBills, { createIndex: () => Promise.resolve() });
     }
 
     class MockBill {
@@ -112,6 +144,7 @@ mock.module('../db.js', () => {
             return makeQuery(existing || null);
         }
         static findOneAndDelete()       { return makeQuery(null); }
+        static collection = makeMockCollection(mockData.bills);
     }
 
     class MockUser {
@@ -131,6 +164,7 @@ mock.module('../db.js', () => {
         }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
+        static collection = makeMockCollection(mockData.users);
     }
 
     class MockTable {
@@ -140,6 +174,7 @@ mock.module('../db.js', () => {
         static findById(id)             { const t = mockData.tables.find(x => x._id === id || x.name === id); return makeQuery(t || null); }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
+        static collection = makeMockCollection(mockData.tables);
     }
 
     class MockEmail {
@@ -149,6 +184,7 @@ mock.module('../db.js', () => {
         static findById()               { return makeQuery(null); }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
+        static collection = makeMockCollection(mockData.emails);
     }
 
     class MockAPI {
@@ -158,6 +194,7 @@ mock.module('../db.js', () => {
         static findById(id)             { const a = mockData.apis.find(x => x._id === id || x._id?.toString?.() === id?.toString?.()); return makeQuery(a || null); }
         static findOneAndUpdate()       { return makeQuery(null); }
         static findOneAndDelete()       { return makeQuery(null); }
+        static collection = makeMockCollection(mockData.apis);
     }
 
     // Supports chaining: .deleteMany().lean().exec()
@@ -172,6 +209,7 @@ mock.module('../db.js', () => {
         static deleteMany()            { return leanChain; }
         static deleteOne({ _id })      { const idx = mockData.pushSubscriptions.findIndex(x => x._id == _id); if (idx !== -1) mockData.pushSubscriptions.splice(idx, 1); return Promise.resolve({ deletedCount: 1 }); }
         static create()                { return Promise.resolve({}); }
+        static collection = makeMockCollection(mockData.pushSubscriptions);
     }
 
     class MockBillReminder {
@@ -181,6 +219,7 @@ mock.module('../db.js', () => {
         static findById()              { return makeQuery(null); }
         static findOneAndUpdate()      { return makeQuery(null); }
         static deleteMany()            { return leanChain; }
+        static collection = makeMockCollection(mockData.reminders);
     }
 
     // Return the default export object that db.js provides

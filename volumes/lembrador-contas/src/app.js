@@ -16,6 +16,7 @@ import emails from './routes/emails.js';
 import tables from './routes/tables.js';
 import apis from './routes/apis.js';
 import notifications from './routes/notifications.js';
+import backup from './routes/backup.js';
 import auth from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { cloudflareAuth } from './middleware/cfAccess.js';
@@ -152,6 +153,7 @@ app.use('/emails', emails);
 app.use('/tables', tables);
 app.use('/apis', apis);
 app.use('/notifications', notifications);
+app.use('/backup', backup);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
