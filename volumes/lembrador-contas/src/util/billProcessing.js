@@ -4,12 +4,13 @@ import { validateExternalApiUrl } from './urlValidator.js';
 
 let _processingLock = false;
 
-async function processBills(bills, selectedPeriods) {
+async function processBills(bills, selectedPeriods, onProgress) {
     if (_processingLock) {
         logger.warn('processBills is already running; skipping concurrent invocation');
         return { skipped: true };
     }
     _processingLock = true;
+    const emit = typeof onProgress === 'function' ? onProgress : () => {};
     try {
         let billsSourceTable = bills.filter(bill => db.ValueSourceTypeEnum[bill.valueSourceType]==db.ValueSourceTypeEnum.TABLE)
         const periods = selectedPeriods ? JSON.parse(selectedPeriods) : await getDefaultPeriods(billsSourceTable)
@@ -20,38 +21,77 @@ async function processBills(bills, selectedPeriods) {
 
         const nonFuturePeriods = periods.filter(p => !isFuturePeriod(p))
 
-        const promises = [findActiveTableBills(billsSourceTable, periods),
-                            findActiveEmailBills(billsSourceEmail, nonFuturePeriods),
-                            findActiveApiBills(billsSourceApi, nonFuturePeriods)]
+        emit({
+            stage: 'started',
+            billCount: bills.length,
+            counts: {
+                table: billsSourceTable.length,
+                email: billsSourceEmail.length,
+                api: billsSourceApi.length,
+            },
+            periods,
+        });
+
+        const promises = [
+            findActiveTableBills(billsSourceTable, periods).then(res => {
+                emit({ stage: 'source_done', source: 'TABLE', count: res.length });
+                return res;
+            }),
+            findActiveEmailBills(billsSourceEmail, nonFuturePeriods).then(res => {
+                emit({ stage: 'source_done', source: 'EMAIL', count: res.length });
+                return res;
+            }),
+            findActiveApiBills(billsSourceApi, nonFuturePeriods).then(res => {
+                emit({ stage: 'source_done', source: 'API', count: res.length });
+                return res;
+            }),
+        ]
         const activeBills = await runParallel(promises)
 
         for (const activeBill of activeBills) {
             const now = new Date();
+            const setFields = {
+                users: activeBill.users,
+                name: activeBill.name,
+                dueDate: activeBill.dueDate,
+                value: activeBill.value,
+                icon: activeBill.icon,
+                paymentType: activeBill.paymentType,
+                referencePeriod: activeBill.referencePeriod,
+                updated_at: now,
+            };
+            if (activeBill.billId) setFields.billId = activeBill.billId;
+            if (activeBill.company) setFields.company = activeBill.company;
+            if (activeBill.valueSourceType) setFields.valueSourceType = activeBill.valueSourceType;
+            if (activeBill.attachmentFilename) setFields.attachmentFilename = activeBill.attachmentFilename;
+            if (activeBill.pixCode) setFields.pixCode = activeBill.pixCode;
+            if (activeBill.barcode) setFields.barcode = activeBill.barcode;
+
             await db.ActiveBill.findOneAndUpdate(
                 { name: activeBill.name, dueDate: activeBill.dueDate },
                 {
-                    $set: {
-                        users: activeBill.users,
-                        name: activeBill.name,
-                        dueDate: activeBill.dueDate,
-                        value: activeBill.value,
-                        icon: activeBill.icon,
-                        paymentType: activeBill.paymentType,
-                        referencePeriod: activeBill.referencePeriod,
-                        updated_at: now,
-                    },
+                    $set: setFields,
                     $setOnInsert: {
                         status: activeBill.status || 'UNPAID',
                         created_at: now,
                     },
                 },
                 { upsert: true }
-            ).catch((err) => {
+            ).then(() => {
+                emit({
+                    stage: 'bill_saved',
+                    name: activeBill.name,
+                    referencePeriod: activeBill.referencePeriod,
+                    value: activeBill.value,
+                    hasPdf: Boolean(activeBill.attachmentFilename),
+                });
+            }).catch((err) => {
                 logger.error({ err }, 'Failed to save processed bill')
             })
         }
 
         logger.info({ periods, processedBillCount: activeBills.length }, 'Finished processing bills')
+        emit({ stage: 'completed', processedCount: activeBills.length });
         return { skipped: false, processedCount: activeBills.length };
     } finally {
         _processingLock = false;
@@ -154,7 +194,13 @@ async function findTableBills(bill, period) {
     let value = currentPeriodData.value
     let icon = bill.icon
     let paymentType = bill.paymentType
-    bills.push(new db.ActiveBill({users, name, dueDate, value, icon, paymentType, referencePeriod}))
+    bills.push(new db.ActiveBill({
+        billId: bill._id || null,
+        company: bill.company || '',
+        valueSourceType: 'TABLE',
+        pixCode: bill.pixKey || '',
+        users, name, dueDate, value, icon, paymentType, referencePeriod,
+    }))
 
     return bills;
 }
@@ -209,7 +255,15 @@ async function findEmailBills(bill, period) {
         let status = dueDate && value ? 'UNPAID' : 'ERROR'
         let paymentType = bill.paymentType
         let referencePeriod = parsedData.referencePeriod || (String(period.month + 1).padStart(2, '0') + '/' + period.year)
-        bills.push(new db.ActiveBill({users, name, dueDate, value, icon, status, paymentType, referencePeriod}))
+        bills.push(new db.ActiveBill({
+            billId: bill._id || null,
+            company: bill.company || '',
+            valueSourceType: 'EMAIL',
+            attachmentFilename: parsedData.attachmentFilename || '',
+            pixCode: parsedData.pixCode || bill.pixKey || '',
+            barcode: parsedData.barcode || '',
+            users, name, dueDate, value, icon, status, paymentType, referencePeriod,
+        }))
     }
     return bills;
 }
@@ -272,7 +326,13 @@ async function findApiBills(bill, period) {
         const raw = resolveJsonPath(data, api.value)
         const value = parseFloat(raw)
         const status = !isNaN(value) ? 'UNPAID' : 'ERROR'
-        bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, value: isNaN(value) ? undefined : value, icon: bill.icon, paymentType: bill.paymentType, status }))
+        bills.push(new db.ActiveBill({
+            billId: bill._id || null,
+            company: bill.company || '',
+            valueSourceType: 'API',
+            pixCode: bill.pixKey || '',
+            users: bill.users, name: bill.name, dueDate, referencePeriod, value: isNaN(value) ? undefined : value, icon: bill.icon, paymentType: bill.paymentType, status,
+        }))
     } catch (error) {
         logger.error({ errorName: error.name }, 'Failed to fetch configured bill API data')
         bills.push(new db.ActiveBill({ users: bill.users, name: bill.name, dueDate, referencePeriod, icon: bill.icon, paymentType: bill.paymentType, status: 'ERROR' }))

@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --wallet-bg: #f6f7fb;
+    --wallet-surface: #ffffff;
+    --wallet-elevated: #f0f2f8;
+    --wallet-border: rgba(15, 23, 42, 0.08);
+    --wallet-border-strong: rgba(15, 23, 42, 0.15);
+    --wallet-text: #0f172a;
+    --wallet-muted: #64748b;
+    --wallet-accent: #7c3aed;
+    --wallet-accent-soft: rgba(124, 58, 237, 0.1);
+    --wallet-emerald: #059669;
+    --wallet-amber: #d97706;
+    --wallet-rose: #e11d48;
+  }
+
+  html.dark {
+    --wallet-bg: #09080f;
+    --wallet-surface: #12111c;
+    --wallet-elevated: #1a1828;
+    --wallet-border: rgba(255, 255, 255, 0.08);
+    --wallet-border-strong: rgba(255, 255, 255, 0.16);
+    --wallet-text: #f8fafc;
+    --wallet-muted: #94a3b8;
+    --wallet-accent: #8b5cf6;
+    --wallet-accent-soft: rgba(139, 92, 246, 0.16);
+    --wallet-emerald: #10b981;
+    --wallet-amber: #f59e0b;
+    --wallet-rose: #f43f5e;
+  }
+
+  html, body {
+    background-color: var(--wallet-bg);
+    color: var(--wallet-text);
+    font-family: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-sheet-up {
+  animation: sheetUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}

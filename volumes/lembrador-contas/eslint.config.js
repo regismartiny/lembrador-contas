@@ -68,6 +68,6 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'downloads/**', '.credentials/**'],
+    ignores: ['node_modules/**', 'downloads/**', '.credentials/**', 'dist/**', 'client/**'],
   },
 ];

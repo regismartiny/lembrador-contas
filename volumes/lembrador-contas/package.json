@@ -1,10 +1,12 @@
 {
   "name": "lembrador-contas",
-  "version": "0.6.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "bun run --watch ./src/bin/www",
+    "dev:client": "vite",
+    "build:client": "vite build",
     "start": "bun run ./src/bin/www",
     "test": "cross-env SESSION_SECRET=test-secret bun test",
     "test:coverage": "cross-env SESSION_SECRET=test-secret bun test --coverage",
@@ -13,12 +15,15 @@
     "node-start": "node ./src/bin/www",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build": "bun run lint && bun run test"
+    "typecheck": "tsc --noEmit",
+    "build": "bun run build:client && bun run lint && bun run typecheck && bun run test"
   },
   "engines": {
     "bun": ">=1.3.5"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.4",
+    "@vitejs/plugin-react": "^4.4.1",
     "bootstrap": "4.6.1",
     "connect-mongo": "^6.0.0",
     "cookie-parser": "~1.4.7",
@@ -34,13 +39,18 @@
     "jquery": "^3.7.1",
     "jquery-mask-plugin": "^1.14.16",
     "jsdom": "26.1.0",
+    "lucide-react": "^0.511.0",
     "mongoose": "8.24.7",
     "pdf2json": "3.1.6",
     "pdfjs-dist": "^4.10.38",
     "pino": "^10.4.0",
     "popper.js": "^1.16.1",
     "puppeteer": "^25.17.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "serve-favicon": "~2.4.5",
+    "tailwindcss": "^4.1.4",
+    "vite": "^6.3.5",
     "web-push": "^3.6.7"
   },
   "overrides": {
@@ -48,8 +58,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
     "cross-env": "^7.0.3",
     "eslint": "^10.15.0",
-    "globals": "^17.14.0"
+    "globals": "^17.14.0",
+    "typescript": "^5.8.3"
   }
 }

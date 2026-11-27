@@ -97,16 +97,19 @@ async function parseEmailData(message) {
         const pdfUrl = extractPDFLink(html);
         if (!pdfUrl) throw new Error('No PDF link found in CORSAN email HTML');
 
-        const pdfBuffer = await downloadPDF(pdfUrl);
+        const downloaded = await downloadPDF(pdfUrl);
+        const pdfBuffer = downloaded.buffer;
+        const attachmentFilename = downloaded.filename || '';
         const pdfData = await (_parsePDFBufferFn || parsePDFBuffer)(pdfBuffer);
 
         const value = extractTotalFromPDF(pdfData);
         const dueDate = extractDueDateFromPDF(pdfData);
         const referencePeriod = extractReferencePeriodFromPDF(pdfData);
+        const { pixCode, barcode } = extractPaymentCodesFromPDF(pdfData);
 
-    logger.info({ hasReferencePeriod: Boolean(referencePeriod) }, 'CORSAN invoice parsed');
+        logger.info({ hasReferencePeriod: Boolean(referencePeriod), attachmentFilename: Boolean(attachmentFilename) }, 'CORSAN invoice parsed');
 
-        return { dueDate, value, referencePeriod };
+        return { dueDate, value, referencePeriod, attachmentFilename, pixCode, barcode };
     } catch (e) {
         logger.error({ err: e }, 'Failed to parse CORSAN email');
         return null;
@@ -400,9 +403,9 @@ function persistPDFBuffer(pdfBuffer) {
     }
 
     fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
-    const filename = `corsan_fatura_${Date.now()}.pdf`;
+    const filename = `corsan_fatura_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.pdf`;
     fs.writeFileSync(path.join(DOWNLOADS_DIR, filename), pdfBuffer);
-    return pdfBuffer;
+    return { buffer: pdfBuffer, filename };
 }
 
 function getAegeaApiUrl(url) {
@@ -678,10 +681,35 @@ function extractReferencePeriodFromPDF(pdfData) {
     return null;
 }
 
+function extractPaymentCodesFromPDF(pdfData) {
+    let pixCode = '';
+    let barcode = '';
+    if (!pdfData?.Pages) return { pixCode, barcode };
+
+    const allDecoded = [];
+    for (const page of pdfData.Pages) {
+        for (const text of page.Texts || []) {
+            if (text?.R?.[0]?.T) {
+                allDecoded.push(decodeText(text.R[0].T));
+            }
+        }
+    }
+    const joined = allDecoded.join(' ');
+    const pixMatch = joined.match(/(000201[0-9A-Za-z.@\-_:/]{30,300})/);
+    if (pixMatch) {
+        pixCode = pixMatch[1].trim();
+    }
+    const barcodeMatch = joined.match(/\b(\d{11,12}[-\s.]?\d[\s.]+\d{11,12}[-\s.]?\d[\s.]+\d{11,12}[-\s.]?\d[\s.]+\d{11,12}[-\s.]?\d|\d{44,48})\b/);
+    if (barcodeMatch) {
+        barcode = barcodeMatch[1].replace(/\s+/g, ' ').trim();
+    }
+    return { pixCode, barcode };
+}
+
 function parseDDMMYYYY(str) {
     const [day, month, year] = str.split('/').map(Number);
     return new Date(year, month - 1, day);
 }
 
-export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, parseBrazilianCurrency, setParsePDFBuffer, findHTMLPart };
+export { fetch, parseEmailData, extractHTMLBody, extractPDFLink, extractTotalFromPDF, extractDueDateFromPDF, extractReferencePeriodFromPDF, extractPaymentCodesFromPDF, parseBrazilianCurrency, setParsePDFBuffer, findHTMLPart, DOWNLOADS_DIR };
 export default { fetch };

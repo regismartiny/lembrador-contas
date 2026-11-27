@@ -1,8 +1,13 @@
 import db from '../db.js'
 import logger from '../util/logger.js'
 
+export function isAuthEnabled() {
+    const raw = process.env.APP_PASSWORD
+    return Boolean(raw && raw !== 'undefined' && raw.trim() !== '')
+}
+
 export function requireAuth(req, res, next) {
-    if (!process.env.APP_PASSWORD || (req.session && req.session.authenticated)) {
+    if (!isAuthEnabled() || (req.session && req.session.authenticated)) {
         return next()
     }
     if (req.method === 'GET' && !req.path.startsWith('/.well-known')) {
@@ -12,7 +17,7 @@ export function requireAuth(req, res, next) {
 }
 
 export async function requireAdmin(req, res, next) {
-    if (!process.env.APP_PASSWORD) {
+    if (!isAuthEnabled()) {
         return next()
     }
     if (!req.session || !req.session.authenticated || !req.session.email) {

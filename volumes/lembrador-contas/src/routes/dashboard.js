@@ -76,7 +76,9 @@ router.get('/user-bill-list', asyncHandler(async function (req, res) {
     let periodFilter = req.query.periodFilter
     const sessionEmail = req.session?.email || ''
     const currentUser = sessionEmail ? await db.User.findOne({ email: sessionEmail }).lean() : null
-    const isAdmin = !!currentUser?.admin
+    const rawPass = process.env.APP_PASSWORD
+    const authDisabled = !rawPass || rawPass === 'undefined' || rawPass.trim() === ''
+    const isAdmin = authDisabled ? true : !!currentUser?.admin
 
     if (!userId || userId == 'null') {
         const allUsers = await db.User.find({}).lean()

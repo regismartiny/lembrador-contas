@@ -36,11 +36,14 @@ const STATIC_ASSETS = [
 
 function isVendorStaticAsset(pathname) {
    return (
+      pathname.startsWith('/assets/') ||
       pathname.startsWith('/bootstrap/') ||
       pathname.startsWith('/jquery/') ||
       pathname.startsWith('/jquery-mask/') ||
       pathname.startsWith('/popperjs/') ||
       pathname.startsWith('/images/') ||
+      pathname.startsWith('/android/') ||
+      pathname.startsWith('/ios/') ||
       pathname === '/favicon.ico'
    );
 }
@@ -77,7 +80,15 @@ self.addEventListener('fetch', event => {
 
    const url = new URL(request.url);
    if (url.origin !== self.location.origin) return;
-   if (url.pathname.startsWith('/notifications/') || url.pathname.startsWith('/backup') || url.pathname.startsWith('/reports/export.csv') || url.pathname === '/logout') return;
+   if (
+      url.pathname.startsWith('/notifications/') ||
+      url.pathname.startsWith('/backup') ||
+      url.pathname.startsWith('/reports/export.csv') ||
+      url.pathname.startsWith('/api/sync') ||
+      url.pathname.startsWith('/api/auth') ||
+      url.pathname.endsWith('/pdf') ||
+      url.pathname === '/logout'
+   ) return;
 
    if (isVendorStaticAsset(url.pathname)) {
       event.respondWith(

@@ -54,7 +54,7 @@ RUN bunx puppeteer browsers install chrome
 
 # Copy source (overridden by volume mount in development, baked-in for production)
 COPY --chown=bun:bun . .
-RUN chown -R bun:bun /home/bun
+RUN bun run build:client && chown -R bun:bun /home/bun
 
 USER bun
 
